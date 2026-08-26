@@ -6,11 +6,11 @@
 
 ## 1. Purpose
 
-This requirement is the **project Single Source of Truth** for **modular function organization** of the folder-backup POSIX shell CLI.
+This requirement is the **project Single Source of Truth** for **modular function organization** of the take-ownership POSIX shell CLI.
 
 **Core idea:** Modularity is achieved through **clear function boundaries, consistent prefixes, and full CIAO documentation** — **not** by splitting the installable CLI into multiple shipped files.
 
-Ship unit remains a **single executable** at `src/folder-backup`.
+Ship unit remains a **single executable** at `src/take-ownership`.
 
 ---
 
@@ -27,7 +27,7 @@ Ship unit remains a **single executable** at `src/folder-backup`.
 
 ### 2.2 Official function prefix table
 
-**All functions MUST use a defined prefix.** Bare names (`main`, `install`, `help`, `backup`) as function names are forbidden.
+**All functions MUST use a defined prefix.** Bare names (`main`, `install`, `help`, `action`) as function names are forbidden.
 
 | Prefix | Category | Purpose | Example functions |
 |--------|----------|---------|-------------------|
@@ -37,13 +37,13 @@ Ship unit remains a **single executable** at `src/folder-backup`.
 | `app_` | Cross-cutting CLI surface | Entry, dispatch, about/help/version/where-is-me | `app_main`, `app_about`, `app_help`, `app_version`, `app_where_is_me` |
 | `path_` | Shell PATH & environment | Optional PATH ensure after user install | `path_add_shell` |
 | `prompt_` | Interactive prompts | TTY-safe confirmations | `prompt_yes_no` |
-| `fb_` | Domain business logic | Folder backup + sudoers fragment | `fb_backup`, `fb_print_sudoers`, `fb_next_archive_name`, `fb_stage_archive` |
+| `to_` | Domain business logic | Take-ownership + sudoers fragment | `to_action`, `to_print_sudoers`, `to_generate_sudoer_request`, `to_submit_sudoer_request` |
 
 **Notes:**
 
-- Domain prefix **`fb_`** is short for **folder-backup** (path-safe, stable).  
+- Domain prefix **`to_`** is short for **take-ownership** (path-safe, stable). **`fb_` is retired** on this product.  
 - **Do not** put domain ops under `app_*`.  
-- **Do not** put generic about/help/main under `fb_*`.  
+- **Do not** put generic about/help/main under `to_*`.  
 - Online-only prefixes from parent (`ver_check` remote network path, download install family) **MUST NOT** be reintroduced unless product mode changes.
 
 ### 2.3 Function documentation standards
@@ -60,15 +60,15 @@ Product-source `ALIGNMENT` / “see” comments **MUST** cite only live `docs/re
 
 ### 2.4 Protection Zones
 
-Critical sections (output SSOT, install place/remove, storage resolve, domain archive naming, sudoers fragment generation, elevated deposit invocation) **MUST** remain CIAO-Lite Protection Zones and **MUST NOT** be simplified away without explicit user redesign order.
+Critical sections (output SSOT, install place/remove, storage resolve, sudoers fragment generation, elevated `action` re-exec) **MUST** remain CIAO-Lite Protection Zones and **MUST NOT** be simplified away without explicit user redesign order.
 
 ### 2.5 Implementation Notes (this project)
 
 | Item | Value |
 |------|--------|
-| **Ship unit** | `src/folder-backup` |
-| **Domain prefix** | `fb_` |
-| **Bootstrap inheritance** | Prefix discipline from cli-template; domain prefix `fb_` added |
+| **Ship unit** | `src/take-ownership` |
+| **Domain prefix** | `to_` |
+| **Bootstrap inheritance** | Prefix discipline from cli-template / folder-backup; domain prefix `to_` replaces `fb_` |
 | **Multi-file authoring** | Optional later only if pack still yields one installable artifact and this requirement is updated |
 
 ### 2.6 Why This Requirement Exists (CIAO)
@@ -94,7 +94,7 @@ Critical sections (output SSOT, install place/remove, storage resolve, domain ar
 **Future AI assistants, Grok, or maintainers MUST NOT**:
 
 1. Introduce bare function names without an approved prefix.  
-2. Merge domain backup logic into `app_*` or `inst_*` without requirement update.  
+2. Merge domain take-ownership logic into `app_*` or `inst_*` without requirement update.  
 3. Split into multi-file runtime without a pack story and requirement change.  
 4. Strip Protection Zones “for readability.”  
 5. Cite templates/skills as product-source behavioral authority.
@@ -108,8 +108,8 @@ Critical sections (output SSOT, install place/remove, storage resolve, domain ar
 | ID | Criterion |
 |----|-----------|
 | AC-1 | All functions use the prefix table |
-| AC-2 | Domain ops live under `fb_*` |
-| AC-3 | Single ship unit at `src/folder-backup` |
+| AC-2 | Domain ops live under `to_*` |
+| AC-3 | Single ship unit at `src/take-ownership` |
 | AC-4 | Product comments cite live requirements only |
 
 ---
@@ -120,7 +120,7 @@ Critical sections (output SSOT, install place/remove, storage resolve, domain ar
 |-----|--------------|
 | `requirement-shell-cli-interface` | Command → handler map |
 | `requirement-shell-output-requirements` | Owns `out_*` |
-| `requirement-domain-folder-backup` | Owns `fb_*` behavior |
+| `requirement-domain-take-ownership` | Owns `to_*` behavior |
 | `docs/requirements/index.md` | Registry |
 
 ---

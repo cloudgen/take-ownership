@@ -1,8 +1,10 @@
 **file**: docs/requirements/requirement-domain-folder-backup.md  
-**Status**: Active (Version 1.6.2)  
+**Status**: Superseded (Version 1.6.2 → replaced 2026-08-25)  
 **Area**: domain  
 **Key**: `requirement-domain-folder-backup`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
+
+**Superseded by:** `requirement-domain-take-ownership`. This workspace is **take-ownership**; backup verbs are not live. Keep this file for lineage only — do not implement from it.
 
 ## 1. Purpose
 

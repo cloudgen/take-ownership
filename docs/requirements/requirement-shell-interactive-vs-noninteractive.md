@@ -6,7 +6,7 @@
 
 ## 1. Purpose
 
-This requirement is the **project Single Source of Truth** for how folder-backup behaves in **interactive** (human + TTY) versus **non-interactive** (automation, CI/CD, pipes, `--json` / often `--quiet`) environments.
+This requirement is the **project Single Source of Truth** for how take-ownership behaves in **interactive** (human + TTY) versus **non-interactive** (automation, CI/CD, pipes, `--json` / often `--quiet`) environments.
 
 ---
 
@@ -91,7 +91,7 @@ prompt_ask() {
 |--------|-------------|-----------------|
 | `uninstall` | Confirm unless `--force` | **Fail closed** without `--force` (`confirm_required`) |
 | `install` | May inform; no required confirm for first install | Proceed without hang |
-| `backup` | May show progress via `out_*` | No prompts; fail loud on missing operands / sudo failure |
+| `action` | TTY: one field at a time if `--path` / `--ownership` missing | No prompts; fail loud on missing operands / sudo failure; **MUST NOT** hang |
 | `print-sudoers` | Print fragment | Print fragment (stdout/file); no `/etc` write |
 | `generate-sudoer-request` | May show path + verify via `out_*` | No prompts; write + verify; no hang |
 | `submit-sudoer-request` | May show detect/submit via `out_*` | No prompts; fail closed if sudoer-cli / inbound missing; no hang |
@@ -102,7 +102,7 @@ prompt_ask() {
 
 | Item | Value |
 |------|--------|
-| **Product** | `folder-backup` |
+| **Product** | `take-ownership` |
 | **No curl\|sh auto-install path** | Local-only; non-interactive does not mean Type O install-ensure |
 | **Prompt helper** | `prompt_yes_no` for uninstall (and any future destructive confirm) |
 
@@ -162,7 +162,7 @@ prompt_ask() {
 
 | Date | Status | Note |
 |------|--------|------|
-| 2026-08-03 | Active | Interactive vs non-interactive for folder-backup |
+| 2026-08-03 | Active | Interactive vs non-interactive for take-ownership |
 
 ---
 

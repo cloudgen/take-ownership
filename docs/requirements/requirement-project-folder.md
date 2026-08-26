@@ -1,14 +1,38 @@
 **file**: docs/requirements/requirement-project-folder.md  
-**Status**: Active (Version 1.0.0)  
+**Status**: Active (Version 2.0.0)  
 **Area**: architecture  
 **Key**: `requirement-project-folder`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
 
 ## 1. Purpose
 
-Define **project folder structure** and path ownership for the folder-backup CLI: source layout, install locations, staging/scratch, and the privileged durable backup deposit root.
+Define **project folder structure** and path ownership for the take-ownership CLI: source layout, install locations, scratch, and config drafts.
 
-**Critical distinction:** CLI tool own paths vs target folders being archived vs host durable backup deposit.
+**Critical distinction:** CLI tool own paths vs target folders whose ownership is taken vs host `/etc/sudoers.d` (admin only).
+
+### 1.1 Human-facing
+
+**In one sentence:** The program lives under `src/`, installs into your bin or `/usr/local/bin`, and writes grant drafts under your config dir — it does not write `/etc`.
+
+| Box | Meaning | Example |
+|-----|---------|---------|
+| You / this login | User-bin install; config drafts | `${HOME}/.local/bin/take-ownership` |
+| Admin / root | Global install | `/usr/local/bin/take-ownership` |
+| Not this file | Recursive chown of a named folder | `requirement-take-ownership-ops` |
+
+| Includes | Excludes |
+|----------|----------|
+| `src/`, bin paths, config drafts | `/var/backup` deposit (retired) |
+| Per-user scratch | Type 0 write of `/etc` |
+
+| Surface | What you open | What for |
+|---------|---------------|----------|
+| `src/take-ownership` | ship unit | live program |
+| `${HOME}/.config/take-ownership/` | drafts | generate/print |
+
+| You do… | What it means | What you type |
+|---------|---------------|---------------|
+| Place the program globally | Production grant path | `sudo sh src/take-ownership install` |
 
 ---
 
@@ -18,7 +42,7 @@ Define **project folder structure** and path ownership for the folder-backup CLI
 
 | Path | Role |
 |------|------|
-| `src/folder-backup` | **Ship unit** — single POSIX shell executable source |
+| `src/take-ownership` | **Ship unit** — single POSIX shell executable source |
 | `tests/` | CLI tests when present |
 | `docs/requirements/` | Product law (this surface) |
 | Product root README / CHANGELOG / LICENSE / SECURITY | Product user docs when specialized |
@@ -27,84 +51,69 @@ Define **project folder structure** and path ownership for the folder-backup CLI
 2. **MUST** install the binary under a privilege-correct bin path (see §2.2).  
 3. **MUST NOT** require online channel files (companion digest) for local install.
 
-### 2.2 CLI tool install locations (Type 1a / 1b)
+### 2.2 CLI tool install locations
 
 | Mode | Binary path | Default |
 |------|-------------|---------|
-| **Per-user (normal)** | `${USER_BIN}/${APP_NAME}` | `${HOME}/.local/bin/folder-backup` |
-| **Global (root)** | `${GLOBAL_BIN}/${APP_NAME}` | `/usr/local/bin/folder-backup` |
+| **Per-user (normal)** | `${USER_BIN}/${APP_NAME}` | `${HOME}/.local/bin/take-ownership` |
+| **Global (root)** | `${GLOBAL_BIN}/${APP_NAME}` | `/usr/local/bin/take-ownership` |
 
 Rules:
 
 1. Non-root **install** **MUST** target user bin.  
-2. Root **install** **MAY** (and for production elevation **SHOULD**) target global bin.  
-3. **Primary product story** for this project: **user bin** (`~/.local/bin`) for Type 0 day-to-day; **global bin** for multi-user / durable sudoers trust.  
+2. Root **install** **MUST** (for production elevation) target global bin.  
+3. **Primary product story:** user bin for Type 0 day-to-day **without** sudoers; **global bin is required** before generate/submit (`requirement-three-layer-privilege-model`).  
 4. Uninstall **MUST** remove only the managed binary path for the install mode used.  
-5. Managed binary mode **MUST** be **`0755`** after install (shell ship unit: non-owners need **read+execute**; see `requirement-shell-local-self-management` §2.3.1). Global install **MUST** leave a path runnable by normal users and root, not owner-only (`0700`) or execute-without-read (`0711`).
+5. Managed binary mode **MUST** be **`0755`** after install (see `requirement-shell-local-self-management` §2.3.1).
 
 ### 2.3 Scratch / cache (CLI own volatile)
 
 | Purpose | Pattern |
 |---------|---------|
-| Effective storage root | From `util_resolve_storage` (see `requirement-shell-cli-storage`) |
-| Archive staging | `${EFFECTIVE_STORAGE_DIR}/stage/` (or `mktemp` under that root) |
-| Sudoers fragment draft | User-writable path under config: `…/sudoers.fragment-<user>` (legacy un-suffixed still discoverable; never auto-write `/etc/sudoers.d`) |
+| Effective storage root | From `util_resolve_storage` (`requirement-shell-cli-storage`) |
+| Temps | `util_mktemp` under that root |
+| Sudoers fragment draft | `${HOME}/.config/take-ownership/sudoers.fragment-<user>` |
+| JSON grant draft | `${HOME}/.config/take-ownership/sudoer-request-<user>.json` |
 
 Rules:
 
-1. Scratch **MUST** be per-user isolated (`APP_NAME` + `USERNAME`).  
-2. Temps **MUST** clean up (`trap`) after success/failure of a backup run.  
-3. Staging archives are **EPHEMERAL** until successfully deposited; do not leave world-writable archives.
+1. Scratch **MUST** be per-user isolated (`APP_NAME` + `USERNAME` from `id -un`).  
+2. Temps **MUST** clean up (`trap`) after success/failure of an `action` run.  
+3. **MUST NOT** auto-write `/etc/sudoers.d`.  
+4. **No** durable `/var/backup` deposit on this product.
 
-### 2.4 Durable host backup deposit (not CLI config)
+### 2.4 Target folders being taken
 
-| Item | Value |
-|------|--------|
-| **Backup root** | `/var/backup` |
-| **Backup notation directory** | `/var/backup/${BACKUP_NOTATION}/` |
-| **Default notation** | `folder-backup` (same as `APP_NAME` unless overridden by env/config) |
-| **Archive basename pattern** | `${SOURCE_FOLDER_NAME}-YYYYMMDD-N.tar.gz` |
+1. `--path` is a **user-supplied absolute directory** (ops operand), not an app system-user tree.  
+2. Validation (exists, directory, not symlink, refuse-list) is **`requirement-take-ownership-ops`**.  
+3. This file does **not** own chown semantics.
 
-Rules:
-
-1. Writing into `/var/backup/...` **MUST** use the **narrow elevated path** defined in privilege + domain law — not unrestricted root shell.  
-2. Normal users **MUST NOT** be granted write to all of `/var` — only the allowlisted deposit.  
-3. Archive **creation** (tar gzip) **MUST** run as the invoking user into staging; only the **deposit copy** is elevated.
-
-### 2.5 Target folders being backed up
-
-1. Source folder is a **user-supplied path** (domain operand), not an app system-user tree.  
-2. The tool **MUST** validate the source is a readable directory before archiving.  
-3. The tool **MUST NOT** follow uncontrolled recursion into dangerous system roots without explicit user path input and validation.
-
-### 2.6 Implementation Notes (this project)
+### 2.5 Implementation Notes (this project)
 
 | Item | Value |
 |------|--------|
-| **APP_NAME** | `folder-backup` |
-| **Ship unit path** | `src/folder-backup` |
+| **APP_NAME** | `take-ownership` |
+| **Ship unit path** | `src/take-ownership` |
 | **USER_BIN default** | `${HOME}/.local/bin` |
 | **GLOBAL_BIN default** | `/usr/local/bin` |
-| **BACKUP_ROOT** | `/var/backup` |
-| **BACKUP_NOTATION default** | `folder-backup` |
-| **Config dir (optional)** | `${HOME}/.config/folder-backup/` for generated sudoers drafts |
-| **No Type 2 app data tree** | No dedicated system app user for routine ops |
+| **Config dir** | `${HOME}/.config/take-ownership/` |
+| **No Type 2 app data tree** | No dedicated system app user |
+| **No BACKUP_ROOT** | Retired with folder-backup domain |
 
-### 2.7 Why This Requirement Exists (CIAO)
+### 2.6 Why This Requirement Exists (CIAO)
 
-- **Principle 1 – Caution**: Separate staging, install, and privileged deposit.  
-- **Principle 10 – Least privilege**: User creates archive; elevation only for deposit.  
-- **Principle 11 – Temps**: Staging is cleanup, not museum.  
-- **Principle 17 – Defensive storage**: No assumed writable paths without resolve.
+- **Principle 1 – Caution**: Separate install, drafts, and target folders.  
+- **Principle 10 – Least privilege**: Global bin for elevation; Type 0 never writes `/etc`.  
+- **Principle 11 – Temps**: Scratch is cleanup, not museum.
 
 ---
 
 ## 3. Design Principles (CIAO / CIAO-Lite)
 
-- **Caution**: Fail loud if deposit root or staging is not usable under policy.  
+- **Caution**: Fail loud if global bin is missing when emitting grants.  
 - **Intentional**: Path classes are documented and not mixed.  
 - **Anti-fragile**: Per-user isolation under multi-user hosts.  
-- **Over-protect**: Do not “simplify” by writing archives straight into `/var/backup` as a normal user or by running the whole CLI as root.
+- **Over-protect**: Do not “simplify” by elevating USER_BIN.
 
 ---
 
@@ -115,8 +124,8 @@ Rules:
 1. Move the ship unit out of `src/` without updating this requirement and install paths.  
 2. Make online channel paths required for install.  
 3. Grant the product unrestricted write under `/var` or `/etc`.  
-4. Collapse staging and durable deposit into one world-writable directory.  
-5. Rename protected temp isolation away from per-user roots.
+4. Treat `${USER_BIN}/take-ownership` as the production sudoers path.  
+5. Restore `/var/backup` as a product deposit root without a new requirement.
 
 **Violating this rule is a critical path/privilege regression.**
 
@@ -126,10 +135,10 @@ Rules:
 
 | ID | Criterion |
 |----|-----------|
-| AC-1 | Ship unit lives at `src/folder-backup` |
-| AC-2 | Default user install path is `~/.local/bin/folder-backup` |
-| AC-3 | Durable deposit is under `/var/backup/${BACKUP_NOTATION}/` |
-| AC-4 | Archive naming pattern documented and owned with domain law |
+| AC-1 | Ship unit lives at `src/take-ownership` |
+| AC-2 | Default user install path is `${HOME}/.local/bin/take-ownership` |
+| AC-3 | Production elevation path is `/usr/local/bin/take-ownership` |
+| AC-4 | No `/var/backup` product deposit |
 
 ---
 
@@ -139,7 +148,7 @@ Rules:
 |-----|--------------|
 | `requirement-shell-local-self-management` | Place/remove binary |
 | `requirement-shell-cli-storage` | Scratch resolve |
-| `requirement-domain-folder-backup` | Archive + deposit behavior |
+| `requirement-domain-take-ownership` | Domain surface |
 | `requirement-three-layer-privilege-model` | Elevation boundary |
 | `docs/requirements/index.md` | Registry |
 
@@ -149,10 +158,11 @@ Rules:
 
 | Date | Status | Note |
 |------|--------|------|
-| 2026-08-03 | Active | Specialized project folder law for folder-backup |
+| 2026-08-03 | Active 1.0.0 | folder-backup layout + `/var/backup` |
+| 2026-08-25 | Active 2.0.0 | take-ownership; drop backup deposit |
 
 ---
 
-**Last Updated**: 2026-08-03  
+**Last Updated**: 2026-08-25  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

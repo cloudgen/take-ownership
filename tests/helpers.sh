@@ -7,8 +7,8 @@
 # shellcheck disable=SC2034
 : "${TESTS_ROOT:=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)}"
 : "${REPO_ROOT:=$(CDPATH= cd -- "${TESTS_ROOT}/.." && pwd)}"
-: "${SCRIPT:=${REPO_ROOT}/src/folder-backup}"
-: "${APP_NAME:=folder-backup}"
+: "${SCRIPT:=${REPO_ROOT}/src/take-ownership}"
+: "${APP_NAME:=take-ownership}"
 : "${PASS:=0}"
 : "${FAIL:=0}"
 : "${SKIP:=0}"

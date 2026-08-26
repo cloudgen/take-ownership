@@ -4,7 +4,8 @@
 
 | Version | Supported |
 |---------|-----------|
-| 1.11.0 (current) | Yes |
+| 2.0.0 (current) | Yes |
+| 1.11.0 | Yes |
 | 1.10.0 | Yes |
 | 1.9.0 | Yes |
 | 1.8.2 | Yes |
@@ -32,10 +33,10 @@ This project follows **[CIAO](https://github.com/cloudgen/ciao)** / **[CIAO-Lite
 
 | Letter | Principle | Security application |
 |--------|-----------|----------------------|
-| **C** | **Caution** | Fail closed without working allowlisted sudo for deposit; restore dest **whitelist** (W-ETC-USER `/etc/{{username}}`; never `/etc/passwd`); validate sources and archives. |
-| **I** | **Intentional** | Type 0 archive create vs Type 1 deposit/restore-stage copy are separate; `print-sudoers` never writes `/etc`. |
-| **A** | **Anti-fragile** | Staging + traps; clear admin install path; hard-disk default restore dest avoids accidental RAM-only recovery assumptions. |
-| **O** | **Over-protect** | Narrow Cmnds only (no `NOPASSWD: ALL`); Protection Zones; count/size verification before success. |
+| **C** | **Caution** | Fail closed without the global binary and a matching grant; refuse system roots and symlink `--path`. |
+| **I** | **Intentional** | You generate/submit; `action` elevates only `/usr/local/bin/take-ownership`; `print-sudoers` never writes `/etc`. |
+| **A** | **Anti-fragile** | Already-matching owner is success; clear next-step errors when the grant is missing. |
+| **O** | **Over-protect** | USER_BIN is never in sudoers; no `/bin/chown`; no `NOPASSWD: ALL`. |
 
 Full principles: [CIAO](https://github.com/cloudgen/ciao) · [CIAO-Lite](https://github.com/cloudgen/ciao-lite).
 

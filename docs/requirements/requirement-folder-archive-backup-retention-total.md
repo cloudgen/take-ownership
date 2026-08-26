@@ -1,10 +1,10 @@
 **file**: docs/requirements/requirement-folder-archive-backup-retention-total.md  
-**Status**: Active (Version 1.0.0)  
+**Status**: Superseded (Version 1.0.0 → retired 2026-08-25)  
 **Area**: backup  
 **Key**: `requirement-folder-archive-backup-retention-total`  
 **Optional RQ-ID**: `RQ-FOLDER-ARCHIVE-BACKUP-RETENTION-TOTAL`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)  
-**Mold**: **`LM-FOLDER-ARCHIVE-BACKUP-RETENTION-TOTAL`** (`template-folder-archive-backup-retention-total.md`)
+**Superseded:** Retention is not live on take-ownership. Do not implement from this file.
 
 ## 1. Purpose
 

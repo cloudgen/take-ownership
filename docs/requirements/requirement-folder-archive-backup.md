@@ -1,9 +1,11 @@
 **file**: docs/requirements/requirement-folder-archive-backup.md  
-**Status**: Active (Version 1.2.0)  
+**Status**: Superseded (Version 1.2.0 → replaced 2026-08-25)  
 **Area**: backup  
 **Key**: `requirement-folder-archive-backup`  
 **Optional RQ-ID**: `RQ-FOLDER-ARCHIVE-BACKUP`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
+
+**Superseded by:** `requirement-take-ownership-ops`. This workspace is **take-ownership**; archive backup/restore is not live. Keep this file for lineage only — do not implement from it.
 
 ## 1. Purpose
 

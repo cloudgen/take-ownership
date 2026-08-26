@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-sudoer-json-file.md  
-**Status**: Active (Version 1.3.0)  
+**Status**: Active (Version 2.0.0)  
 **Area**: architecture  
 **Key**: `requirement-sudoer-json-file`  
 **Optional RQ-ID**: `RQ-SUDOER-JSON-FILE`  
@@ -9,42 +9,48 @@
 
 This requirement is the **product Single Source of Truth** for the **JSON-type sudoer file**: the machine encoding of this product’s elevation grant (the body a Type 0 submit hands to the sibling allocator, or an equivalent JSON dual of that grant).
 
-The grant **MUST** name only the project command **`{{PRJ_NAME}}`**. It **MUST NOT** allowlist other shell or OS tools (`cp`, `mkdir`, `install`, `chmod`, `tar`, `rm`, shells, …). Those extra tools **increase design complexity and thereby weaken security**.
+The grant **MUST** name only the project command **`take-ownership`**. It **MUST NOT** allowlist other shell or OS tools (`cp`, `mkdir`, `install`, `chmod`, `chown`, `tar`, `rm`, shells, …). Those extra tools **increase design complexity and thereby weaken security**.
+
+**Command identity (this product):** only the **managed global** binary. Local `${USER_BIN}/take-ownership` in `commands[].path` is a **security leak** (the user can rewrite the file). Generate and submit **MUST** fail closed unless `${GLOBAL_BIN}/take-ownership` exists.
+
+**Grant width (this product):** **exact folder**, **any** `user:group`. Each grant line binds `--path` to one absolute directory and uses sudoers `*` for `--ownership`.
+
+Must-not-confuse: JSON field **`action`** is `add` or `update` of the grant. CLI verb **`action`** is the take-ownership command. They are different words.
 
 This file does **not** own:
 
 | Concern | Owner |
 |---------|--------|
-| Type 0/1/2 map, `print-sudoers` emit, admin install, submit **workflow** (detect / no inbound `mkdir` / no `/etc` write) | `requirement-three-layer-privilege-model` |
-| Domain verb catalog / help / about | `requirement-domain-folder-backup` |
-| Backup / restore operations | `requirement-folder-archive-backup` |
+| Type 0/1/2 map, `print-sudoers` emit, admin install, submit **workflow**, global-bin gate | `requirement-three-layer-privilege-model` |
+| Domain verb catalog / help / about | `requirement-domain-take-ownership` |
+| Recursive chown / refuse-list | `requirement-take-ownership-ops` |
 
 Queued **basename** allocation remains sibling-owned. This requirement owns **command identity and JSON body shape**.
 
 ### 1.1 Human-facing
 
-**In one sentence:** The JSON grant says this login may run `folder-backup backup <folder>` and `restore <token>` as root — the `*` in args is a sudoers extra operand, not a disk path.
+**In one sentence:** The JSON grant says this login may run `take-ownership action --path /that/folder --ownership anyone:anygroup` as root of the **global** binary — the `*` is the ownership operand, not a disk path.
 
 | Box | Meaning | Example |
 |-----|---------|---------|
 | You / this login | The username in the JSON | live emit uses `id -un` |
-| The grant | Product binary + verb + `*` | `args: ["backup", "*"]` |
+| The grant | Global binary + `action` + exact `--path` + `--ownership *` | `args: ["action","--path","/var/www/html","--ownership","*"]` |
 | Not this file | How to install the fragment | `requirement-three-layer-privilege-model` |
 
 | Includes | Excludes |
 |----------|----------|
-| `backup` / `restore` plus one `*` | Verb-only `["backup"]` |
-| Optional `--json` as a **separate** command object | Frozen `/var/backup/…` or `*.tar.gz` in args |
-| Project command only | `mkdir` / `cp` / `tar` as root tools |
+| One folder per command pair (verb + `--json` twin) | Wildcard `--path *` |
+| `--json` as a **separate** command object | Frozen `user:group` in the grant; `/bin/chown` |
+| `/usr/local/bin/take-ownership` only | `${HOME}/.local/bin/take-ownership` |
 
 | Surface | What you open | What for |
 |---------|---------------|----------|
-| `folder-backup generate-sudoer-request` | command | JSON grant on a readable dest |
-| `./src/folder-backup` | ship unit | emit (Gap until 1.3.0 implemented) |
+| `take-ownership generate-sudoer-request --path /var/www/html` | command | JSON grant on a readable dest |
+| `./src/take-ownership` | ship unit | emit |
 
 | You do… | What it means | What you type |
 |---------|---------------|---------------|
-| Generate the JSON grant | You can `cat` the dest without sudo. Both verbs must include `*`. | `folder-backup generate-sudoer-request` |
+| Generate the JSON grant for one folder | You can `cat` the dest without sudo. Ownership stays `*`. | `take-ownership generate-sudoer-request --path /var/www/html` |
 
 ---
 
@@ -55,199 +61,174 @@ Queued **basename** allocation remains sibling-owned. This requirement owns **co
 1. A JSON sudoer file is a **closed-schema object** that states: who may elevate, which **product** the grant is for, add vs update, and a **commands** list.  
 2. It is **not** `sudoers(5)` text. It is **not** this product’s `--json` CLI status.  
 3. Sibling approval software **MAY** convert a text dual into this JSON. Conversion **MUST NOT** invent OS-tool commands that this requirement forbids.  
-4. If both a text fragment and a JSON sudoer file represent the **same** grant, they **MUST** be equivalent: both elevate **`{{PRJ_NAME}}` only**. A text file that allowlists `mkdir`/`cp`/… **MUST NOT** be treated as a valid dual of a compliant JSON sudoer file.  
-5. Pretty-printed JSON (newlines and spaces between `commands[]` objects) is a **legal** encoding of this schema. Compact one-line JSON is also legal. A decoder **MUST** accept both.
+4. If both a text fragment and a JSON sudoer file represent the **same** grant, they **MUST** be equivalent: both elevate **`take-ownership` only**. A text file that allowlists `chown`/`mkdir`/`cp` **MUST NOT** be treated as a valid dual.  
+5. Pretty-printed JSON is a **legal** encoding. Compact one-line JSON is also legal. A decoder **MUST** accept both.
 
-### 2.2 Command identity — `{{PRJ_NAME}}` only (sacred)
-
-**`{{PRJ_NAME}}`** is the product command (the ship-unit basename). It is the **only** elevated program this JSON may grant.
+### 2.2 Command identity — `take-ownership` global only (sacred)
 
 | Rule | Detail |
 |------|--------|
-| **Identity** | Every `commands[].path` **MUST** be the **managed global** product command: `{{GLOBAL_BIN}}/{{PRJ_NAME}}` |
-| **Basename** | `basename(path)` **MUST** equal `{{PRJ_NAME}}` |
+| **Identity** | Every `commands[].path` **MUST** be `/usr/local/bin/take-ownership` (`{{GLOBAL_BIN}}/{{PRJ_NAME}}`) |
+| **Basename** | `basename(path)` **MUST** equal `take-ownership` |
 | **One program** | The grant **MUST NOT** list any other executable |
-| **No local binary** | **MUST NOT** elevate `{{USER_BIN}}/{{PRJ_NAME}}` (user-rewritable; not production-secure) |
-| **No OS tools** | **MUST NOT** list `cp`, `mkdir`, `install`, `chmod`, `tar`, `rm`, `ln`, `mv`, `chown`, `dd`, or any shell (`sh`, `bash`, `dash`) — including `/bin/*` and `/usr/bin/*` twins |
+| **No local binary** | **MUST NOT** elevate `${USER_BIN}/take-ownership` |
+| **No OS tools** | **MUST NOT** list `cp`, `mkdir`, `install`, `chmod`, `chown`, `tar`, `rm`, `ln`, `mv`, `dd`, or any shell |
 | **No ALL** | **MUST NOT** use `ALL`, `NOPASSWD: ALL`, or an empty/unrestricted command set |
+| **Global must exist** | Generate / submit / print-sudoers **MUST** fail closed if `/usr/local/bin/take-ownership` is missing or not executable. **No** `--allow-test-local` |
 
-**Why OS-tool grants are forbidden (complexity is a security defect):**
+Elevating **`take-ownership`** once is the smaller F6: after the grant, the ship unit performs `chown` **internally**. `/bin/chown` is **not** a sudoers catalog.
 
-| OS-tool design | What it costs | How it weakens security |
-|----------------|---------------|-------------------------|
-| One line per helper (`mkdir`, `cp`, `install`, `chmod`, `tar`, `rm`) | Fragment and JSON grow with every new backup need | Larger allowlist; easier to miss a dangerous twin (`/bin` vs `/usr/bin`) |
-| Dest / stage / filename operands in the grant | Paths and `*.tar.gz` freeze into `/etc` | Host HOME, deposit trees, and archive names become sudoers law; env overrides break elev or over-grant |
-| Wildcards to “keep it matching” | `*` and `*.tar.gz` on shared deposit | User can `cp`/`rm`/`tar` as root **without** running `{{PRJ_NAME}}` |
-| Runtime must stay lockstep with the grant | Second lock after elev | Each product change needs a new sudoers review; agents add “just one more” Cmnd |
+### 2.3 Arguments — exact folder, any ownership (sacred)
 
-Elevating **`{{PRJ_NAME}}`** once is the smaller, stronger F6: after the operator (or passwordless ticket) has approved that command, the ship unit performs mkdir/copy/tar/rm **internally**. Those live tools are **not** a second sudoers catalog.
+1. Each elev object’s `commands[].args` **MUST** be exactly:
 
-### 2.3 Arguments — product verbs, no path or filename hardcode
+```text
+["action", "--path", "<absolute-folder>", "--ownership", "*"]
+```
 
-1. `commands[].args` **MUST** be a product elev verb plus **exactly one** sudoers operand wildcard: `["backup", "*"]` and `["restore", "*"]`. The string `*` is **not** a filesystem path.  
-2. **MUST** include a `backup` grant when durable deposit is in scope.  
-3. **MUST** include a `restore` grant when elevated restore-stage fetch is in scope.  
-4. **MUST NOT** put deposit paths, stage paths, host HOME, or archive filenames in `args` (no `/var/backup/…`, no `/dev/shm/…`, no `*.tar.gz`, no `NAME-YYYYMMDD-N.tar.gz`). Paths and names are **Config / product law**, not grant operands.  
-5. **MUST NOT** grant `install`, `uninstall`, `print-sudoers`, `print-sudoers-install-script`, `remove-project-sudoers`, `generate-sudoer-request`, or `submit-sudoer-request` as elevated commands (those stay Type 0).  
-6. **MUST NOT** grant `{{PRJ_NAME}}` with **no** verb when that would let the user run any subcommand as root. Verb-bound entries are required. **MUST NOT** emit verb-only `["backup"]` / `["restore"]` (sudoers exact-argv would not match `backup <source-folder>`).  
-7. `--json` **MAY** appear only as the **first** element of a **separate** `commands[]` object (`["--json", "backup", "*"]`, `["--json", "restore", "*"]`). Other CLI flags (`--force`, `--disk`, `--ram`) **MUST NOT** be frozen as host paths; the product validates them after elev.
+or the `--json` twin:
+
+```text
+["--json", "action", "--path", "<absolute-folder>", "--ownership", "*"]
+```
+
+2. `<absolute-folder>` **MUST** be an absolute directory path (the bound folder). It is **not** `*`.  
+3. The string `*` is **only** allowed as the `--ownership` operand. It is **not** a filesystem path.  
+4. `--json` **MUST** be a **separate** `commands[]` object with `--json` as the **first** arg. Bare `action --path F --ownership *` **MUST NOT** be treated as covering `take-ownership --json action --path F --ownership U:G`.  
+5. **MUST NOT** freeze a specific `user:group` into the grant (runtime operand).  
+6. **MUST NOT** grant `install`, `uninstall`, `print-sudoers`, `print-sudoers-install-script`, `remove-project-sudoers`, `generate-sudoer-request`, or `submit-sudoer-request` as elevated commands.  
+7. **MUST NOT** grant the binary with **no** verb.  
+8. **MUST NOT** emit short flags (`-p`, `-o`) or swapped `--ownership` before `--path`.  
+9. A second folder **MUST** be additional command pairs (verb + `--json` twin), typically on `"action": "update"`. **MUST NOT** replace `--path` with `*` to “cover all folders.”
 
 ### 2.4 Closed schema (normative)
 
 | Field | Type | Required | Rule |
 |-------|------|----------|------|
-| `schema_version` | integer | yes | `1` for this requirement |
+| `schema_version` | integer | yes | `1` |
 | `purpose` | string | yes | Human purpose; no secrets |
 | `username` | string | yes | Target login (submitter); not `ALL` |
-| `service` | string | yes | **MUST** equal `{{PRJ_NAME}}` |
-| `action` | string | yes | `add` or `update` only |
+| `service` | string | yes | **MUST** equal `take-ownership` |
+| `action` | string | yes | `add` or `update` only (**not** the CLI verb) |
 | `commands` | array | yes | Non-empty; every element obeys §2.2–2.3 |
 | `commands[].runas` | string | yes | `root` |
-| `commands[].tags` | array | yes | `NOPASSWD` **MAY** appear when non-interactive deposit is product law; residual risk stays on the privilege peer |
-| `commands[].path` | string | yes | Absolute `{{GLOBAL_BIN}}/{{PRJ_NAME}}` only |
-| `commands[].args` | array of strings | yes | `["backup", "*"]` or `["restore", "*"]` (required). Optional extra objects: `["--json", "backup", "*"]` / `["--json", "restore", "*"]` |
+| `commands[].tags` | array | yes | `NOPASSWD` **MAY** appear |
+| `commands[].path` | string | yes | `/usr/local/bin/take-ownership` only |
+| `commands[].args` | array of strings | yes | §2.3 shape |
 
-**MUST NOT** add undeclared privilege fields (extra binaries, `env_keep` shells, `ALL`). Unknown sibling metadata **MUST NOT** widen `commands`.
+**MUST NOT** add undeclared privilege fields. Unknown sibling metadata **MUST NOT** widen `commands`.
 
 ### 2.5 Filename grammar (queued artifact — sibling allocator)
 
-This product **MUST NOT** invent the dest basename. Sibling grammar (informative for pairing):
-
 ```text
-sudoer-{{YYYYMMDD}}-{{PRJ_NAME}}-{{username}}-{{action}}-{{n}}.json
+sudoer-{{YYYYMMDD}}-take-ownership-{{username}}-{{action}}-{{n}}.json
 ```
 
-**Worked sample basename (add):** `sudoer-20260815-folder-backup-leolio-add-1.json`  
-**Worked sample basename (update):** `sudoer-20260815-folder-backup-leolio-update-1.json`
+**Worked sample basename (add):** `sudoer-20260825-take-ownership-alice-add-1.json`  
+**Worked sample basename (update):** `sudoer-20260825-take-ownership-alice-update-1.json`
 
-### 2.6 Complete sample bodies (same grant; add vs update)
+Live emit uses `id -un` for `{{username}}`. Worked samples use `alice` (illustrative, not a host login freeze).
 
-Normative **add** JSON (this project’s filled values — see §2.8):
+### 2.6 Complete sample bodies (add vs update)
+
+**Add** — one folder:
 
 ```json
 {
   "schema_version": 1,
-  "purpose": "Allow leolio to run folder-backup backup and restore as root.",
-  "username": "leolio",
-  "service": "folder-backup",
+  "purpose": "Allow alice to take ownership of /var/www/html.",
+  "username": "alice",
+  "service": "take-ownership",
   "action": "add",
   "commands": [
-    {
-      "runas": "root",
-      "tags": ["NOPASSWD"],
-      "path": "/usr/local/bin/folder-backup",
-      "args": ["backup", "*"]
-    },
-    {
-      "runas": "root",
-      "tags": ["NOPASSWD"],
-      "path": "/usr/local/bin/folder-backup",
-      "args": ["restore", "*"]
-    }
+    {"runas": "root", "tags": ["NOPASSWD"], "path": "/usr/local/bin/take-ownership", "args": ["action", "--path", "/var/www/html", "--ownership", "*"]},
+    {"runas": "root", "tags": ["NOPASSWD"], "path": "/usr/local/bin/take-ownership", "args": ["--json", "action", "--path", "/var/www/html", "--ownership", "*"]}
   ]
 }
 ```
 
-Normative **update** JSON (same commands; `action` only changes):
+**Update** — append a second folder (same user fragment):
 
 ```json
 {
   "schema_version": 1,
-  "purpose": "Allow leolio to run folder-backup backup and restore as root.",
-  "username": "leolio",
-  "service": "folder-backup",
+  "purpose": "Allow alice to take ownership of /var/www/html and /srv/data.",
+  "username": "alice",
+  "service": "take-ownership",
   "action": "update",
   "commands": [
-    {
-      "runas": "root",
-      "tags": ["NOPASSWD"],
-      "path": "/usr/local/bin/folder-backup",
-      "args": ["backup", "*"]
-    },
-    {
-      "runas": "root",
-      "tags": ["NOPASSWD"],
-      "path": "/usr/local/bin/folder-backup",
-      "args": ["restore", "*"]
-    }
+    {"runas": "root", "tags": ["NOPASSWD"], "path": "/usr/local/bin/take-ownership", "args": ["action", "--path", "/var/www/html", "--ownership", "*"]},
+    {"runas": "root", "tags": ["NOPASSWD"], "path": "/usr/local/bin/take-ownership", "args": ["--json", "action", "--path", "/var/www/html", "--ownership", "*"]},
+    {"runas": "root", "tags": ["NOPASSWD"], "path": "/usr/local/bin/take-ownership", "args": ["action", "--path", "/srv/data", "--ownership", "*"]},
+    {"runas": "root", "tags": ["NOPASSWD"], "path": "/usr/local/bin/take-ownership", "args": ["--json", "action", "--path", "/srv/data", "--ownership", "*"]}
   ]
 }
 ```
 
-Equivalent **text dual** of the same grant (not a second allowlist of OS tools):
+Equivalent **text dual** of the add grant:
 
 ```text
-# Purpose: Allow leolio to run folder-backup backup and restore as root.
-leolio ALL=(root) NOPASSWD: /usr/local/bin/folder-backup backup *
-leolio ALL=(root) NOPASSWD: /usr/local/bin/folder-backup restore *
+# Purpose: Allow alice to take ownership of /var/www/html.
+alice ALL=(root) NOPASSWD: /usr/local/bin/take-ownership action --path /var/www/html --ownership *
+alice ALL=(root) NOPASSWD: /usr/local/bin/take-ownership --json action --path /var/www/html --ownership *
 ```
 
-**Withdrawn (forbidden) encoding** — do not copy into a JSON sudoer file:
+`"*"` is a quoted string (not a cwd listing).
+
+**Withdrawn (forbidden)** encodings — do not copy:
 
 ```json
-{
-  "path": "/usr/bin/mkdir",
-  "args": ["-p", "/var/backup/folder-backup"]
-}
+{"path": "/bin/chown", "args": ["-R", "/var/www/html"]}
 ```
 
-That shape (and `cp` / `tar` / `rm` / `install` / `chmod` siblings) is **non-compliant**. It is the complexity/security defect this requirement exists to end.
+```json
+{"path": "/usr/local/bin/take-ownership", "args": ["action", "--path", "*", "--ownership", "*"]}
+```
+
+```json
+{"path": "${HOME}/.local/bin/take-ownership", "args": ["action", "--path", "/var/www/html", "--ownership", "*"]}
+```
 
 ### 2.7 Submit / emit honesty
 
-1. When `submit-sudoer-request` builds or accepts a JSON sudoer file, the body **MUST** satisfy §2.2–2.4.  
-2. **MUST** fail closed if an input file’s `commands` contain a forbidden path or OS-tool basename.  
+1. When `submit-sudoer-request` or `generate-sudoer-request` builds a JSON sudoer file, the body **MUST** satisfy §2.2–2.4.  
+2. **MUST** fail closed if `commands` contain a forbidden path, USER_BIN path, OS-tool basename, or `--path *`.  
 3. **MUST NOT** “fix” a forbidden file by submitting it anyway.  
-4. Trust-tier gates (production vs test_local) remain on `requirement-three-layer-privilege-model`. This requirement does not weaken those gates.  
-5. **Independent generate:** this JSON **MUST** be writable by a Type 0 **subcommand** (this product: `generate-sudoer-request`) **without** submit, inbound, or `/etc`. Dest **MUST** be invoking-user readable so tests and review can `cat` it without sudo. Submit temp and inbound are **not** that dest. Workflow/readability law: `requirement-three-layer-privilege-model` §2.3.2a.
-
-### 2.7a Re-encode / convert fidelity (sacred)
-
-Sibling (or this product) **MAY** decode then re-encode the grant when converting or queueing. That rewrite is still **this** grant.
-
-1. Decode / convert / re-encode **MUST** preserve **every** `commands[]` object: `path`, `args`, `runas`, `tags`.  
-2. **MUST NOT** silently drop a verb so that purpose still says “backup and restore” while `commands` lists only `restore` (or only `backup`). Purpose is **not** completeness.  
-3. **MUST** treat pretty-printed and compact JSON as the same grant. A splitter that only recognizes the token `},{` is non-compliant (it loses objects when `}, {` or `},\n{` appear).  
-4. If the codec cannot represent the full `commands` array, it **MUST** fail closed (`invalid_json` or product equivalent). Silent last-`args`-wins is forbidden.  
-5. `[OK] submitted` / a request_id **MUST NOT** be treated as proof the queued body equals the emit dual. When the inbound file is readable, submit **MUST** fail closed if required verbs are missing.  
-6. Proof **MUST** exercise pretty **and** compact multi-command fixtures — compact-only suite green is not fidelity.
+4. Independent generate dest **MUST** be invoking-user readable. Workflow: `requirement-three-layer-privilege-model`.  
+5. Re-encode / convert **MUST** preserve **every** `commands[]` object (pretty and compact). Silent drop of a folder pair is a different grant — fail closed.
 
 ### 2.8 Implementation Notes (this project)
 
 | Item | Value |
 |------|--------|
-| **`{{PRJ_NAME}}` / `APP_NAME`** | `folder-backup` |
+| **`{{PRJ_NAME}}` / `APP_NAME`** | `take-ownership` |
 | **`{{GLOBAL_BIN}}`** | `/usr/local/bin` |
-| **Elevated path** | `/usr/local/bin/folder-backup` |
-| **Allowed args** | `backup *` · `restore *` (JSON: `["backup","*"]` / `["restore","*"]`). Optional `--json` objects. Ship unit **1.10.0** emit matches. |
-| **Forbidden paths (examples)** | `/usr/bin/mkdir`, `/bin/mkdir`, `/usr/bin/cp`, `/bin/cp`, `/usr/bin/install`, `/usr/bin/tar`, `/bin/tar`, `/bin/rm`, `/usr/bin/rm`, `/usr/bin/chmod`, `/bin/chmod` |
-| **Ship unit** | `src/folder-backup` |
-| **Submit verb** | `submit-sudoer-request` → `fb_submit_sudoer_request` |
-| **Generate verb** | `generate-sudoer-request` → `fb_generate_sudoer_request` (independent compact dual; dest readable without sudo) |
-| **Generate dest (default)** | `${HOME}/.config/folder-backup/sudoer-request-<user>.json` (path operand for suite/review) |
-| **Service field** | `folder-backup` |
-| **Worked user in samples** | `leolio` (illustrative login; live emit uses `id -un`) |
+| **Elevated path** | `/usr/local/bin/take-ownership` |
+| **Allowed args** | `["action","--path","<folder>","--ownership","*"]` and `["--json","action","--path","<folder>","--ownership","*"]` per folder |
+| **Forbidden paths (examples)** | `/usr/bin/chown`, `/bin/chown`, `/usr/bin/mkdir`, `${HOME}/.local/bin/take-ownership` |
+| **Ship unit** | `src/take-ownership` |
+| **Submit verb** | `submit-sudoer-request` → `to_submit_sudoer_request` |
+| **Generate verb** | `generate-sudoer-request` → `to_generate_sudoer_request` |
+| **Generate dest (default)** | `${HOME}/.config/take-ownership/sudoer-request-<user>.json` |
+| **Service field** | `take-ownership` |
+| **Worked user in samples** | `alice` (illustrative; live emit uses `id -un`) |
 | **Privilege / workflow peer** | `requirement-three-layer-privilege-model` |
-| **Ship unit emit** | **1.10.0:** `fb_sudoers_json_text` / `fb_sudoers_fragment_text` emit `*` operand. `print-sudoers <path>` also writes `<path>.json`. Submit default input is the JSON grant. Host `/etc` fragment is still admin-installed. |
 
 ### 2.9 Why This Requirement Exists (Direct CIAO Alignment)
 
-- **CIAO Principle 10 – Least privilege**: F6 is one managed binary and two verbs — not a catalog of root `cp`/`mkdir`/`rm`.  
-- **CIAO Principle 1 – Caution**: Extra sudoers lines are extra ways to be wrong; complexity is treated as a vulnerability.  
-- **CIAO Principle 2 – Intentional**: The JSON file means “this user may run `{{PRJ_NAME}} backup <folder>` and `restore <token>` as root” (`args` verb plus `*`), nothing else.  
-- **CIAO Principle 9 – Type 0 / 1 / 2**: JSON is the Type 1 **grant**. Live mkdir/copy/tar after elev are not a second grant.  
-- **CIAO Principle 21 – Dual policies**: Core rules use `{{PRJ_NAME}}` / `{{GLOBAL_BIN}}`; this section fills `folder-backup` and `/usr/local/bin`.
+- **Principle 10 – Least privilege**: One managed global binary, one folder, ownership wildcard — not `/bin/chown -R *`.  
+- **Principle 1 – Caution**: USER_BIN in sudoers is a rewrite jailbreak.  
+- **Principle 2 – Intentional**: JSON `action` vs CLI `action` are named and fenced.  
+- **Principle 21 – Dual policies**: Core rules use placeholders; this section fills `take-ownership` and `/usr/local/bin`.
 
 ---
 
 ## 3. Design Principles (CIAO / CIAO-Lite)
 
-- **Caution:** Refuse OS-tool JSON even if an older fragment or review used it.  
-- **Intentional:** `service` and `path` basename are the same name: `{{PRJ_NAME}}`.  
-- **Anti-fragile:** Paths and archive names stay in Config; changing `BACKUP_ROOT` must not require a new sudoers JSON.  
-- **Over-protect:** Verb-bound `backup *` / `restore *`; no bare-binary grant; no `USER_BIN` path; no verb-only exact argv.  
-- **Stay-honest:** 1.8.x emit is **Gap** vs 1.3.0 until ship unit includes `*`; inbound after submit must still list both verbs; do not revive OS-tool Cmnds.  
-- **Anti-fragile (codec):** Re-encode is lossy unless proven; pretty JSON is legal input.
+- **Caution:** Refuse OS-tool JSON and local-bin JSON even if an older fragment used them.  
+- **Intentional:** `service` and `path` basename are `take-ownership`.  
+- **Anti-fragile:** Ownership stays `*` so a new `user:group` does not need a new sudoers review; a new **folder** does.  
+- **Over-protect:** Verb-bound exact `--path`; no USER_BIN; no `--path *`.
 
 ---
 
@@ -255,20 +236,16 @@ Sibling (or this product) **MAY** decode then re-encode the grant when convertin
 
 **Future AI assistants, Grok, or maintainers MUST NOT**:
 
-1. Put `cp`, `mkdir`, `install`, `chmod`, `tar`, `rm`, or a shell in a JSON sudoer file `commands` list.  
-2. Treat “more specific wildcards” (`*.tar.gz`, `/var/backup/…/*`) as a substitute for `{{PRJ_NAME}}`-only.  
-3. Hardcode deposit, stage, HOME, or archive **filenames** into `path` or `args`.  
-4. Elevate `{{USER_BIN}}/{{PRJ_NAME}}` in this JSON.  
-5. Grant `{{PRJ_NAME}}` with no verb (whole CLI as root).  
-5b. Emit verb-only `args: ["backup"]` / `["restore"]` when operate argv includes a source folder or restore token.  
-6. Claim an OS-tool emit (`mkdir`/`cp`/`tar`/`rm`) is compliant with this requirement.  
-7. Duplicate submit/install workflow law here (that stays on the privilege peer).  
+1. Put `chown`, `cp`, `mkdir`, `install`, `chmod`, `tar`, `rm`, or a shell in a JSON sudoer file `commands` list.  
+2. Elevate `${USER_BIN}/take-ownership` or any home-tree path.  
+3. Grant `--path *` or omit `--path`.  
+4. Grant the binary with no verb.  
+5. Emit `-p`/`-o` or swapped flag order in `args`.  
+6. Treat JSON field `action` as the CLI verb `action`.  
+7. Unquote JSON `"*"` so a shell glob freezes cwd names into the grant.  
 8. Store secrets in the JSON body.  
-9. Cite templates or skills as product-source authority for this grant.  
-10. Treat a sibling re-encode that dropped `commands[]` objects as “still the same grant” because `purpose` or `[OK]` survived.  
-11. Mark emit-only tests (substring `"backup"` on the draft dual) as proof the **queued inbound** kept every verb.  
-12. Require callers to emit minified `},{` only in order to skip a whitespace-tolerant decoder.  
-13. Make submit, inbound, or a deleted temp the only way to obtain this JSON for tests or review. Independent generate to a readable dest is required.
+9. Duplicate submit/install workflow law here.  
+10. Make submit, inbound, or a deleted temp the only way to obtain this JSON for tests or review.
 
 **Violating this rule is a critical privilege / complexity-as-insecurity regression.**
 
@@ -278,16 +255,15 @@ Sibling (or this product) **MAY** decode then re-encode the grant when convertin
 
 | ID | Criterion |
 |----|-----------|
-| AC-1 | Every `commands[].path` is `{{GLOBAL_BIN}}/{{PRJ_NAME}}` (this project: `/usr/local/bin/folder-backup`) |
-| AC-2 | `service` equals `{{PRJ_NAME}}` (`folder-backup`) |
-| AC-3 | `args` are `["backup", "*"]` and `["restore", "*"]` (optional extra objects `["--json", verb, "*"]`). Verb-only `["backup"]` **Fail** |
-| AC-4 | No `mkdir` / `cp` / `install` / `chmod` / `tar` / `rm` / shell basename appears in `path` or `args` |
-| AC-5 | No deposit/stage/HOME path and no `*.tar.gz` / archive filename in the JSON grant |
-| AC-6 | Add and update samples exist and differ only by `action` |
-| AC-7 | Submit of a file that violates AC-1–AC-5 fails closed |
-| AC-8 | Text dual of this grant lists `{{PRJ_NAME}} backup *` and `{{PRJ_NAME}} restore *` (not verb-only) |
-| AC-9 | Pretty-printed grant with both verbs survives sibling `json-to-sudoers` / submit re-encode as **both** verbs (or submit fail-closed if inbound readable and a verb is missing) |
-| AC-10 | Independent generate subcommand writes this JSON to an invoking-user-readable dest; suite opens it without sudo |
+| AC-1 | Every `commands[].path` is `/usr/local/bin/take-ownership` |
+| AC-2 | `service` equals `take-ownership` |
+| AC-3 | `args` are `action --path <abs> --ownership *` plus `--json` twin per folder |
+| AC-4 | No `chown` / `mkdir` / `cp` / USER_BIN path |
+| AC-5 | No `--path *` |
+| AC-6 | Add sample is one folder; update sample **may** append a second folder |
+| AC-7 | Generate/submit of a violating body fails closed |
+| AC-8 | Independent generate dest is readable without sudo |
+| AC-9 | Global binary missing → generate/submit fail closed |
 
 ---
 
@@ -295,14 +271,14 @@ Sibling (or this product) **MAY** decode then re-encode the grant when convertin
 
 | Key | Relationship |
 |-----|--------------|
-| `requirement-three-layer-privilege-model` | Privilege layers; submit/install workflow; trust tiers |
-| `requirement-domain-folder-backup` | `submit-sudoer-request` surface; defers JSON **body** here |
-| `requirement-folder-archive-backup` | `backup` / `restore` ops after elev |
+| `requirement-three-layer-privilege-model` | Privilege layers; submit/install workflow; global-bin gate |
+| `requirement-domain-take-ownership` | `submit-sudoer-request` surface; defers JSON **body** here |
+| `requirement-take-ownership-ops` | `action` ops after elev |
 | `requirement-shell-cli-interface` | Verb routing |
 | `requirement-project-folder` | Global bin / ship unit |
 | `requirement-class-software-dev` | Residual points JSON sudoer file here |
 | `docs/requirements/index.md` | Registry |
-| `./src/folder-backup` | Implementation under test |
+| `./src/take-ownership` | Implementation under test |
 
 ---
 
@@ -310,13 +286,11 @@ Sibling (or this product) **MAY** decode then re-encode the grant when convertin
 
 | TP family / ID | Suite | Status |
 |----------------|-------|--------|
-| **TP-FOLDER-BACKUP-22** | `tests/test_domain_folder_backup.sh` | **have** — JSON sudoer file `path` is only `/usr/local/bin/folder-backup` |
-| **TP-FOLDER-BACKUP-22b** | same | **have** — JSON sudoer file contains no `mkdir`/`cp`/`tar`/`rm`/`install`/`chmod` |
-| **TP-FOLDER-BACKUP-22c** | same | **have** — JSON sudoer file contains no deposit/stage path and no `*.tar.gz` |
-| **TP-FOLDER-BACKUP-22e** | same | **have** — pretty emit through real `sudoer-cli` keeps `backup` and `restore` |
-| **TP-FOLDER-BACKUP-22f** | same | **have** — stub inbound body still contains both verbs (not file-count only) |
-| **TP-FOLDER-BACKUP-24 / 24d** | same | **have** — independent generate dest; suite reads file without sudo |
-| **TP-FOLDER-BACKUP-26 / 26b** | same | **have** — JSON `args` include `*` after each verb; verb-only **Fail** (do not reuse TP-25) |
+| **TP-TAKE-OWNERSHIP-20** | `tests/test_domain_take_ownership.sh` | **todo** — JSON path is only `/usr/local/bin/take-ownership` |
+| **TP-TAKE-OWNERSHIP-21** | same | **todo** — no `chown`/`mkdir`/USER_BIN |
+| **TP-TAKE-OWNERSHIP-22** | same | **todo** — args include exact `--path` and `--ownership *` plus `--json` twin |
+| **TP-TAKE-OWNERSHIP-23** | same | **todo** — generate refuses missing global binary |
+| **TP-TAKE-OWNERSHIP-24** | same | **todo** — independent generate dest readable without sudo |
 
 **Matrix:** `reviews/requirement-test-matrix.md`  
 **Map:** `reviews/test-plan.md`
@@ -325,14 +299,12 @@ Sibling (or this product) **MAY** decode then re-encode the grant when convertin
 
 | Date | Status | Note |
 |------|--------|------|
-| 2026-08-15 | Active 1.0.0 | JSON sudoer file SSOT; grant is `{{PRJ_NAME}}` only; OS-tool commands forbidden (complexity weakens security) |
-| 2026-08-15 | Active 1.0.1 | Ship unit 1.8.0 emit matches §2.6; DTV 22/22b/22c **have** |
-| 2026-08-17 | Active 1.1.0 | §2.7a re-encode fidelity; pretty JSON legal; AC-9; TP-22e/22f; INC-20260817-001 |
-| 2026-08-17 | Active 1.2.0 | §2.7 item 5 independent generate to a dest tests/review can read; AC-10; TP-24d |
-| 2026-08-23 | Active 1.3.0 | `args` **MUST** be verb plus `*`; verb-only withdrawn; AC-3/AC-8 |
+| 2026-08-15 | Active 1.0.0 | folder-backup: `{{PRJ_NAME}}` only; OS-tool commands forbidden |
+| 2026-08-23 | Active 1.4.0 | folder-backup: `--json` twins; verb plus `*` |
+| 2026-08-25 | Active 2.0.0 | Retarget take-ownership: exact `--path`, `--ownership *`, global-only, no test-local |
 
 ---
 
-**Last Updated**: 2026-08-23  
+**Last Updated**: 2026-08-25  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

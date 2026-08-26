@@ -6,7 +6,7 @@
 
 ## 1. Purpose
 
-This requirement is the **project Single Source of Truth** for **all CLI output** of folder-backup: human messages, machine JSON, channel split (stdout vs stderr), and mode behavior (normal / quiet / JSON / debug).
+This requirement is the **project Single Source of Truth** for **all CLI output** of take-ownership: human messages, machine JSON, channel split (stdout vs stderr), and mode behavior (normal / quiet / JSON / debug).
 
 Inherited architecture from bootstrap parent **cli-template** (`out_*` family); retargeted for this product’s identity and domain messages.
 
@@ -61,7 +61,7 @@ Rules:
 
 1. Fatal paths use `out_die` / `out_json_error`.  
 2. JSON mode: no colors, banners, or progress mixed into stdout JSON.  
-3. Capture pattern: `folder-backup --json <cmd> 2>err.log`.  
+3. Capture pattern: `take-ownership --json <cmd> 2>err.log`.  
 4. **No secrets** on either channel (tokens, passwords, private keys, full private key material).
 
 ### 2.4 Mode behavior
@@ -77,8 +77,8 @@ Rules:
 
 | Item | Value |
 |------|--------|
-| **Product** | `folder-backup` |
-| **Ship unit** | `src/folder-backup` |
+| **Product** | `take-ownership` |
+| **Ship unit** | `src/take-ownership` |
 | **Human prefixes** | `[INFO]`, `[OK]`, `[WARN]`, `[ERROR]` (or equivalent consistent set) |
 | **Domain messages** | Backup progress/results and sudoers-print status **must** use `out_*` |
 | **Bootstrap inheritance** | Same `out_*` family as cli-template |
@@ -121,7 +121,7 @@ Rules:
 | AC-1 | All product messages route through `out_*` |
 | AC-2 | JSON mode produces structured success/error without human interleave |
 | AC-3 | Quiet still surfaces errors |
-| AC-4 | Domain backup messaging uses the same SSOT |
+| AC-4 | Domain take-ownership messaging uses the same SSOT |
 
 ---
 
@@ -131,7 +131,7 @@ Rules:
 |-----|--------------|
 | `requirement-shell-cli-interface` | Modes and flags |
 | `requirement-shell-interactive-vs-noninteractive` | Prompt vs auto |
-| `requirement-domain-folder-backup` | Domain message payloads |
+| `requirement-domain-take-ownership` | Domain message payloads |
 | `requirement-operator-readable-error` | Operator error **wording** (human-intro style) |
 | `docs/requirements/index.md` | Registry |
 
@@ -141,7 +141,7 @@ Rules:
 
 | Date | Status | Note |
 |------|--------|------|
-| 2026-08-03 | Active | Output SSOT for folder-backup |
+| 2026-08-03 | Active | Output SSOT for take-ownership |
 
 ---
 

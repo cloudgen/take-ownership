@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-shell-cli-default-interaction.md  
-**Status**: Active (Version 1.2.0)  
+**Status**: Active (Version 2.0.0)  
 **Area**: shell  
 **Key**: `requirement-shell-cli-default-interaction`  
 **Optional RQ-ID**: `RQ-SHELL-CLI-DEFAULT-INTERACTION`  
@@ -7,36 +7,36 @@
 
 ## 1. Purpose
 
-This requirement is the **product Single Source of Truth** for folder-backup’s **claimed default interactive main menu**. Empty argv stays help (`requirement-shell-cli-zero-arguments`). The numbered list opens with **`folder-backup menu`** (or **`main`**). The ship unit routes those verbs to `app_main_menu`.
+This requirement is the **product Single Source of Truth** for take-ownership’s **claimed default interactive main menu**. Empty argv stays help (`requirement-shell-cli-zero-arguments`). The numbered list opens with **`take-ownership menu`** (or **`main`**). The ship unit routes those verbs to `app_main_menu`.
 
 ### 1.1 Human-facing
 
-**In one sentence:** At a real terminal, type `folder-backup menu` to see a numbered list of live work commands; typing only `folder-backup` still prints help.
+**In one sentence:** At a real terminal, type `take-ownership menu` to see a numbered list of live work commands; typing only `take-ownership` still prints help.
 
 | Box | Meaning | Example |
 |-----|---------|---------|
-| You / this login | Open the list or pick a number | `folder-backup menu` then `1` |
-| The other role | Scripts and CI must not hang on that list | `folder-backup menu` in a pipe → help |
+| You / this login | Open the list or pick a number | `take-ownership menu` then `1` |
+| The other role | Scripts and CI must not hang on that list | `take-ownership menu` in a pipe → help |
 | Not this file | Empty argv meaning | `requirement-shell-cli-zero-arguments` |
 
 | Includes | Excludes |
 |----------|----------|
 | Numbered live work commands | `help` as a row |
 | Line `command: what it does` | `install`, `uninstall`, `where-is-me`, `version`, `about` |
-| Exit as **9** (four command rows) | `setup`, `menu`/`main` as a choice |
+| Exit as **9** (three command rows) | `setup`, `menu`/`main` as a choice |
 | `main` as the same list | Test-purpose: `print-sudoers`, `print-sudoers-install-script`, `generate-sudoer-request` |
 
 | Surface | What you open | What for |
 |---------|---------------|----------|
-| `./src/folder-backup` | ship unit | live dispatch (`menu` / `main`) |
-| `folder-backup help` | command | listed verbs including lifecycle |
-| `folder-backup menu` | command | numbered list when implemented |
+| `./src/take-ownership` | ship unit | live dispatch (`menu` / `main`) |
+| `take-ownership help` | command | listed verbs including lifecycle |
+| `take-ownership menu` | command | numbered list when implemented |
 
 | You do… | What it means | What you type |
 |---------|---------------|---------------|
-| Open the list at a prompt | The program prints numbers 1–4 then 9 Exit. `--json` is ignored on a real terminal. | `folder-backup menu` |
-| Pack a folder from the list | Choose backup, then give the folder (one field at a time) or read Next. | `1` then `/home/you/prjs/genesis-template` |
-| Run menu in CI | No prompt. Human help, or JSON help with `--json`. | `folder-backup menu </dev/null` |
+| Open the list at a prompt | The program prints numbers 1–3 then 9 Exit. `--json` is ignored on a real terminal. | `take-ownership menu` |
+| Take ownership from the list | Choose `action`, then give folder and `user:group` one field at a time, or read Next. | `1` then `--path /var/www/html` |
+| Run menu in CI | No prompt. Human help, or JSON help with `--json`. | `take-ownership menu </dev/null` |
 
 ---
 
@@ -56,7 +56,7 @@ Measure interactive capability **outside functions** (`TTY=1` only when stdin an
 
 | Invocation | Mode | `--json` | MUST | MUST NOT |
 |------------|------|----------|------|----------|
-| `folder-backup menu` or `main` | Interactive (`TTY=1`) | **Ignore** | Draw the numbered list | Treat as JSON help; hang |
+| `take-ownership menu` or `main` | Interactive (`TTY=1`) | **Ignore** | Draw the numbered list | Treat as JSON help; hang |
 | same | Non-interactive (`TTY=0`) | **Follow** | **Help**: human when JSON=0; JSON help when JSON=1 | Draw the menu; hang; silent return |
 
 `--quiet` off-TTY is still the help path (do not swallow help). Reuse `app_help` — **MUST NOT** invent a second JSON help catalog.
@@ -67,8 +67,8 @@ Measure interactive capability **outside functions** (`TTY=1` only when stdin an
 2. Each command row is one live **operational** command that is **not** excluded below, numbered **1 … N** in kept-list order.  
 3. Printed line **MUST** be the kept-list **human-readable** value: **`{{short-descript}}: {{explain}}`** (short-descript = the command token).  
 4. **MUST NOT** list `help`, `menu`, `main`, gap/forbidden names, **diagnostics** (`version`, `about`), **self-managed / install-setup** tokens (`install`, `uninstall`, `where-is-me`, `setup`), or **test-purpose** verbs. On this product the test-purpose verbs **MUST** be `print-sudoers`, `print-sudoers-install-script`, and `generate-sudoer-request`. Those stay on `help`, listed apart from operational work.  
-5. Accept a **number** or the **verb token**. Extra operands: prompt **one field at a time** on TTY, or print `Next: folder-backup <verb> …` and return.  
-6. Last extra row is **Exit** (not a command). For this product **N = 4**, so Exit **MUST** be **9**. Unused integers 5–8 are omitted.  
+5. Accept a **number** or the **verb token**. Extra operands: prompt **one field at a time** on TTY, or print `Next: take-ownership <verb> …` and return.  
+6. Last extra row is **Exit** (not a command). For this product **N = 3**, so Exit **MUST** be **9**. Unused integers 4–8 are omitted.  
 7. Exit number, `exit`, or `quit` returns 0 with no further prompt.  
 8. Typical handler: `app_main_menu`.
 
@@ -76,7 +76,7 @@ Measure interactive capability **outside functions** (`TTY=1` only when stdin an
 
 | Item | Value |
 |------|--------|
-| **Product** | `folder-backup` |
+| **Product** | `take-ownership` |
 | **Claimed** | yes |
 | **Case** | **3** (zero-arg REQ exists; local-only) |
 | **Empty argv owner** | `requirement-shell-cli-zero-arguments` (help) |
@@ -84,29 +84,28 @@ Measure interactive capability **outside functions** (`TTY=1` only when stdin an
 | **Handler** | `app_main_menu` |
 | **Ship unit** | Implemented — `app_main` routes `menu` / `main` to `app_main_menu` |
 | **Kept list** | `reviews/cli-routed-verb-table.md` |
-| **N** | 4 |
+| **N** | 3 |
 | **Exit** | 9 |
 | **Test-purpose (this product)** | `print-sudoers`, `print-sudoers-install-script`, `generate-sudoer-request` |
 
 **Normative menu draft** (operational only; self-managed, diagnostics, and test-purpose omitted):
 
 ```text
-1. backup: Pack a named folder into a dated gzip archive under /var/backup/folder-backup
-2. restore: Put an archive back onto the hard-disk projects tree
-3. remove-project-sudoers: Remove the local grant draft only
-4. submit-sudoer-request: Hand the JSON grant to the approval queue
+1. action: Recursively take ownership of a named folder
+2. remove-project-sudoers: Remove the local grant draft only
+3. submit-sudoer-request: Hand the JSON grant to the approval queue
 9. Exit
 ```
 
 **Invocation samples (CI-M1a):**
 
 ```text
-folder-backup menu
-folder-backup main
-folder-backup menu --json
+take-ownership menu
+take-ownership main
+take-ownership menu --json
 ```
 
-On a real terminal those three **MUST** show the list. Off-TTY, `folder-backup menu` **MUST** call help; `folder-backup menu --json` **MUST** call JSON help.
+On a real terminal those three **MUST** show the list. Off-TTY, `take-ownership menu` **MUST** call help; `take-ownership menu --json` **MUST** call JSON help.
 
 ### 2.5 Why This Requirement Exists (CIAO)
 
@@ -121,7 +120,7 @@ On a real terminal those three **MUST** show the list. Off-TTY, `folder-backup m
 
 - **Caution:** Do not steal empty argv; do not hang off-TTY.  
 - **Intentional:** Case 3; labels from the kept list.  
-- **Anti-fragile:** `main` may alias `menu`; Exit 9 when N=4.  
+- **Anti-fragile:** `main` may alias `menu`; Exit 9 when N=3.  
 - **Over-protect:** Self-managed, diagnostics, and test-purpose verbs stay off the list even if they are live.
 
 ---
@@ -133,9 +132,9 @@ On a real terminal those three **MUST** show the list. Off-TTY, `folder-backup m
 1. Attach this menu to empty argv while `requirement-shell-cli-zero-arguments` is Active.  
 2. Invent menu labels instead of `command: what it does` from the kept list.  
 3. Put `help`, `install`, `uninstall`, `where-is-me`, `version`, `about`, `setup`, `menu`, `main`, or a test-purpose verb (`print-sudoers`, `print-sudoers-install-script`, `generate-sudoer-request`) on the numbered list.  
-4. Number Exit as 5 when N=4 (Exit **MUST** be 9).  
+4. Number Exit as 4 when N=3 (Exit **MUST** be 9).  
 5. Draw the menu in non-interactive mode.  
-6. Treat interactive `folder-backup menu --json` as JSON help.  
+6. Treat interactive `take-ownership menu --json` as JSON help.  
 7. Claim the ship unit lacks the menu while `app_main` routes `menu` / `main`.  
 8. Auto-write `/etc` from a menu choice (print/submit stay Type 0 drafts).
 
@@ -149,7 +148,7 @@ On a real terminal those three **MUST** show the list. Off-TTY, `folder-backup m
 |----|-----------|
 | AC-1 | Empty argv remains help |
 | AC-2 | Case 3 recorded; `menu` / `main` named and routed |
-| AC-3 | Interactive `menu` draws the four-row list + Exit 9 |
+| AC-3 | Interactive `menu` draws the three-row list + Exit 9 |
 | AC-4 | Interactive `menu --json` still draws the list |
 | AC-5 | Non-interactive `menu` is help; `--json` is JSON help |
 | AC-6 | Numbered choices omit help, install, uninstall, where-is-me, version, about, setup, menu, main, and test-purpose (`print-sudoers`, `print-sudoers-install-script`, `generate-sudoer-request`) |
@@ -175,7 +174,7 @@ On a real terminal those three **MUST** show the list. Off-TTY, `folder-backup m
 | TP family / ID | Suite | Status |
 |----------------|-------|--------|
 | **TP-CLI-07** | `tests/test_cli.sh` | **have** — empty argv still help (AC-1) |
-| **TP-CLI-13** | `tests/test_cli.sh` | **have** — interactive `menu` prints the four labels + `9. Exit` (AC-3) |
+| **TP-CLI-13** | `tests/test_cli.sh` | **todo** — interactive `menu` prints the three labels + `9. Exit` (AC-3) |
 | **TP-CLI-14** | same | **have** — interactive `menu --json` still prints the list (AC-4) |
 | **TP-CLI-15** | same | **have** — non-interactive `menu` is help; `--json` JSON help (AC-5) |
 | **TP-CLI-16** | same | **have** — numbered list omits help/install/uninstall/where-is-me/version/about/test-purpose/menu (AC-6) |
@@ -190,6 +189,7 @@ On a real terminal those three **MUST** show the list. Off-TTY, `folder-backup m
 | 2026-08-23 | Active 1.0.0 | Case 3 claimed; menu/main Gap; nine-row list; Exit 99 |
 | 2026-08-23 | Active 1.1.0 | Colon labels; exclude version/about; test-purpose print-sudoers / generate-sudoer-request / print-sudoers-install-script; N=4 Exit 9 |
 | 2026-08-23 | Active 1.2.0 | Ship unit routes `menu` / `main`; Gap closed |
+| 2026-08-25 | Active 2.0.0 | take-ownership: N=3 (`action`, remove, submit); Exit 9 |
 
 ---
 

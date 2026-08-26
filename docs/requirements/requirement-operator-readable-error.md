@@ -7,7 +7,7 @@
 
 ## 1. Purpose
 
-This requirement is the **product Single Source of Truth** for **operator-facing error wording** on folder-backup.
+This requirement is the **product Single Source of Truth** for **operator-facing error wording** on take-ownership.
 
 Every blocking `[ERROR]` **MUST** be understandable to a person at the prompt: **what happened**, **what it means**, and **what to do next** — the same concreteness as a human-intro page. Channel ownership stays on `requirement-shell-output-requirements`. Fail-fast vs degrade stays on that peer’s `out_die` contract plus product fail-closed rules. This file owns **copy**.
 
@@ -23,7 +23,7 @@ Every fatal `out_die` / blocking `out_error` **MUST** include:
 |------|----------|--------------|
 | **What happened** | yes | One concrete sentence |
 | **What it means** | SHOULD | Restate if the first sentence uses an internal noun |
-| **What to do next** | yes | A `folder-backup` command, `sudo …`, or “ask an admin” |
+| **What to do next** | yes | A `take-ownership` command, `sudo …`, or “ask an admin” |
 | **Do not** | when dangerous | e.g. do not approve a named request file |
 
 JSON `message` **MUST** be that same sentence.
@@ -35,7 +35,7 @@ JSON `message` **MUST** be that same sentence.
 | Token | Replace with |
 |-------|----------------|
 | `inbound grant` | “queued sudo request” / the file name |
-| `backup verb` / `restore verb` | “allows backup” / “allows restore” |
+| `action verb` / grant jargon | “allows take-ownership of that folder” |
 | `sibling re-encode` | “the approval CLI rewrote the request” **after** the operator sentence, or omit |
 | Incident IDs alone | Operator sentence first |
 
@@ -53,8 +53,8 @@ JSON `message` **MUST** be that same sentence.
 
 | Item | Value |
 |------|--------|
-| **Product** | `folder-backup` |
-| **Ship unit** | `src/folder-backup` |
+| **Product** | `take-ownership` |
+| **Ship unit** | `src/take-ownership` |
 | **Printer** | `out_die` / `out_error` |
 | **Worked inbound miss** | `Queued sudo request is incomplete: it allows restore but not backup. Do not approve <id>. … generate-sudoer-request` |
 | **Worked generate `/etc`** | `generate-sudoer-request refuses to write under /etc (Type 0). Use a path under $HOME or /dev/shm.` |
@@ -112,7 +112,7 @@ JSON `message` **MUST** be that same sentence.
 | `requirement-sudoer-json-file` | Grant body |
 | `requirement-class-software-dev` | Class residual points here |
 | `docs/requirements/index.md` | Registry |
-| `./src/folder-backup` | Implementation |
+| `./src/take-ownership` | Implementation |
 
 ---
 

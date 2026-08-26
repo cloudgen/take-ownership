@@ -6,11 +6,11 @@
 
 ## 1. Purpose
 
-This requirement is the **project Single Source of Truth** for **zero-argument (empty argv) dispatcher behavior** of the folder-backup POSIX shell CLI.
+This requirement is the **project Single Source of Truth** for **zero-argument (empty argv) dispatcher behavior** of the take-ownership POSIX shell CLI.
 
 ### 1.0 Product type
 
-| Field | Value for folder-backup |
+| Field | Value for take-ownership |
 |-------|-------------------------|
 | **Empty-argv type** | **Type N — Non-online-install** |
 | **Rationale** | Product is **local-only**; no `curl \| sh` channel; empty argv shows **help**, not install-ensure |
@@ -24,26 +24,26 @@ Type O (online-install empty-argv = install-ensure) does **not** apply.
 ### 2.1 Single meaning of empty argv
 
 1. When **argv is empty** (`$# -eq 0` at entry to `app_main`), the dispatcher **MUST** route to **`help`** / usage (`app_help`).  
-2. Empty argv **MUST NOT** perform install, backup, or any state-changing ensure.  
-3. Explicit `folder-backup help` remains a valid full-usage path (same content family as empty argv).  
-4. Explicit `folder-backup install` remains the only first-time local install path (plus documented force refresh).  
+2. Empty argv **MUST NOT** perform install, `action`, or any state-changing ensure.  
+3. Explicit `take-ownership help` remains a valid full-usage path (same content family as empty argv).  
+4. Explicit `take-ownership install` remains the only first-time local install path (plus documented force refresh).  
 5. Script entry **MUST** always call `app_main "$@"` (no basename product-name gate that blocks dispatch).  
-6. Empty argv **MUST NOT** become the numbered work list. That list is `folder-backup menu` (`requirement-shell-cli-default-interaction`).
+6. Empty argv **MUST NOT** become the numbered work list. That list is `take-ownership menu` (`requirement-shell-cli-default-interaction`).
 
 ### 2.2 Normative matrix
 
 | Invocation | Behavior |
 |------------|----------|
-| `folder-backup` (no args) | Show help; exit 0 |
-| `folder-backup help` | Show help; exit 0 |
-| `folder-backup install` | Local install ensure |
+| `take-ownership` (no args) | Show help; exit 0 |
+| `take-ownership help` | Show help; exit 0 |
+| `take-ownership install` | Local install ensure |
 | Flags only (e.g. `--json` with no command) | **MUST** still resolve to help (or fail with clear usage if product chooses fail-closed) — default: **help** after flag parse with no command token |
 
 ### 2.3 Implementation Notes (this project)
 
 | Item | Value |
 |------|--------|
-| **Product** | `folder-backup` |
+| **Product** | `take-ownership` |
 | **Type** | **Type N** |
 | **Default COMMAND** | `help` |
 | **Contrast parent** | cli-template is already Type N — **inherited**. (Historical: selfmanaged Type O was trimmed in 2026-08-03; not live origin.) |
@@ -71,8 +71,8 @@ Type O (online-install empty-argv = install-ensure) does **not** apply.
 
 1. Change empty argv to install-ensure while the product remains local-only.  
 2. Copy a Type O empty-argv parent wholesale without updating this file and install mode.  
-3. Make bare invocation run domain `backup`.  
-4. Attach the claimed numbered list to empty argv (that list is `folder-backup menu`).
+3. Make bare invocation run domain `action`.  
+4. Attach the claimed numbered list to empty argv (that list is `take-ownership menu`).
 
 **Violating this rule is a critical dispatcher regression.**
 
@@ -112,7 +112,7 @@ Type O (online-install empty-argv = install-ensure) does **not** apply.
 
 | Date | Status | Note |
 |------|--------|------|
-| 2026-08-03 | Active | Type N for local-only folder-backup |
+| 2026-08-03 | Active | Type N for local-only take-ownership |
 
 ---
 

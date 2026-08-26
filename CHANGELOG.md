@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.0.0] - 2026-08-26
+
+### Changed
+
+- **Domain replace:** product is **take-ownership**. Ship unit `src/take-ownership`. `APP_NAME=take-ownership`, `VERSION=2.0.0`.
+- Live work is **`action --path <folder> --ownership <user:group>`** (recursive chown, no symlink follow). `backup` / `restore` are unknown commands.
+- Sudoers/JSON grant names **only** `${GLOBAL_BIN}/take-ownership` with `action --path <exact-folder> --ownership *` plus a `--json` twin. Generate/print/submit **fail closed** unless the global binary exists. **`--allow-test-local` is gone** (USER_BIN in sudoers is a security leak).
+- Main menu has three work rows: `action`, `remove-project-sudoers`, `submit-sudoer-request` (Exit 9).
+- Domain prefix `to_` (retired `fb_`).
+
+### Removed
+
+- Folder archive backup/restore, retention, `/var/backup` deposit.
+
 ## [1.11.0] - 2026-08-23
 
 ### Added

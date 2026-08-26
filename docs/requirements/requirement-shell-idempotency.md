@@ -6,7 +6,7 @@
 
 ## 1. Purpose
 
-This requirement is the **project Single Source of Truth** for **idempotency (re-run safety)** of state-changing operations in the folder-backup POSIX shell CLI.
+This requirement is the **project Single Source of Truth** for **idempotency (re-run safety)** of state-changing operations in the take-ownership POSIX shell CLI.
 
 **Informal formula:** for ensure-style operation *f* and system state *x*, **f(f(x)) ≈ f(x)** for the **desired outcome** (logs and timestamps may differ).
 
@@ -48,28 +48,24 @@ Force policy (`--force` / `FORCE=1`) **MAY** re-apply ensure steps that would ot
 | `print-sudoers` | Emit fragment text | Safe re-print (same content for same user/host defaults) | Does not install into `/etc` |
 | `generate-sudoer-request` | Local verified JSON grant at dest path | Overwrite same dest (draft) | Does not write `/etc` or inbound |
 | `submit-sudoer-request` | Queue a **new** JSON request (sibling allocates next `n`) | Each success is a new `request_id`; not a no-op | Does not write `/etc`; does not `mkdir` inbound; missing inbound fails closed |
-| `backup` | New archive deposit for this run | **Not** “skip backup”; each run **SHOULD** create next `N` or fail if naming cannot progress | Must not overwrite existing archive without explicit force policy (default: **never overwrite** — allocate next `N`) |
+| `action` | Named folder already has `--ownership` | Success no-op (idempotent chown) | `--force` does **not** bypass refuse-list or missing identity |
 
-### 2.5 Domain numbering idempotency
+### 2.5 Domain idempotency
 
-Archive names use `${SOURCE_FOLDER_NAME}-YYYYMMDD-N.tar.gz`. For the same calendar day and same source basename:
-
-1. **MUST** scan destination (or staging policy) for existing `N` values.  
-2. **MUST** choose the next free positive integer `N` (1, 2, 3, …).  
-3. **MUST NOT** overwrite an existing archive file by default.
+`action` **MUST** succeed without rewriting inodes when the tree already matches `--ownership` (`requirement-take-ownership-ops`). Sibling submit still allocates a **new** request `n` each success (not a no-op).
 
 ### 2.6 Why This Requirement Exists (CIAO)
 
-- **Principle 1 – Caution**: Re-runs must not corrupt installs or archives.  
+- **Principle 1 – Caution**: Re-runs must not corrupt installs.  
 - **Principle 3 – Anti-fragile**: Safe to re-invoke.  
-- **Principle 12 – Backup**: New archives do not clobber prior ones.
+- **Principle 10 – Least privilege**: Already-matching ownership is not a second elev.
 
 ---
 
 ## 3. Design Principles (CIAO / CIAO-Lite)
 
 - Detect → ensure → success-if-done for lifecycle.  
-- Domain backup is **additive** (new N), not “ensure same file.”  
+- Domain `action` is **ensure-same-owner**, not additive archives.  
 - Fail closed on permission and path errors (idempotency ≠ never error).
 
 ---
@@ -79,7 +75,7 @@ Archive names use `${SOURCE_FOLDER_NAME}-YYYYMMDD-N.tar.gz`. For the same calend
 **Future AI assistants, Grok, or maintainers MUST NOT**:
 
 1. Make `install` fail when already installed (force off).  
-2. Overwrite existing dated archives by default.  
+2. Fail `action` solely because the folder is already the requested owner:group.  
 3. Treat idempotency as permission to ignore validation failures.  
 4. Remove atomic install/stage patterns for “speed.”
 
@@ -93,7 +89,7 @@ Archive names use `${SOURCE_FOLDER_NAME}-YYYYMMDD-N.tar.gz`. For the same calend
 |----|-----------|
 | AC-1 | Second `install` without force is success no-op |
 | AC-2 | Second `uninstall` when absent is success no-op |
-| AC-3 | Second `backup` same day allocates next `N` without overwrite |
+| AC-3 | Second `action` on an already-matching tree is success no-op |
 
 ---
 
@@ -102,7 +98,7 @@ Archive names use `${SOURCE_FOLDER_NAME}-YYYYMMDD-N.tar.gz`. For the same calend
 | Key | Relationship |
 |-----|--------------|
 | `requirement-shell-local-self-management` | Install/uninstall ensure |
-| `requirement-domain-folder-backup` | Archive numbering |
+| `requirement-take-ownership-ops` | `action` already-matching success |
 | `requirement-shell-cli-interface` | Force flag wiring |
 | `docs/requirements/index.md` | Registry |
 
@@ -113,8 +109,7 @@ Archive names use `${SOURCE_FOLDER_NAME}-YYYYMMDD-N.tar.gz`. For the same calend
 | TP family / ID | Suite | Status |
 |----------------|-------|--------|
 | **TP-LC-03,07** | `tests/test_local_lifecycle.sh` | have |
-| **TP-FOLDER-BACKUP-06** | `tests/test_domain_folder_backup.sh` | have |
-| **TP-FOLDER-BACKUP-08** | `tests/test_domain_folder_backup.sh` | skip (non-root CI) |
+| **TP-TAKE-OWNERSHIP-13** | `tests/test_domain_take_ownership.sh` | **todo** — already matching is success |
 
 **Matrix:** `reviews/requirement-test-matrix.md`  
 **Map:** `reviews/test-plan.md`

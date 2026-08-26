@@ -6,7 +6,7 @@
 
 ## 1. Purpose
 
-This requirement is the **project Single Source of Truth** for **local self-managed lifecycle** of the folder-backup POSIX shell CLI: **`install`**, **`uninstall`**, and **`where-is-me`**, plus the local diagnostics package contract for **`version`**, **`about`**, and **`help`** (wiring owned with CLI interface).
+This requirement is the **project Single Source of Truth** for **local self-managed lifecycle** of the take-ownership POSIX shell CLI: **`install`**, **`uninstall`**, and **`where-is-me`**, plus the local diagnostics package contract for **`version`**, **`about`**, and **`help`** (wiring owned with CLI interface).
 
 **Install mode:** **local-only**. Online channel install, remote version-check, self-update, and self-uninstall are **out of scope** (intentionally absent).
 
@@ -67,8 +67,8 @@ This product ships as a **POSIX shell script** (interpreted). Execution by any n
 2. Target **MUST** be the managed binary only.  
 3. Absent → success no-op.  
 4. Interactive confirm unless `--force`; non-interactive/json/quiet without force → **fail closed** (`confirm_required`).  
-5. **MUST NOT** delete domain data, `/var/backup` archives, home trees, or unrelated binaries.  
-6. After remove, human mode **SHOULD** warn that host sudoers fragments under **`/etc/sudoers.d/folder-backup-<user>`** (and any legacy `/etc/sudoers.d/folder-backup`) are **not** removed by uninstall; admin must remove or reinstall fragment separately when leaving test elevation.
+5. **MUST NOT** delete home trees, config drafts unless documented, or unrelated binaries.  
+6. After remove, human mode **SHOULD** warn that host sudoers fragments under **`/etc/sudoers.d/take-ownership-<user>`** are **not** removed by uninstall; admin must remove the fragment separately when leaving elevation.
 
 ### 2.5 Where-is-me rules
 
@@ -82,22 +82,22 @@ This product ships as a **POSIX shell script** (interpreted). Execution by any n
 
 | Variable | Role | Default / note |
 |----------|------|----------------|
-| `APP_NAME` | Binary basename SSOT | hard-assign `folder-backup` |
+| `APP_NAME` | Binary basename SSOT | hard-assign `take-ownership` |
 | `VERSION` | Local version SSOT | hard-assign `1.6.1` |
 | `GLOBAL_BIN` | System-wide bin | `/usr/local/bin` |
 | `USER_BIN` | Per-user bin | `${HOME}/.local/bin` |
 | `FORCE` | Replace / skip confirm | `0` |
 | `FORCE_GLOBAL` | Force install/operate on global path | `0` (`install --global`) |
-| `ALLOW_TEST_LOCAL_SUDOERS` | Allow `print-sudoers` under test_local tier | `0` (see three-layer privilege) |
+| `ALLOW_TEST_LOCAL_SUDOERS` | **Absent** on this product (global-only grant; fail closed without `GLOBAL_BIN`) | — |
 | `SCRIPT_URL` / `REPO_*` / `CHECKSUM` | **Not** install source | Must not appear as required install UX |
 
 ### 2.7 Implementation Notes (this project)
 
 | Item | Value |
 |------|--------|
-| **Product / binary** | `folder-backup` |
-| **Ship unit** | `src/folder-backup` |
-| **Primary install path story** | Type 0 day-to-day: `${HOME}/.local/bin/folder-backup`; production elevation: `/usr/local/bin/folder-backup` |
+| **Product / binary** | `take-ownership` |
+| **Ship unit** | `src/take-ownership` |
+| **Primary install path story** | Type 0 day-to-day: `${HOME}/.local/bin/take-ownership`; production elevation: `/usr/local/bin/take-ownership` |
 | **Handlers** | `inst_local_install`, `inst_local_uninstall`, `app_where_is_me`, `app_version` |
 | **Detect** | `inst_is_installed` / privilege-correct path helpers |
 | **Online package** | **Absent by design** (inherited from cli-template) |
@@ -127,7 +127,7 @@ This product ships as a **POSIX shell script** (interpreted). Execution by any n
 1. Replace local `uninstall` with online `self-uninstall` as the primary remove verb.  
 2. Require `SCRIPT_URL` for install.  
 3. Make empty argv install-ensure while this product remains local-only (Type N owns empty argv).  
-4. Delete user data or `/var/backup` content during uninstall.  
+4. Delete user home trees or `/etc/sudoers.d` fragments during uninstall.  
 5. Fetch remote version inside `version`.  
 6. Install the managed binary with execute-only group/other bits (`0711` / `chmod +x` after `0600` stage) — **must** keep absolute **`0755`** so global install remains multi-user runnable for a shell ship unit.
 
@@ -178,7 +178,7 @@ This product ships as a **POSIX shell script** (interpreted). Execution by any n
 
 | Date | Status | Note |
 |------|--------|------|
-| 2026-08-03 | Active | Local-only lifecycle for folder-backup |
+| 2026-08-03 | Active | Local-only lifecycle for take-ownership |
 | 2026-08-09 | Active 1.2.0 | §2.3.1 mode **0755** multi-user; ban `chmod +x`→`0711` trap; AC-6..8; TP-LC-09/10 |
 
 ---

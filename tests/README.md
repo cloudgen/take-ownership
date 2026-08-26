@@ -1,4 +1,4 @@
-# Tests — folder-backup
+# Tests — take-ownership
 
 ## Run
 
@@ -18,19 +18,18 @@ Exit **0** when all assertions pass; **1** on failure; **2** if ship unit missin
 | `helpers.sh` | Asserts + isolated HOME | — |
 | `test_cli.sh` | CLI surface, Type N empty argv, offline online-reject | **TP-CLI-*** |
 | `test_local_lifecycle.sh` | install / uninstall / where-is-me | **TP-LC-*** |
-| `test_domain_folder_backup.sh` | backup ops + domain surface + sudoers print + JSON grant + submit inbound detect | **TP-FOLDER-BACKUP-*** (ops → `requirement-folder-archive-backup`; grant → `requirement-sudoer-json-file`; submit → three-layer §2.3.3c) |
+| `test_domain_take_ownership.sh` | `action` + grant emit (global-only sudoers JSON) | **TP-TAKE-OWNERSHIP-*** |
 
 ## Isolation
 
-- Temp `HOME` + `USER_BIN` for install tests  
+- Temp `HOME` + `USER_BIN` + `GLOBAL_BIN` for install and grant tests  
 - **No** public network  
-- **No** write to `/etc/sudoers.d` (suite never installs sudoers)  
-- Deposit **fail-closed** forced with a PATH-local fake `sudo` (stays valid when host sudoers is installed)  
-- Deposit **success** when root **or** allowlisted `sudo -n mkdir -p /var/backup/folder-backup` works (Type 1 escalate); otherwise SKIP 07/08
+- **No** write to `/etc/sudoers.d`  
+- Grant emit copies the ship unit into isolated `GLOBAL_BIN` when testing a successful generate/print
 
 ## Ship unit under test
 
-`src/folder-backup`
+`src/take-ownership`
 
 ## Maps
 

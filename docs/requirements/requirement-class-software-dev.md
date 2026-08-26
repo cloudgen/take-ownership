@@ -1,25 +1,25 @@
 **file**: docs/requirements/requirement-class-software-dev.md  
-**Status**: Active (Version 1.1.0 – residual ARSA/fence honesty + human-facing)  
+**Status**: Active (Version 2.0.0 – take-ownership residual)  
 **Area**: class  
 **Key**: `requirement-class-software-dev`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
 
 ## 1. Purpose
 
-Declare this workspace as a **software-development** project class and hold the **residual collection** of software-engineering stack facts **not already owned** by more specific Active peer requirements: primary language, toolchain policy, package/test tooling, and runtime OS family.
+Declare this workspace as a **software-development** project nature and hold the **residual collection** of software-engineering stack facts **not already owned** by more specific Active peer requirements: primary language, toolchain policy, package/test tooling, and runtime OS family.
 
-This file is **class law + residual SSOT**, not a second copy of Type 0 lifecycle, domain backup, output, or storage tables (those stay on peer requirements).
+This file is **class law + residual SSOT**, not a second copy of Type 0 lifecycle, domain take-ownership, output, or storage tables (those stay on peer requirements).
 
 ### 1.1 Human-facing
 
-This file says the workspace is a **shippable program** (folder-backup) and records leftover stack facts that no other requirement already owns.
+This file says the workspace is a **shippable program** (take-ownership) and records leftover stack facts that no other requirement already owns.
 
 | You | Another role | Not this |
 |-----|--------------|----------|
-| Read this file to learn the project class and leftover stack (language, tools, “no dest approver”) | Peer requirements own backup ops, install, sudoers grant body, and CLI verbs | A dest approval machine, a second class file, or online-install law |
+| Read this file to learn the project nature and leftover stack (language, tools, “no dest approver”) | Peer requirements own take-ownership ops, install, sudoers grant body, and CLI verbs | A dest approval machine, a second class file, or online-install law |
 
 **Includes:** class membership, residual stack, honest “none” for dest approver and dest fences.  
-**Excludes:** inventing an approver account; inventing dest fence rows; duplicating peer backup/install tables.
+**Excludes:** inventing an approver account; inventing dest fence rows; duplicating peer ops/install tables.
 
 | Step | What it means | What you type |
 |------|---------------|---------------|
@@ -37,7 +37,7 @@ This file says the workspace is a **shippable program** (folder-backup) and reco
 3. **MUST NOT** register an Active `requirement-class-server-maintenance.md` while class is software-development.  
 4. **MUST** retain portable harness knowledge; specialized product knowledge lives in this and peer `requirement-*.md` files.  
 5. **MUST** apply software-development SSOT/gate posture when claimed (identity, ship unit, precommit when git is used — as applicable).  
-5a. When git is used on a **multi-vault host**, **MUST** treat forge push identity as **product repository-user SSOT** (Config `REPO_USER` / project-repository owner), not ambient default SSH face: agents **MUST** run precommit / SSH-profile gates (pre-git report; vault bind via activate or one-shot identity for push). Host vault basenames are **not** product law — portable process lives in harness skills (`skill-commit-check`, `skill-ssh-user-profile`).  
+5a. When git is used on a **multi-vault host**, **MUST** treat forge push identity as **product repository-user SSOT** (Config `REPO_USER` / project-repository owner), not ambient default SSH face. Host vault basenames are **not** product law.  
 6. **MUST NOT** invent hollow product docs solely to look specialized; collect real values or defer explicitly.
 
 ### 2.1 Residual collection principle (SSOT hygiene)
@@ -47,45 +47,16 @@ This file says the workspace is a **shippable program** (folder-backup) and reco
 9. When a new specialized requirement **takes ownership** of a topic previously only listed here, **MUST** update this file in the **same change**: remove or shrink the residual entry and point to the new owner.  
 10. **MUST NOT** leave contradictory stack facts across this file and peer requirements.
 
-### 2.2 Programming language(s)
+### 2.2–2.6 Stack rules
 
-11. **MUST** declare at least one **primary programming language** for the ship unit.  
-12. **SHOULD** list secondary languages only when they are real product law.  
-13. **MUST** state whether the product is primarily: interpreted, compiled, polyglot, or package-multi-language.  
-14. **MUST NOT** freeze a marketing product name as if it were the language name.
-
-### 2.3 Compilers, interpreters, and toolchains
-
-15. **MUST** declare the **target toolchain class** used to build or run the product.  
-16. **MUST** state version policy as one of: unconstrained · minimum version · range · pinned.  
-17. **SHOULD** record whether cross-compilation is in scope.  
-18. **MUST** fail closed in CI/docs claims: do not claim “supports all compilers” without tests or explicit unconstrained policy.
-
-### 2.4 Project / package / build tools
-
-19. **MUST** declare the **primary project or package tool** used for dependencies and builds.  
-20. **MUST** declare how dependencies are resolved when the ecosystem supports lockfiles.  
-21. **SHOULD** name the test runner and linter/formatter **classes** when they are project law.  
-22. **MUST NOT** require a secret token or private registry password in this file.
-
-### 2.5 Runtime and platform (residual)
-
-23. **MUST** declare the intended **primary runtime/OS family** when not fully owned by another architecture requirement.  
-24. **SHOULD** declare minimum CPU/arch support only when it is real product law.  
-25. **MUST** separate **developer machine** toolchain requirements from **end-user runtime** requirements when they differ.
-
-### 2.6 No-hardcode / dual policy (class file)
-
-26. **MUST NOT** hard-code a single product/app brand, one org’s production hostname, or personal owner identity as universal core law.  
-27. **MUST** put live product name, repo slug, and concrete stack choices in **Implementation Notes** after collection — complete when Status is Active.  
-28. **MUST NOT** store secrets, PATs, or toy credentials in this file.
+Primary language, toolchain, package tools, and runtime **MUST** be declared in Implementation Notes. **MUST NOT** freeze secrets or a session Unix login as universal core law.
 
 ### 2.7 Implementation Notes (this project)
 
-| Field | Value (folder-backup) |
+| Field | Value (take-ownership) |
 |-------|---------------------|
-| **Project display name** | `folder-backup` |
-| **Project class** | software-development |
+| **Project display name** | `take-ownership` |
+| **Project nature** | software-development |
 | **Class requirement basename** | `requirement-class-software-dev.md` |
 | **Primary language(s)** | `posix-sh` (`/bin/sh`) |
 | **Language role** | primary only — single-file shell ship unit under `src/` |
@@ -97,12 +68,14 @@ This file says the workspace is a **shippable program** (folder-backup) and reco
 | **Lockfile policy** | not used |
 | **Test runner** | POSIX shell suite under `tests/` when present (`tests/run.sh` pattern) |
 | **Linter/formatter** | none as project law (shellcheck optional for maintainers) |
-| **Primary runtime / OS family** | POSIX Linux (and compatible UNIX where `/bin/sh` + `tar` + `gzip`/`tar -z` + `mktemp` exist) |
+| **Primary runtime / OS family** | POSIX Linux (and compatible UNIX where `/bin/sh` + `chown` + `mktemp` exist) |
 | **Architectures supported** | any arch with POSIX sh and the external tools the script invokes |
 | **Git surface** | used when product is published |
-| **Ship unit / install** | yes — `src/folder-backup` → `${USER_BIN}/folder-backup` (default `~/.local/bin/folder-backup`); **local-only** install (no online channel) |
-| **Product version SSOT** | `VERSION="1.11.0"` hard-assign in `src/folder-backup` |
-| **Bootstrap origin** | sibling product **cli-template** (`/home/leolio/prjs/cli-template`) — Type 0 local-only template; domain extend only |
+| **Ship unit / install** | yes — `src/take-ownership` → user bin and/or `/usr/local/bin/take-ownership`; **local-only** / non-online-installable (no online channel) |
+| **Product version SSOT** | `VERSION=` hard-assign in `src/take-ownership` |
+| **Bootstrap origin** | hop A0 `cli-template` → hop A1 `folder-backup` → B `take-ownership` (`requirement-bootstrap-chain`) |
+| **Database** | **none** |
+| **Product archive backup** | **none** (not a backup tool) |
 
 **Residual ownership table:**
 
@@ -111,24 +84,33 @@ This file says the workspace is a **shippable program** (folder-backup) and reco
 | Project class membership | **this file** | Fixed |
 | Primary language + toolchain policy | **this file** | posix-sh, unconstrained |
 | Package/build tool + lockfile | **this file** | none / not used |
-| Bootstrap lineage / keep-extend | `requirement-bootstrap-chain` | A=cli-template → B + domain extend |
+| Coding-style specialize-in | `requirement-shell-script-coding` | **MUST**; without it, portable lessons arrive raw |
+| In-tool sudo wrap | `requirement-shell-sudo-command` | `util_sudo`; check before sudo |
+| Bootstrap lineage / keep-extend | `requirement-bootstrap-chain` | A0=cli-template → A1=folder-backup → B |
 | Project layout / ship path | `requirement-project-folder` | `src/` + bin targets |
 | Type 0 CLI surface / flags / dispatch | `requirement-shell-cli-interface` | Do not duplicate |
 | Empty argv Type N help | `requirement-shell-cli-zero-arguments` | Local-only |
 | Local self-managed lifecycle | `requirement-shell-local-self-management` | install / uninstall / where-is-me |
 | Output SSOT (`out_*`) | `requirement-shell-output-requirements` | Do not duplicate |
-| Operator-readable error wording | `requirement-operator-readable-error` | Human-intro-style `[ERROR]` copy; do not duplicate |
+| Operator-readable error wording | `requirement-operator-readable-error` | Do not duplicate |
 | Scratch/cache storage resolve | `requirement-shell-cli-storage` | Do not duplicate |
 | Idempotency / re-run safety | `requirement-shell-idempotency` | Do not duplicate |
 | Interactive vs non-interactive | `requirement-shell-interactive-vs-noninteractive` | Do not duplicate |
 | Modular prefixes / single-file layout | `requirement-shell-modular-function-design` | Do not duplicate |
-| Privilege layers + sudoers **files** (emit/install/fail-closed) | `requirement-three-layer-privilege-model` | Type 0 + narrow Type 1 deposit; §2.3 sudoers workflow SSOT |
-| JSON sudoer file (grant body) | `requirement-sudoer-json-file` | `{{PRJ_NAME}}` only; no `cp`/`mkdir`/OS-tool commands |
-| Folder archive **backup operations** | `requirement-folder-archive-backup` | Create / name / deposit / verify (not domain) |
-| Domain surface (verbs, help, about) | `requirement-domain-folder-backup` | Four pillars only; ops pointer |
-| Actor / role / subject / approver | **this file** (residual) | **considered — no dest approver and no approval subject**. This product has no dest approval machine. **MUST NOT** invent an approver. |
+| Privilege layers + sudoers **files** | `requirement-three-layer-privilege-model` | You + narrow `action`; global-only grant |
+| JSON sudoer file (grant body) | `requirement-sudoer-json-file` | `take-ownership` only; exact `--path`; `--ownership *` |
+| Take-ownership **operations** | `requirement-take-ownership-ops` | Recursive chown; no symlink follow |
+| Domain surface (verbs, help, about) | `requirement-domain-take-ownership` | Four pillars only; ops pointer |
+| Actor / role / subject / approver | **this file** (residual) | **considered — no dest approver and no approval subject**. This product has no dest approval machine. Sibling `sudoer-cli` dest is **not** this product. **MUST NOT** invent an approver. |
 | Dest fence conditions | **this file** (residual) | **considered — no dest fence conditions**. No dest Fence table. **MUST NOT** invent a dest fence. |
-| Online install / remote self-management / companion checksum | **intentionally absent** | Absent on A; remain absent on B |
+| Online install / remote self-management / companion checksum | **intentionally absent** | Remain absent on B |
+| Folder archive backup / retention | **superseded** | Not Active on this product |
+
+**Actor / role / subject / approver (considered — None dest):**
+
+| Actor | Role | Subject | Submitter | Approver |
+|-------|------|---------|-----------|----------|
+| Invoking login | Operator of this CLI | This login (self-scope grant) | **the actor itself** | **None** (this product). Sibling dest `sudoer-adm` is outside this CLI |
 
 ---
 
@@ -160,9 +142,10 @@ This file says the workspace is a **shippable program** (folder-backup) and reco
 3. Hard-code secrets, personal owner identity, or production host FQDNs into core rules as universal law.  
 4. Duplicate full peer requirement bodies into this residual section.  
 5. Leave Implementation Notes as hollow stubs when Status claims Active.  
-6. Reintroduce Active **online-install** / remote **self-update** / **self-uninstall** / channel **checksum** law without explicit user order (product is **local-only** by design).  
+6. Reintroduce Active **online-install** / remote **self-update** / **self-uninstall** / channel **checksum** law without explicit user order (product is **non-online-installable** by design).  
 7. Treat this file as server-maintenance allowlist law, or register an Active server-maintenance class file in parallel.  
-8. Invent a second primary language SSOT that contradicts peer modular/CLI requirements.
+8. Invent a dest approver or dest fence so the set “looks complete.”  
+9. Skip `requirement-shell-script-coding` so portable lessons arrive raw.
 
 **Violating any of these is considered a critical regression.**
 
@@ -172,13 +155,14 @@ This file says the workspace is a **shippable program** (folder-backup) and reco
 
 | ID | Criterion |
 |----|-----------|
-| AC-1 | Active registered `requirement-class-software-dev.md` matches software-development class |
+| AC-1 | Active registered `requirement-class-software-dev.md` matches software-development |
 | AC-2 | Primary language + toolchain policy + package tool declared in Implementation Notes (complete) |
 | AC-3 | Residual ownership table honest: no silent dual SSOT with peer REQs |
 | AC-4 | Core rules remain free of frozen secret/host hardcodes |
 | AC-5 | No class file conflict with `requirement-class-server-maintenance` |
 | AC-6 | Ship unit identity (posix-sh single-file, local install) consistent with peer shell REQs |
 | AC-7 | Online install package **absent** from Active registry by design |
+| AC-8 | Coding-style REQ Active; dest approver/fences honest None |
 
 ---
 
@@ -186,8 +170,10 @@ This file says the workspace is a **shippable program** (folder-backup) and reco
 
 | Key | Relationship |
 |-----|--------------|
-| `requirement-bootstrap-chain` | Lineage A=cli-template → B=folder-backup (domain extend) |
+| `requirement-bootstrap-chain` | Lineage A0=cli-template → A1=folder-backup → B=take-ownership |
 | `requirement-project-folder` | Layout and install locations |
+| `requirement-shell-script-coding` | Coding-style specialize-in |
+| `requirement-shell-sudo-command` | In-tool sudo |
 | `requirement-shell-cli-interface` | Command surface, flags, dispatch |
 | `requirement-shell-cli-zero-arguments` | Type N empty argv |
 | `requirement-shell-local-self-management` | Local install lifecycle |
@@ -198,9 +184,9 @@ This file says the workspace is a **shippable program** (folder-backup) and reco
 | `requirement-shell-interactive-vs-noninteractive` | Mode policy |
 | `requirement-shell-modular-function-design` | Prefixes / single-file modularity |
 | `requirement-three-layer-privilege-model` | Privilege + working with sudoers fragment files |
-| `requirement-sudoer-json-file` | JSON sudoer file body (`{{PRJ_NAME}}` only) |
-| `requirement-folder-archive-backup` | Folder archive backup operations SSOT |
-| `requirement-domain-folder-backup` | Domain four pillars |
+| `requirement-sudoer-json-file` | JSON sudoer file body |
+| `requirement-take-ownership-ops` | Take-ownership operations SSOT |
+| `requirement-domain-take-ownership` | Domain four pillars |
 | `docs/requirements/index.md` | Registry SSOT |
 
 ---
@@ -209,13 +195,11 @@ This file says the workspace is a **shippable program** (folder-backup) and reco
 
 | Date | Status | Note |
 |------|--------|------|
-| 2026-08-03 | Active | Specialized class law for folder-backup (left genesis; then named selfmanaged as origin) |
-| 2026-08-13 | Active | Origin retarget: A=cli-template → B=folder-backup |
-| 2026-08-15 | Active | Residual: JSON sudoer file → `requirement-sudoer-json-file` |
-| 2026-08-19 | Active (1.1.0) | Residual: **considered — no dest approver and no approval subject**; **considered — no dest fence conditions**. §1.1 Human-facing. Version SSOT note 1.9.0. |
+| 2026-08-19 | Active (1.1.0) | folder-backup residual: no dest approver / no dest fences |
+| 2026-08-25 | Active (2.0.0) | take-ownership residual; coding-style + sudo-wrap peers; backup ops superseded |
 
 ---
 
-**Last Updated**: 2026-08-19  
+**Last Updated**: 2026-08-25  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

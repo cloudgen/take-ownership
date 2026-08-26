@@ -1,23 +1,22 @@
 # Requirements
 
-Authoritative specialized product law for **folder-backup** lives here.
+Authoritative specialized product law for **take-ownership** lives here.
 
-**Current state (2026-08-13):** Specialized **software-development** product. Left genesis. Bootstrap parent is sibling **cli-template** (Type 0 local-only). Domain extend: folder archive backup. Registry is populated — see `index.md`.
+**Current state (2026-08-25):** Specialized **software-development** product. Bootstrap **cli-template → folder-backup → take-ownership** (domain replace). Registry is populated — see `index.md`.
 
 ## Product identity (summary)
 
 | Field | Value |
 |-------|--------|
-| Product / `APP_NAME` | `folder-backup` |
-| Version SSOT | `1.11.0` (ship unit hard-assign) |
-| Ship unit | `src/folder-backup` |
-| Default install | `~/.local/bin/folder-backup` |
-| Install mode | **Local-only** |
-| Backup ops | `requirement-folder-archive-backup` — create / name / deposit / verify / restore |
-| Retention total | `requirement-folder-archive-backup-retention-total` — max **30** per basename |
-| Retention daily | `requirement-folder-archive-backup-retention-daily` — max **5** per basename per day |
-| Domain surface | `requirement-domain-folder-backup` — four pillars; ops deferred |
-| JSON sudoer file | `requirement-sudoer-json-file` — grant is `folder-backup` only; no `cp`/`mkdir` |
+| Product / `APP_NAME` | `take-ownership` |
+| Version SSOT | ship unit hard-assign |
+| Ship unit | `src/take-ownership` |
+| Default user install | `${HOME}/.local/bin/take-ownership` |
+| Production elevation path | `/usr/local/bin/take-ownership` (**required** before grant emit) |
+| Install mode | **Local-only** / non-online-installable |
+| Ops | `requirement-take-ownership-ops` — recursive chown, no symlink follow |
+| Domain surface | `requirement-domain-take-ownership` — four pillars; ops deferred |
+| JSON sudoer file | `requirement-sudoer-json-file` — global binary only; `action --path <folder> --ownership *` plus `--json` twin |
 
 ## Class requirement gate
 
@@ -49,4 +48,4 @@ Typical: `draft` · `Active` · `approved` · `in-progress` · `done` · `deprec
 2. Class files only via class process; non-class via create-specific process.  
 3. Never dump harness inventories into this versioned surface.  
 4. Online install requirements stay **absent** unless product mode is explicitly changed.  
-5. Sole domain SSOT: `requirement-domain-folder-backup.md`.
+5. Sole domain SSOT: `requirement-domain-take-ownership.md`.

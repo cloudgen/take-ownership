@@ -6,9 +6,9 @@
 
 ## 1. Purpose
 
-This requirement is the **project Single Source of Truth** for **shell CLI storage resolution** of folder-backup: volatile scratch and app-scoped cache path selection, per-user isolation, central resolver ownership, `app_main` wire, and about diagnostics.
+This requirement is the **project Single Source of Truth** for **shell CLI storage resolution** of take-ownership: volatile scratch and app-scoped cache path selection, per-user isolation, central resolver ownership, `app_main` wire, and about diagnostics.
 
-Used heavily for **tar.gz staging** before elevated deposit into `/var/backup/...`.
+Used for **volatile temps** (mktemp, grant convert scratch). This product has **no** `/var/backup` deposit.
 
 ---
 
@@ -45,7 +45,7 @@ First match that is available and writable:
 
 ```sh
 util_mktemp() {
-    : "${APP_NAME:=folder-backup}"
+    : "${APP_NAME:=take-ownership}"
     : "${EFFECTIVE_STORAGE_DIR:=}"
     _suffix="${1:-tmp}"
     case "${_suffix}" in
@@ -74,23 +74,23 @@ tmp="${EFFECTIVE_STORAGE_DIR}/${APP_NAME}.$$"
 |---------|-------------|
 | `app_main` | Resolve once early: `EFFECTIVE_STORAGE_DIR=$(util_resolve_storage)`; export `EFFECTIVE_STORAGE_DIR`, `STORAGE_DIR`, `TMPDIR` |
 | `app_about` | Include effective storage fields (human + JSON) |
-| Domain `backup` | Stage archives under effective storage; clean up on exit |
+| Domain `action` | Temps under effective storage; clean up on exit |
 
-### 2.5 Staging rules for backups
+### 2.5 Temp rules for take-ownership
 
-1. Create archives in a stage directory under `EFFECTIVE_STORAGE_DIR` (e.g. `.../stage/`).  
+1. Create temps under `EFFECTIVE_STORAGE_DIR` via `util_mktemp`.  
 2. Use restrictive modes appropriate for user data (prefer not world-readable when content may be sensitive).  
-3. **MUST** remove staging artifacts via `trap` on success and failure after deposit attempt completes (or fails closed with path logged).  
-4. Durable deposit path `/var/backup/...` is **not** the storage resolver’s job (privilege + domain law).
+3. **MUST** remove temps via `trap` on success and failure of `action` / grant-emit.  
+4. This product has **no** durable `/var/backup` deposit root.
 
 ### 2.6 Implementation Notes (this project)
 
 | Item | Live value |
 |------|------------|
-| **Product / binary** | `folder-backup` |
-| **Resolver** | `util_resolve_storage` in `src/folder-backup` |
-| **Call sites** | `app_main`, `app_about`, domain staging |
-| **Not used for** | Durable `/var/backup` deposit root |
+| **Product / binary** | `take-ownership` |
+| **Resolver** | `util_resolve_storage` in `src/take-ownership` |
+| **Call sites** | `app_main`, `app_about`, domain temps |
+| **Not used for** | Durable `/var/backup` (retired) |
 
 ### 2.7 Why This Requirement Exists (CIAO)
 
@@ -115,7 +115,7 @@ tmp="${EFFECTIVE_STORAGE_DIR}/${APP_NAME}.$$"
 
 1. Remove `${APP_NAME}` / `${USERNAME}` isolation.  
 2. Replace the fallback chain with a shared world-writable dump.  
-3. Scatter hard-coded `/tmp/folder-backup` roots outside the resolver.  
+3. Scatter hard-coded `/tmp/take-ownership` roots outside the resolver.  
 4. Leave the resolver dead with no call sites while claiming storage is product law.  
 5. Echo a tier path without creating it.  
 6. Stage durable deposits only in world-writable shared paths by design.  
@@ -142,7 +142,7 @@ tmp="${EFFECTIVE_STORAGE_DIR}/${APP_NAME}.$$"
 | Key | Relationship |
 |-----|--------------|
 | `requirement-project-folder` | Path classes |
-| `requirement-domain-folder-backup` | Staging use |
+| `requirement-domain-take-ownership` | Staging use |
 | `requirement-shell-cli-interface` | About fields |
 | `docs/requirements/index.md` | Registry |
 
@@ -152,7 +152,7 @@ tmp="${EFFECTIVE_STORAGE_DIR}/${APP_NAME}.$$"
 
 | Date | Status | Note |
 |------|--------|------|
-| 2026-08-03 | Active | Storage resolve for folder-backup staging |
+| 2026-08-03 | Active | Storage resolve for take-ownership staging |
 | 2026-08-15 | Active | `util_mktemp` sample; forbid `$$` scratch names |
 
 ---

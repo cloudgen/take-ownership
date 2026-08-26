@@ -14,7 +14,7 @@ run_test_cli() {
 
     require_cmd sh
     require_cmd grep
-    require_cmd tar
+    require_cmd id
 
     # TP-CLI-01 syntax
     sh -n "${SCRIPT}"
@@ -42,8 +42,10 @@ run_test_cli() {
     assert_contains "TP-CLI-04 help install" "$_out" "install"
     assert_contains "TP-CLI-04 help uninstall" "$_out" "uninstall"
     assert_contains "TP-CLI-04 help where-is-me" "$_out" "where-is-me"
-    assert_contains "TP-CLI-04 help backup" "$_out" "backup"
-    assert_contains "TP-CLI-04 help restore" "$_out" "restore"
+    assert_contains "TP-CLI-04 help action" "$_out" "action --path"
+    assert_contains "TP-CLI-04 help --ownership" "$_out" "--ownership"
+    assert_not_contains "TP-CLI-04 no backup command" "$_out" "backup <folder>"
+    assert_not_contains "TP-CLI-04 no restore command" "$_out" "restore <archive"
     assert_contains "TP-CLI-04 help print-sudoers" "$_out" "print-sudoers"
     assert_contains "TP-CLI-04 help install-script" "$_out" "print-sudoers-install-script"
     assert_contains "TP-CLI-04 help remove-project-sudoers" "$_out" "remove-project-sudoers"
@@ -53,7 +55,7 @@ run_test_cli() {
     assert_contains "TP-CLI-04 help --update" "$_out" "--update"
     assert_contains "TP-CLI-04 help --add" "$_out" "--add"
     assert_contains "TP-CLI-04 help SUDOER_PUBLIC_ROOT" "$_out" "SUDOER_PUBLIC_ROOT"
-    assert_contains "TP-CLI-04 help hard-disk default" "$_out" "hard-disk"
+    assert_contains "TP-CLI-04 help --path" "$_out" "--path PATH"
     assert_contains "TP-CLI-04 help --json" "$_out" "--json"
     assert_contains "TP-CLI-04 help menu" "$_out" "Numbered list of live work commands"
     assert_contains "TP-CLI-04 help main" "$_out" "Same as menu"
@@ -74,13 +76,13 @@ run_test_cli() {
     assert_eq "TP-CLI-06 about --json exit 0" 0 "$_ec"
     assert_contains "TP-CLI-06 type about" "$_out" '"type":"about"'
     assert_contains "TP-CLI-06 effective_storage" "$_out" '"effective_storage"'
-    assert_contains "TP-CLI-06 backup_notation" "$_out" '"backup_notation"'
-    assert_contains "TP-CLI-06 deposit_dir" "$_out" '"deposit_dir"'
+    assert_contains "TP-CLI-06 global_bin_present" "$_out" '"global_bin_present"'
+    assert_contains "TP-CLI-06 global_bin" "$_out" '"global_bin"'
     assert_contains "TP-CLI-06 sudoer_cli" "$_out" '"sudoer_cli"'
     assert_contains "TP-CLI-06 sudoer_adm" "$_out" '"sudoer_adm"'
     assert_contains "TP-CLI-06 sudoer_inbound" "$_out" '"sudoer_inbound"'
     assert_contains "TP-CLI-06 host_sudoers_present" "$_out" '"host_sudoers_present"'
-    assert_contains "TP-CLI-06 restore_host_default" "$_out" '"restore_host_default"'
+    assert_not_contains "TP-CLI-06 no backup_notation" "$_out" "backup_notation"
     assert_not_contains "TP-CLI-06 no CHECKSUM" "$_out" "CHECKSUM"
     assert_not_contains "TP-CLI-06 no SCRIPT_URL" "$_out" "SCRIPT_URL"
 
@@ -120,6 +122,16 @@ run_test_cli() {
 
     _err=$(sh "${SCRIPT}" version-check 2>&1 >/dev/null)
     assert_eq "TP-CLI-10 version-check exit 1" 1 "$?"
+
+    _err=$(sh "${SCRIPT}" backup 2>&1 >/dev/null)
+    assert_eq "TP-CLI-10 backup unknown exit 1" 1 "$?"
+    assert_contains "TP-CLI-10 backup unknown" "$_err" "Unknown command"
+
+    _err=$(sh "${SCRIPT}" restore 2>&1 >/dev/null)
+    assert_eq "TP-CLI-10 restore unknown exit 1" 1 "$?"
+
+    _err=$(sh "${SCRIPT}" --allow-test-local help 2>&1 >/dev/null)
+    assert_eq "TP-CLI-10 no allow-test-local exit 1" 1 "$?"
 
     # TP-CLI-11 set -u HOME unset still works for version
     _out=$(env -u HOME sh "${SCRIPT}" version 2>/dev/null)
@@ -171,18 +183,15 @@ run_test_cli() {
 
     if command -v python3 >/dev/null 2>&1; then
         _out=$(PTY_IN="9" ci_pty_run menu)
-        assert_contains "TP-CLI-13 TTY menu backup row" "$_out" "1. backup: Pack a named folder into a dated gzip archive under /var/backup/folder-backup"
-        assert_contains "TP-CLI-13 TTY menu restore row" "$_out" "2. restore: Put an archive back onto the hard-disk projects tree"
-        assert_contains "TP-CLI-13 TTY menu remove row" "$_out" "3. remove-project-sudoers: Remove the local grant draft only"
-        assert_contains "TP-CLI-13 TTY menu submit row" "$_out" "4. submit-sudoer-request: Hand the JSON grant to the approval queue"
+        assert_contains "TP-CLI-13 TTY menu action row" "$_out" "1. action: Recursively take ownership of a named folder"
+        assert_contains "TP-CLI-13 TTY menu remove row" "$_out" "2. remove-project-sudoers: Remove the local grant draft only"
+        assert_contains "TP-CLI-13 TTY menu submit row" "$_out" "3. submit-sudoer-request: Hand the JSON grant to the approval queue"
         assert_contains "TP-CLI-13 TTY menu Exit 9" "$_out" "9. Exit"
-        _out=$(PTY_IN="$(printf '%s\n' '1' '/tmp/does-not-exist-fb-menu')" ci_pty_run menu)
-        assert_contains "TP-CLI-13 TTY pick 1 uses typed folder" "$_out" "Source is not a directory: /tmp/does-not-exist-fb-menu"
-        assert_not_contains "TP-CLI-13 TTY pick 1 path not polluted by prompt" "$_out" "Source is not a directory: Folder to pack:"
+        assert_not_contains "TP-CLI-13 TTY menu no backup row" "$_out" "1. backup:"
 
         _out=$(PTY_IN="9" ci_pty_run --json menu)
         assert_contains "TP-CLI-14 TTY menu --json still numbered list" "$_out" "9. Exit"
-        assert_contains "TP-CLI-14 TTY menu --json backup row" "$_out" "1. backup: Pack a named folder"
+        assert_contains "TP-CLI-14 TTY menu --json action row" "$_out" "1. action: Recursively take ownership"
         assert_not_contains "TP-CLI-14 TTY menu --json ignores JSON help" "$_out" '"type":"success"'
 
         _out=$(PTY_IN="9" ci_pty_run menu)
