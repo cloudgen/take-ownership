@@ -2,6 +2,7 @@
 
 | Date | Report | Scope | Verdict | Suite |
 |------|--------|-------|---------|-------|
+| 2026-08-26 | 2.2.0 generate-sudoer-json | Canonical JSON grant; dirty-cwd `"*"`; inbound exact-args; TP-27/28 | living | 2.2.0 |
 | 2026-08-23 | `cli-routed-verb-table.md` | Live dispatcher inventory + human-readable `verb: explain`; test-purpose grant-emit verbs; `menu`/`main` routed | living | 1.11.0 |
 | 2026-08-17 | `reports/2026-08-17-review-revision-test-plans.md` | Review/test-plan revision vs 1.9.0 generate + operator-readable errors | **PASS** (plans aligned; suite green) | PASS=242 FAIL=0 SKIP=2 |
 | 2026-08-17 | 1.9.0 generate-sudoer-request | Local verified compact JSON; submit compact handoff; TP-24 | living | 1.9.0 |

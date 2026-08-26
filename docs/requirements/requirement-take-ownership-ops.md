@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-take-ownership-ops.md  
-**Status**: Active (Version 1.0.0)  
+**Status**: Active (Version 1.2.0)  
 **Area**: domain-ops  
 **Key**: `requirement-take-ownership-ops`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -86,6 +86,9 @@ Before any chown:
 | Refused | Why |
 |---------|-----|
 | `/` `/boot` `/bin` `/sbin` `/usr` `/etc` `/lib` `/lib64` `/proc` `/sys` `/dev` `/run` `/root` | Host system trees |
+| `/dev/shm` (the mount root, exact) | Whole tmpfs — not a project folder |
+
+**Ram-drive exception (sacred):** `--path` **MAY** be a project tree under **`/dev/shm/<project-basename>`** (and children of that folder). That path family is a **workspace root**, not a device node. **MUST still refuse** `/dev`, `/dev/shm` (the mount root), and other `/dev/*` that are **not** under `/dev/shm/<name>/`. Typical dest: `/dev/shm/genesis-template`.
 
 5. When `realpath` (or equivalent) is available, the **physical** path **MUST** also fail the same refuse list.  
 6. **MUST NOT** follow directory symlinks while walking (`chown -R` without `-L` / `-H`; physical walk).
@@ -103,7 +106,24 @@ Before any chown:
 2. **MUST NOT** follow symlinks (chown the symlink inode if the tool chowns links; **MUST NOT** chown the link target).  
 3. If every walked inode already has the requested owner and group → **success no-op** (idempotent).  
 4. Partial failure (unreadable child, I/O error) → **non-zero**; do not claim success.  
-5. `--force` does **not** bypass refuse-list, symlink, or missing-identity checks.
+5. `--force` does **not** bypass refuse-list, symlink, missing-identity, or allowed-folder checks.
+
+### 2.5a Allowed folders (list-folders + action gate)
+
+**Shared set:** folders this login may take ownership of. **`list-folders`** prints that set. **`action` MUST** confirm `--path` is in that set **before** any chown or already-matching success.
+
+| Rule | Detail |
+|------|--------|
+| **Verb** | `list-folders` (no `--path`; Type 0; does not write `/etc`; does not chown) |
+| **Subject** | Current login (`id -un`). After `sudo` re-exec, use `SUDO_USER` when euid is 0 |
+| **Union sources** | Readable JSON grant `~/.config/take-ownership/sudoer-request-<user>.json`; readable sudoers draft `sudoers.fragment-<user>` (and unsuffixed legacy); readable installed fragment; `sudo -n -l` lines that name this program (only when `SUDOERS_D_DIR` is `/etc/sudoers.d`, so tests can isolate) |
+| **Values** | Absolute `--path` tokens only (same normalize as `action`: strip trailing `/`, refuse `*`) |
+| **Empty set** | `list-folders` exits 0 and says there are no folders. `action` **MUST** fail closed |
+| **Not in set** | `action` **MUST** fail closed; next step `list-folders` or `generate-sudoer-request --path` |
+| **Exact match** | Grant folder is exact (not a parent prefix). `/var/www` does **not** authorize `/var/www/html` |
+| **JSON** | `list-folders --json` reports `user`, `count`, `folders` (array) |
+
+This gate is **in addition to** sudoers exact-argv at re-exec. Type 0 lists from artifacts this login can read so the operator sees the same set `action` will accept.
 
 ### 2.6 Privilege split
 
@@ -134,7 +154,7 @@ Operator **MAY** type `sudo take-ownership action --path … --ownership …` th
 | Item | Value |
 |------|--------|
 | **Product** | `take-ownership` |
-| **Handler** | `to_action` |
+| **Handler** | `to_action` · `to_list_folders` |
 | **Chown implementation** | POSIX `chown -R` **without** `-L`/`-H` (or equivalent walk that does not follow links) |
 | **GLOBAL_BIN** | `/usr/local/bin` |
 | **Worked path** | `/var/www/html` |
@@ -171,7 +191,9 @@ Operator **MAY** type `sudo take-ownership action --path … --ownership …` th
 5. Hang in CI waiting for `--path` / `--ownership`.  
 6. Treat refuse-list paths as “the user asked for it.”  
 7. Claim success when any walked inode failed.  
-8. Restore backup/restore as this file’s job.
+8. Restore backup/restore as this file’s job.  
+9. Run `action` without confirming `--path` against the `list-folders` set.  
+10. Treat a parent directory grant as covering a child path.
 
 **Violating this rule is a critical ownership / privilege regression.**
 
@@ -187,6 +209,9 @@ Operator **MAY** type `sudo take-ownership action --path … --ownership …` th
 | AC-4 | Already matching → success no-op |
 | AC-5 | Non-root re-execs **global** binary via `sudo -n`; already-root does not sudo |
 | AC-6 | TTY missing fields → one-at-a-time prompts; non-TTY missing fields → fail, no hang |
+| AC-7 | `/dev/shm/<project>` ram-drive trees are **not** refuse-list; `/dev` and `/dev/shm` (mount root) **are** |
+| AC-8 | `list-folders` prints this login’s allowed `--path` set (empty set is success with a next step) |
+| AC-9 | `action` fails closed when `--path` is missing from that set, including already-matching trees |
 
 ---
 

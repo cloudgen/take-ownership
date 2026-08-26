@@ -34,7 +34,7 @@
 # Single-file ship unit under src/; local install to ~/.local/bin.
 #
 # APP NAME: hard-assign APP_NAME="take-ownership"
-# VERSION: hard-assign VERSION="2.0.0"
+# VERSION: hard-assign VERSION="2.2.0"
 #
 # =============================================================================
 
@@ -49,10 +49,10 @@ APP_NAME="take-ownership"
 : "${APP_NAME:=take-ownership}"
 : "${APP_DESC:=Take Unix ownership of a named folder with a narrow global-only sudo grant}"
 : "${SHORT_DESCRIPTION:=${APP_DESC}}"
-: "${DESCRIPTION:=POSIX /bin/sh local CLI: install, uninstall, where-is-me, version, about, help, menu, main, action, print-sudoers, print-sudoers-install-script, remove-project-sudoers, generate-sudoer-request, submit-sudoer-request.}"
+: "${DESCRIPTION:=POSIX /bin/sh local CLI: install, uninstall, where-is-me, version, about, help, menu, main, list-folders, action, print-sudoers, print-sudoers-install-script, remove-project-sudoers, generate-sudoer-request, generate-sudoer-json, submit-sudoer-request.}"
 # Product version SSOT (semver). Extractors use: grep '^VERSION="'
-VERSION="2.0.0"
-: "${VERSION:=2.0.0}"
+VERSION="2.2.0"
+: "${VERSION:=2.2.0}"
 # Repository identity SSOT (git host owner/repo for project-repository alignment).
 # Install remains local-only: SCRIPT_URL stays empty (no online curl|sh channel).
 : "${REPO_USER:=cloudgen}"
@@ -1562,7 +1562,13 @@ to_require_absolute_path() {
 # =============================================================================
 to_refuse_system_path() {
     _p="${1:-}"
+    # Ram-drive project trees (policy-ram-drive-first): /dev/shm/<basename>[/...]
+    # is a workspace root, not a device node. Allow those children.
+    # Still refuse /dev, /dev/shm (the mount root), and other /dev/* device paths.
     case "${_p}" in
+        /dev/shm/*)
+            return 1
+            ;;
         /|/boot|/boot/*|/bin|/bin/*|/sbin|/sbin/*|/usr|/usr/*|/etc|/etc/*|/lib|/lib/*|/lib64|/lib64/*|/proc|/proc/*|/sys|/sys/*|/dev|/dev/*|/run|/run/*|/root|/root/*)
             return 0
             ;;
@@ -1710,12 +1716,201 @@ to_collect_missing_action_fields() {
 }
 
 # =============================================================================
+# to_grant_subject_user() - Login whose grant we list (SUDO_USER after re-exec)
+# =============================================================================
+#
+# ALIGNMENT: requirement-take-ownership-ops.md §2.5a
+# Last updated: 2026-08-26
+# =============================================================================
+to_grant_subject_user() {
+    if [ "$(id -u 2>/dev/null || echo 1)" -eq 0 ] && [ -n "${SUDO_USER:-}" ] && [ "${SUDO_USER}" != "root" ]; then
+        printf '%s' "${SUDO_USER}"
+        return 0
+    fi
+    to_current_login_user
+}
+
+to_home_for_login() {
+    _u="${1:-}"
+    _cur=$(id -un 2>/dev/null || echo "unknown")
+    if [ -n "${_u}" ] && [ "${_u}" = "${_cur}" ]; then
+        printf '%s' "${HOME}"
+        return 0
+    fi
+    _h=""
+    if [ -n "${_u}" ] && command -v getent >/dev/null 2>&1; then
+        _h=$(getent passwd "${_u}" 2>/dev/null | cut -d: -f6)
+    fi
+    if [ -z "${_h}" ] && [ -n "${_u}" ] && [ -r /etc/passwd ]; then
+        _h=$(awk -F: -v u="${_u}" '$1==u {print $6; exit}' /etc/passwd 2>/dev/null)
+    fi
+    if [ -n "${_h}" ] && [ -d "${_h}" ]; then
+        printf '%s' "${_h}"
+        return 0
+    fi
+    printf '%s' "${HOME}"
+}
+
+# =============================================================================
+# to_extract_grant_paths_from_text() - Pull --path values from JSON or sudoers
+# =============================================================================
+#
+# ALIGNMENT: requirement-take-ownership-ops.md §2.5a
+# Last updated: 2026-08-26
+# =============================================================================
+to_extract_grant_paths_from_text() {
+    awk '
+    {
+      line = $0
+      while (match(line, /"--path",[[:space:]]*"[^"]+"/)) {
+        s = substr(line, RSTART, RLENGTH)
+        sub(/"--path",[[:space:]]*"/, "", s)
+        sub(/"$/, "", s)
+        if (s != "" && s != "*") print s
+        line = substr(line, RSTART + RLENGTH)
+      }
+      line = $0
+      while (match(line, /--path[[:space:]]+[^[:space:]]+/)) {
+        s = substr(line, RSTART, RLENGTH)
+        sub(/--path[[:space:]]+/, "", s)
+        if (s != "" && s != "*") print s
+        line = substr(line, RSTART + RLENGTH)
+      }
+    }'
+}
+
+to_append_grant_paths_from_file() {
+    _gf="${1:-}"
+    [ -n "${_gf}" ] && [ -r "${_gf}" ] || return 0
+    to_extract_grant_paths_from_text <"${_gf}"
+}
+
+# =============================================================================
+# to_emit_allowed_folders() - Unique absolute folders this login may take
+# =============================================================================
+#
+# Sources (union, Type 0 readable): JSON grant, sudoers draft, installed
+# fragment when readable, sudo -n -l when it prints this program's --path.
+#
+# ALIGNMENT: requirement-take-ownership-ops.md §2.5a
+# Last updated: 2026-08-26
+# =============================================================================
+to_emit_allowed_folders() {
+    : "${APP_NAME:=take-ownership}"
+    : "${HOME:=/tmp}"
+    : "${SUDOERS_D_DIR:=/etc/sudoers.d}"
+    _user=$(to_grant_subject_user)
+    _home=$(to_home_for_login "${_user}")
+    _raw=$(util_mktemp allowed-raw)
+    to_append_grant_paths_from_file "${_home}/.config/${APP_NAME}/sudoer-request-${_user}.json" >>"${_raw}"
+    to_append_grant_paths_from_file "${_home}/.config/${APP_NAME}/sudoers.fragment-${_user}" >>"${_raw}"
+    to_append_grant_paths_from_file "${_home}/.config/${APP_NAME}/sudoers.fragment" >>"${_raw}"
+    to_append_grant_paths_from_file "${SUDOERS_D_DIR}/${APP_NAME}-${_user}" >>"${_raw}"
+    to_append_grant_paths_from_file "${SUDOERS_D_DIR}/${APP_NAME}" >>"${_raw}"
+    if [ "${SUDOERS_D_DIR}" = "/etc/sudoers.d" ] && command -v sudo >/dev/null 2>&1; then
+        sudo -n -l 2>/dev/null | grep -F "${APP_NAME}" | to_extract_grant_paths_from_text >>"${_raw}" || true
+    fi
+    _out=$(util_mktemp allowed-out)
+    while IFS= read -r _cand; do
+        [ -n "${_cand}" ] || continue
+        _norm=$(to_require_absolute_path "${_cand}" 2>/dev/null) || continue
+        printf '%s\n' "${_norm}"
+    done <"${_raw}" | awk 'NF && !seen[$0]++' | sort >"${_out}"
+    cat "${_out}"
+    rm -f "${_raw}" "${_out}"
+}
+
+to_folder_is_allowed() {
+    _want="${1:-}"
+    [ -n "${_want}" ] || return 1
+    _list=$(util_mktemp allowed-check)
+    to_emit_allowed_folders >"${_list}"
+    _ok=1
+    while IFS= read -r _p; do
+        if [ "${_p}" = "${_want}" ]; then
+            _ok=0
+            break
+        fi
+    done <"${_list}"
+    rm -f "${_list}"
+    return "${_ok}"
+}
+
+to_require_allowed_folder() {
+    : "${APP_NAME:=take-ownership}"
+    _folder="${1:-}"
+    if to_folder_is_allowed "${_folder}"; then
+        return 0
+    fi
+    _any=$(to_emit_allowed_folders | awk 'NF{c++; exit} END{print c+0}')
+    if [ "${_any}" = "0" ]; then
+        out_die "This login has no take-ownership folders yet. Next: ${APP_NAME} list-folders   then   ${APP_NAME} generate-sudoer-request --path ${_folder}"
+    fi
+    out_die "Folder ${_folder} is not in this login's take-ownership list. Next: ${APP_NAME} list-folders   or   ${APP_NAME} generate-sudoer-request --path ${_folder}"
+}
+
+# =============================================================================
+# to_list_folders() - Type 0: list folders this login may take ownership of
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# Print the union of --path values from this login's grant artifacts.
+# Same set action uses before chown. Does not write /etc. Does not chown.
+#
+# ALIGNMENT:
+# - requirement-domain-take-ownership.md
+# - requirement-take-ownership-ops.md §2.5a
+#
+# Last updated: 2026-08-26
+# =============================================================================
+to_list_folders() {
+    : "${APP_NAME:=take-ownership}"
+    : "${JSON:=0}"
+    _user=$(to_grant_subject_user)
+    _list=$(util_mktemp allowed-list)
+    to_emit_allowed_folders >"${_list}"
+    _count=0
+    _arr="["
+    _sep=""
+    while IFS= read -r _p; do
+        [ -n "${_p}" ] || continue
+        _count=$((_count + 1))
+        _arr="${_arr}${_sep}\"$(util_json_escape "${_p}")\""
+        _sep=","
+    done <"${_list}"
+    _arr="${_arr}]"
+
+    if [ "${JSON}" -eq 1 ]; then
+        out_json "list-folders" "ok" \
+            "user" "${_user}" \
+            "count" "${_count}" \
+            "@folders" "${_arr}"
+        rm -f "${_list}"
+        return 0
+    fi
+    if [ "${_count}" -eq 0 ]; then
+        out_info "No folders in this login's take-ownership grant."
+        out_info "Next: ${APP_NAME} generate-sudoer-request --path /var/www/html"
+        rm -f "${_list}"
+        return 0
+    fi
+    out_success "Folders this login may take ownership of (${_count}):"
+    while IFS= read -r _p; do
+        [ -n "${_p}" ] || continue
+        out_plain "  ${_p}"
+    done <"${_list}"
+    rm -f "${_list}"
+    return 0
+}
+
+# =============================================================================
 # to_action() - Recursively take ownership of a named folder
 # =============================================================================
 #
 # GENERAL PURPOSE:
-# Validate --path and --ownership, then chown -R without following symlinks.
-# Non-root re-execs the global binary via sudo -n. Already-root chowns directly.
+# Validate --path and --ownership, confirm --path is in list-folders, then
+# chown -R without following symlinks. Non-root re-execs the global binary
+# via sudo -n. Already-root chowns directly.
 #
 # ALIGNMENT:
 # - requirement-take-ownership-ops.md
@@ -1760,6 +1955,7 @@ to_action() {
     if ! to_validate_ownership "${TO_OWNERSHIP}"; then
         out_die "--ownership must be an existing host user:group (example www-data:www-data). You passed: ${TO_OWNERSHIP}"
     fi
+    to_require_allowed_folder "${TO_PATH}"
 
     if to_tree_already_owned "${TO_PATH}" "${TO_OWNERSHIP}"; then
         if [ "${JSON}" -eq 1 ]; then
@@ -1923,14 +2119,54 @@ to_sudoers_fragment_text() {
 }
 
 # =============================================================================
+# to_sudoers_star_token() - sudoers one-operand wildcard (never a glob)
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# Emit the single character * as a string. JSON/sudoers * is an operand
+# wildcard, not a filesystem path. Callers MUST keep the result quoted.
+#
+# ALIGNMENT: requirement-sudoer-json-file.md §2.3 · INC-20260823-002
+# Last updated: 2026-08-26
+# =============================================================================
+to_sudoers_star_token() {
+    printf '%s' '*'
+}
+
+# =============================================================================
+# to_sudoers_json_command_object() - one commands[] object (verb or --json twin)
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# Compact JSON command object. $1 = bound --path. $2 = 0 verb-first, 1 --json first.
+# Ownership operand is always the star token (not cwd names).
+#
+# ALIGNMENT: requirement-sudoer-json-file.md §2.3
+# Last updated: 2026-08-26
+# =============================================================================
+to_sudoers_json_command_object() {
+    _gp="${1:-}"
+    _json_first="${2:-0}"
+    : "${APP_NAME:=take-ownership}"
+    : "${GLOBAL_BIN:=/usr/local/bin}"
+    _global_path="${GLOBAL_BIN}/${APP_NAME}"
+    _star="$(to_sudoers_star_token)"
+    if [ "${_json_first}" = "1" ]; then
+        printf '%s' "{\"runas\":\"root\",\"tags\":[\"NOPASSWD\"],\"path\":\"${_global_path}\",\"args\":[\"--json\",\"action\",\"--path\",\"${_gp}\",\"--ownership\",\"${_star}\"]}"
+    else
+        printf '%s' "{\"runas\":\"root\",\"tags\":[\"NOPASSWD\"],\"path\":\"${_global_path}\",\"args\":[\"action\",\"--path\",\"${_gp}\",\"--ownership\",\"${_star}\"]}"
+    fi
+}
+
+# =============================================================================
 # to_sudoers_json_text() - Class B: emit JSON sudoer file to stdout
 # =============================================================================
 #
 # GENERAL PURPOSE:
 # JSON sudoer file (requirement-sudoer-json-file). action from SUBMIT_ACTION.
 #
-# ALIGNMENT: requirement-sudoer-json-file.md 1.3.0 (args verb plus *)
-# Last reviewed: 2026-08-23
+# ALIGNMENT: requirement-sudoer-json-file.md §2.3 (args verb plus *)
+# Last reviewed: 2026-08-26
 # =============================================================================
 to_sudoers_json_text() {
     # Compact and pretty are the same grant (requirement-sudoer-json-file).
@@ -1945,7 +2181,6 @@ to_sudoers_json_text_compact() {
     : "${TO_PATH:=}"
 
     _user=$(id -un 2>/dev/null || echo "unknown")
-    _global_path="${GLOBAL_BIN}/${APP_NAME}"
     _action="${SUBMIT_ACTION}"
     case "${_action}" in
         add|update) ;;
@@ -1955,8 +2190,8 @@ to_sudoers_json_text_compact() {
     _sep=""
     while IFS= read -r _gp; do
         [ -n "${_gp}" ] || continue
-        _one="{\"runas\":\"root\",\"tags\":[\"NOPASSWD\"],\"path\":\"${_global_path}\",\"args\":[\"action\",\"--path\",\"${_gp}\",\"--ownership\",\"*\"]}"
-        _two="{\"runas\":\"root\",\"tags\":[\"NOPASSWD\"],\"path\":\"${_global_path}\",\"args\":[\"--json\",\"action\",\"--path\",\"${_gp}\",\"--ownership\",\"*\"]}"
+        _one="$(to_sudoers_json_command_object "${_gp}" 0)"
+        _two="$(to_sudoers_json_command_object "${_gp}" 1)"
         _cmds="${_cmds}${_sep}${_one},${_two}"
         _sep=","
     done <<EOF
@@ -1992,34 +2227,41 @@ to_sudoers_refuse_forbidden_grant() {
     return 0
 }
 
-# Fail closed unless the file still names action --path --ownership * and --json twin.
+# Fail closed unless args are exactly action --path F --ownership * plus --json twin.
+# $2 = queued request id (optional). INC-20260823-002: cwd listings must not pass.
 to_sudoers_verify_grant_verbs() {
     _gf="${1:-}"
+    _queued="${2:-}"
     : "${APP_NAME:=take-ownership}"
     : "${GLOBAL_BIN:=/usr/local/bin}"
     if [ -z "${_gf}" ] || [ ! -f "${_gf}" ]; then
         out_die "sudoer file missing (cannot verify the take-ownership grant)"
     fi
+    _head="Sudoer file is incomplete"
+    _tail="Path: ${_gf}."
+    _next="Next: ${APP_NAME} generate-sudoer-json --path <folder>   (or generate-sudoer-request)"
+    if [ -n "${_queued}" ]; then
+        _head="Queued sudo request is incomplete"
+        _tail="Do not approve ${_queued}."
+    fi
     _gb=$(cat "${_gf}" 2>/dev/null || true)
+    _norm=$(printf '%s' "${_gb}" | tr -d ' \t\n\r')
     case "${_gb}" in
         *"${GLOBAL_BIN}/${APP_NAME}"*) ;;
-        *) out_die "Sudoer file is incomplete: it does not name ${GLOBAL_BIN}/${APP_NAME}. Path: ${_gf}" ;;
+        *) out_die "${_head}: it does not name ${GLOBAL_BIN}/${APP_NAME}. ${_tail}" ;;
     esac
-    case "${_gb}" in
-        *'"--path"'*) ;;
-        *) out_die "Sudoer file is incomplete: it does not bind --path. Do not submit ${_gf}. Next: ${APP_NAME} generate-sudoer-request --path /var/www/html" ;;
+    case "${_norm}" in
+        *'"args":["action","--path",'*',"--ownership","*"]'*) ;;
+        *) out_die "${_head}: args must be action --path <folder> --ownership * (the * is a sudoers operand, not a path). ${_tail} ${_next}" ;;
     esac
-    case "${_gb}" in
-        *'"--ownership"'*) ;;
-        *) out_die "Sudoer file is incomplete: it does not include --ownership. Path: ${_gf}" ;;
+    case "${_norm}" in
+        *'"args":["--json","action","--path",'*',"--ownership","*"]'*) ;;
+        *) out_die "${_head}: missing --json twin with --ownership *. ${_tail} ${_next}" ;;
     esac
-    case "${_gb}" in
-        *'"*"'*) ;;
-        *) out_die "Sudoer file is incomplete: --ownership needs a sudoers operand wildcard (*). Path: ${_gf}" ;;
-    esac
-    case "${_gb}" in
-        *'"--json"'*) ;;
-        *) out_die "Sudoer file is incomplete: it is missing the --json twin command. Path: ${_gf}" ;;
+    case "${_norm}" in
+        *'"--ownership","*",'*)
+            out_die "${_head}: --ownership * was expanded to extra arguments (looks like a directory listing). The * is a sudoers operand, not a path. ${_tail} ${_next}"
+            ;;
     esac
     return 0
 }
@@ -2309,10 +2551,12 @@ to_sudoers_require_emit_trust() {
 # ALIGNMENT:
 # - requirement-three-layer-privilege-model.md §2.3.3d
 # - requirement-sudoer-json-file.md
-# - requirement-domain-folder-backup.md
+# - requirement-domain-take-ownership.md
 # - INC-20260817-002 (operator-readable; incomplete JSON is not a standing class)
+# - INC-20260823-002 (* must stay a sudoers operand, not a cwd listing)
 #
-# Last reviewed: 2026-08-17
+# Last reviewed: 2026-08-26
+# generate-sudoer-json is the same handler (test-purpose alias; gold JSON body).
 # =============================================================================
 to_generate_sudoer_request() {
     : "${APP_NAME:=take-ownership}"
@@ -2321,6 +2565,12 @@ to_generate_sudoer_request() {
     : "${SUBMIT_ACTION:=add}"
     : "${SUBMIT_ACTION_EXPLICIT:=0}"
     : "${TO_PATH:=}"
+    : "${COMMAND:=generate-sudoer-request}"
+    _gen_verb="${COMMAND}"
+    case "${_gen_verb}" in
+        generate-sudoer-json|generate-sudoer-request) ;;
+        *) _gen_verb="generate-sudoer-request" ;;
+    esac
 
     to_require_grant_path
     _out_path="${1:-}"
@@ -2342,20 +2592,20 @@ to_generate_sudoer_request() {
     fi
     case "${SUBMIT_ACTION}" in
         add|update) ;;
-        *) out_die "generate-sudoer-request action must be add or update (got ${SUBMIT_ACTION})" ;;
+        *) out_die "${_gen_verb} action must be add or update (got ${SUBMIT_ACTION})" ;;
     esac
 
-    to_sudoers_require_emit_trust "generate-sudoer-request"
+    to_sudoers_require_emit_trust "${_gen_verb}"
 
     if [ -z "${_out_path}" ]; then
         _out_path=$(to_default_sudoer_request_path)
     fi
     case "${_out_path}" in
         /etc|/etc/*)
-            out_die "generate-sudoer-request refuses to write under /etc (Type 0). Use a path under \$HOME or /dev/shm."
+            out_die "${_gen_verb} refuses to write under /etc (Type 0). Use a path under \$HOME or /dev/shm."
             ;;
         /var/sudoer-cli|/var/sudoer-cli/*)
-            out_die "generate-sudoer-request does not write inbound. Write a local file, then: ${APP_NAME} submit-sudoer-request <path>"
+            out_die "${_gen_verb} does not write inbound. Write a local file, then: ${APP_NAME} submit-sudoer-request <path>"
             ;;
     esac
     if [ -e "${_out_path}" ] && [ -L "${_out_path}" ]; then
@@ -2384,7 +2634,7 @@ to_generate_sudoer_request() {
     fi
 
     if [ "${JSON}" -eq 1 ]; then
-        out_json "generate-sudoer-request" "written" \
+        out_json "${_gen_verb}" "written" \
             "path" "${_out_path}" \
             "readable" "true" \
             "verified" "true" \
@@ -2396,7 +2646,7 @@ to_generate_sudoer_request() {
     fi
 
     out_success "Wrote verified sudoer file to ${_out_path}"
-    out_info "Grant allows: ${APP_NAME} action --path ${TO_PATH} --ownership * (JSON action=${SUBMIT_ACTION})"
+    out_info "Grant allows: ${APP_NAME} action --path ${TO_PATH} --ownership * (JSON action=${SUBMIT_ACTION}; * is not a path)"
     if [ "${_convert}" = "ok" ]; then
         out_info "Convert check: action --path still present after sudoer-cli json-to-sudoers"
     else
@@ -2473,6 +2723,7 @@ to_submit_sudoer_request() {
             out_die "refusing symlink sudoers input: ${_src_file}"
         fi
         to_sudoers_refuse_forbidden_grant "${_src_file}"
+        to_sudoers_verify_grant_verbs "${_src_file}"
     fi
 
     _cli=""
@@ -2568,18 +2819,11 @@ to_submit_sudoer_request() {
         _rid=$(printf '%s\n' "${_out}" | sed -n 's/.*request_id=\([^[:space:]]*\).*/\1/p')
     fi
 
-    # When inbound is readable, queued body MUST still name both elev verbs.
-    # Purpose text and [OK] submitted are not completeness. INC-20260817-001.
+    # When inbound is readable, queued body MUST still be the exact grant
+    # (action --path F --ownership * plus --json twin). Purpose text and
+    # [OK] submitted are not completeness. INC-20260817-001 · INC-20260823-002.
     if [ -n "${_rid}" ] && [ -r "${_inbound}/${_rid}" ]; then
-        _ibody=$(cat "${_inbound}/${_rid}" 2>/dev/null || true)
-        case "${_ibody}" in
-            *'"--path"'*) ;;
-            *) out_die "Queued sudo request is incomplete: it does not bind --path. Do not approve ${_rid}. Write a verified file: ${APP_NAME} generate-sudoer-request --path <folder> && ${APP_NAME} submit-sudoer-request <path>" ;;
-        esac
-        case "${_ibody}" in
-            *'"--ownership"'*) ;;
-            *) out_die "Queued sudo request is incomplete: it does not include --ownership. Do not approve ${_rid}." ;;
-        esac
+        to_sudoers_verify_grant_verbs "${_inbound}/${_rid}" "${_rid}"
     fi
 
     if [ "${JSON}" -eq 1 ]; then
@@ -3322,6 +3566,7 @@ app_about() {
     out_info "   sudo ${APP_NAME} install    → Global install (required before grant emit)"
     out_info "   ${APP_NAME} generate-sudoer-request --path <folder>"
     out_info "   ${APP_NAME} submit-sudoer-request --path <folder>"
+    out_info "   ${APP_NAME} list-folders"
     out_info "   ${APP_NAME} action --path <folder> --ownership user:group"
     out_info "   ${APP_NAME} --json          → Machine-readable output"
 }
@@ -3331,7 +3576,7 @@ app_about() {
 # =============================================================================
 #
 # GENERAL PURPOSE:
-# Print the three operational work rows plus Exit 9. Labels are the kept-list
+# Print the four operational work rows plus Exit 9. Labels are the kept-list
 # human-readable form (verb: explain). Self-managed, diagnostics, and
 # test-purpose verbs are omitted.
 #
@@ -3347,8 +3592,9 @@ app_main_menu_print() {
 
     out_info "${APP_NAME} — numbered list of live work commands"
     out_plain "1. action: Recursively take ownership of a named folder"
-    out_plain "2. remove-project-sudoers: Remove the local grant draft only"
-    out_plain "3. submit-sudoer-request: Hand the JSON grant to the approval queue"
+    out_plain "2. list-folders: List folders this login may take ownership of"
+    out_plain "3. remove-project-sudoers: Remove the local grant draft only"
+    out_plain "4. submit-sudoer-request: Hand the JSON grant to the approval queue"
     out_plain "9. Exit"
 }
 
@@ -3379,10 +3625,13 @@ app_main_menu_run_pick() {
             export TO_PATH TO_OWNERSHIP
             to_action
             ;;
-        2|remove-project-sudoers)
+        2|list-folders)
+            to_list_folders
+            ;;
+        3|remove-project-sudoers)
             to_remove_project_sudoers "${_a}"
             ;;
-        3|submit-sudoer-request)
+        4|submit-sudoer-request)
             to_submit_sudoer_request "${_a}"
             ;;
         9|exit|quit|Exit|QUIT)
@@ -3478,12 +3727,12 @@ app_main_menu() {
 # =============================================================================
 app_help() {
     : "${SHORT_DESCRIPTION:=${APP_DESC:-Take Unix ownership of a named folder with a narrow global-only sudo grant}}"
-    : "${DESCRIPTION:=POSIX /bin/sh local CLI: install, uninstall, where-is-me, version, about, help, menu, main, action, print-sudoers, print-sudoers-install-script, remove-project-sudoers, generate-sudoer-request, submit-sudoer-request.}"
+    : "${DESCRIPTION:=POSIX /bin/sh local CLI: install, uninstall, where-is-me, version, about, help, menu, main, list-folders, action, print-sudoers, print-sudoers-install-script, remove-project-sudoers, generate-sudoer-request, generate-sudoer-json, submit-sudoer-request.}"
 
     if [ "${JSON}" -eq 1 ]; then
         out_json "success" "Help text available in human-readable mode. Run without --json." \
             "command" "help" \
-            "note" "Use --json with version, about, install, uninstall, where-is-me, action. menu/main off-TTY uses this help."
+            "note" "Use --json with version, about, install, uninstall, where-is-me, list-folders, action. menu/main off-TTY uses this help."
         return 0
     fi
     if [ "${QUIET}" -eq 1 ]; then
@@ -3508,8 +3757,10 @@ app_help() {
     out_plain "  main                 Same as menu"
     out_empty_line
     out_info "Work (operational):"
+    out_plain "  list-folders         List folders this login may take ownership of"
     out_plain "  action --path <folder> --ownership <user:group>"
     out_plain "                       Recursively take ownership (no symlink follow)."
+    out_plain "                       Confirms --path is on list-folders first."
     out_plain "                       Needs a grant for that folder and the global binary."
     out_plain "  remove-project-sudoers [path]"
     out_plain "                       Remove project-sudoers-file draft only (not host elev)"
@@ -3523,7 +3774,12 @@ app_help() {
     out_plain "  print-sudoers-install-script --path <folder> [path]"
     out_plain "                       Write admin script to install|uninstall|replace the fragment"
     out_plain "  generate-sudoer-request --path <folder> [dest]"
+    out_plain "  generate-sudoer-json    --path <folder> [dest]"
     out_plain "                       Independent JSON grant you can read without sudo."
+    out_plain "                       Canonical body for tests: args stay"
+    out_plain "                       action --path <folder> --ownership *"
+    out_plain "                       plus --json twin. The * is a sudoers operand,"
+    out_plain "                       not a directory listing (INC-20260823-002)."
     out_plain "                       JSON field action (add/update) is not the CLI verb action."
     out_empty_line
     out_info "Global Options:"
@@ -3550,7 +3806,9 @@ app_help() {
     out_plain "  ${APP_NAME} install"
     out_plain "  sudo ${APP_NAME} install"
     out_plain "  ${APP_NAME} generate-sudoer-request --path /var/www/html"
+    out_plain "  ${APP_NAME} generate-sudoer-json --path /var/www/html /tmp/gold-sudoer.json"
     out_plain "  ${APP_NAME} submit-sudoer-request --path /var/www/html"
+    out_plain "  ${APP_NAME} list-folders"
     out_plain "  ${APP_NAME} action --path /var/www/html --ownership www-data:www-data"
     out_empty_line
     out_info "Empty argv shows help (Type N — local-only; no curl|sh install-ensure)."
@@ -3661,7 +3919,7 @@ app_main() {
                 SUBMIT_ACTION_EXPLICIT=1
                 export SUBMIT_ACTION SUBMIT_ACTION_EXPLICIT
                 ;;
-            version|about|help|install|uninstall|where-is-me|action|print-sudoers|print-sudoers-install-script|remove-project-sudoers|generate-sudoer-request|submit-sudoer-request|menu|main)
+            version|about|help|install|uninstall|where-is-me|list-folders|action|print-sudoers|print-sudoers-install-script|remove-project-sudoers|generate-sudoer-request|generate-sudoer-json|submit-sudoer-request|menu|main)
                 if [ "${COMMAND}" = "menu" ] || [ "${COMMAND}" = "main" ]; then
                     if [ -z "${_menu_pick}" ]; then
                         _menu_pick="$1"
@@ -3681,6 +3939,7 @@ app_main() {
                     || [ "${COMMAND}" = "print-sudoers-install-script" ] \
                     || [ "${COMMAND}" = "remove-project-sudoers" ] \
                     || [ "${COMMAND}" = "generate-sudoer-request" ] \
+                    || [ "${COMMAND}" = "generate-sudoer-json" ] \
                     || [ "${COMMAND}" = "submit-sudoer-request" ]; then
                     if [ -z "${_domain_arg}" ]; then
                         _domain_arg="$1"
@@ -3713,11 +3972,12 @@ app_main() {
         install)      inst_local_install ;;
         uninstall)    inst_local_uninstall ;;
         where-is-me)  app_where_is_me ;;
+        list-folders) to_list_folders ;;
         action)       to_action ;;
         print-sudoers) to_print_sudoers "${_domain_arg}" ;;
         print-sudoers-install-script) to_print_sudoers_install_script "${_domain_arg}" ;;
         remove-project-sudoers) to_remove_project_sudoers "${_domain_arg}" ;;
-        generate-sudoer-request) to_generate_sudoer_request "${_domain_arg}" ;;
+        generate-sudoer-request|generate-sudoer-json) to_generate_sudoer_request "${_domain_arg}" ;;
         submit-sudoer-request) to_submit_sudoer_request "${_domain_arg}" ;;
         menu|main)    app_main_menu "${_menu_pick}" "${_domain_arg}" "${_domain_arg2}" ;;
         help|*)       app_help ;;

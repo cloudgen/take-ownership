@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-domain-take-ownership.md  
-**Status**: Active (Version 1.0.0)  
+**Status**: Active (Version 1.2.0)  
 **Area**: domain  
 **Key**: `requirement-domain-take-ownership`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -49,14 +49,16 @@ Must-not-confuse: JSON field **`action`** means add vs update of a grant. CLI ve
 
 | Command | Operands / flags | Handler prefix | Behavior summary | Behavior SSOT |
 |---------|------------------|----------------|------------------|---------------|
-| `action` | `--path <folder>` **then** `--ownership <user:group>` (long flags only; that order) | `to_*` | Take ownership immediately (recursive chown; no symlink follow) | **`requirement-take-ownership-ops`** |
+| `list-folders` | none | `to_*` | List folders this login may take ownership of (union of `--path` values from this login’s grant artifacts). Type 0; no `/etc` write | **`requirement-take-ownership-ops`** |
+| `action` | `--path <folder>` **then** `--ownership <user:group>` (long flags only; that order) | `to_*` | Take ownership immediately (recursive chown; no symlink follow). **MUST** confirm `--path` is on the `list-folders` set first | **`requirement-take-ownership-ops`** |
 | `print-sudoers` | optional output path; **`--path <folder>` required** | `to_*` | Emit **project-sudoers-file** (draft; no `/etc` write). **Fails closed** unless `${GLOBAL_BIN}/take-ownership` exists | **`requirement-three-layer-privilege-model`** |
 | `print-sudoers-install-script` | optional script path; same `--path` and global-bin gate | `to_*` | Admin handoff script under `/dev/shm` or temp | **`requirement-three-layer-privilege-model`** |
 | `remove-project-sudoers` | optional path; `--force` | `to_*` | Remove **project-sudoers-file** draft only (not `/etc`) | **`requirement-three-layer-privilege-model`** |
 | `generate-sudoer-request` | **`--path <folder>` required**; optional dest path; `--update` / `--add` | `to_*` | Independent JSON grant to a dest **readable without sudo**. **Fails closed** unless global binary exists. No `/etc`; no inbound | workflow: **`requirement-three-layer-privilege-model`** · JSON body: **`requirement-sudoer-json-file`** |
+| `generate-sudoer-json` | same as `generate-sudoer-request` | `to_*` | **Test-purpose alias** of generate-sudoer-request. Canonical JSON for tests: `--ownership` stays `*` (not a cwd listing) | same |
 | `submit-sudoer-request` | **`--path <folder>`** when emitting; optional sudoers file; `--purpose`; `--update` / `--add` | `to_*` | Type 0 submitter into sibling public inbound. **Fails closed** unless global binary exists. Default **update** if this user’s host fragment exists, else add | workflow: **`requirement-three-layer-privilege-model`** · JSON body: **`requirement-sudoer-json-file`** |
 
-**Purpose (this product):** `print-sudoers`, `print-sudoers-install-script`, and `generate-sudoer-request` are **test-purpose**. `action`, `remove-project-sudoers`, and `submit-sudoer-request` are **operational**. Test-purpose verbs stay on `help` under a heading **apart** from operational work and **MUST NOT** appear on the numbered main menu (`requirement-shell-cli-default-interaction`).
+**Purpose (this product):** `print-sudoers`, `print-sudoers-install-script`, `generate-sudoer-request`, and `generate-sudoer-json` are **test-purpose**. `list-folders`, `action`, `remove-project-sudoers`, and `submit-sudoer-request` are **operational**. Test-purpose verbs stay on `help` under a heading **apart** from operational work and **MUST NOT** appear on the numbered main menu (`requirement-shell-cli-default-interaction`).
 
 **Routing:** Dispatcher in `app_main` **MUST** route these verbs; unknown operands fail closed.
 
@@ -68,12 +70,13 @@ Must-not-confuse: JSON field **`action`** means add vs update of a grant. CLI ve
 
 | Feature area | Domain role | Full law |
 |--------------|-------------|----------|
-| Take ownership of a folder | Expose `action` verb + `--path` / `--ownership` | `requirement-take-ownership-ops` |
+| List grant folders | Expose `list-folders` | `requirement-take-ownership-ops` |
+| Take ownership of a folder | Expose `action` verb + `--path` / `--ownership`; confirm against `list-folders` | `requirement-take-ownership-ops` |
 | Elevated chown | Product uses a Type 1 re-exec of the **global** binary | `requirement-three-layer-privilege-model` + ops REQ |
 | Sudoers draft print | Expose `print-sudoers` | `requirement-three-layer-privilege-model` |
 | Admin sudoers install script | Expose `print-sudoers-install-script` | `requirement-three-layer-privilege-model` |
 | Remove project-sudoers draft | Expose `remove-project-sudoers` | `requirement-three-layer-privilege-model` |
-| Generate sudoer file | Expose `generate-sudoer-request` — JSON grant for **one exact folder**, ownership wildcard | workflow + `requirement-sudoer-json-file` |
+| Generate sudoer file | Expose `generate-sudoer-request` / `generate-sudoer-json` — JSON grant for **one exact folder**, ownership wildcard | workflow + `requirement-sudoer-json-file` |
 | Submit sudoers for approval | Expose `submit-sudoer-request` — JSON request into sibling public inbound | workflow + `requirement-sudoer-json-file` |
 | Global-only grant path | Emit/submit **MUST** name only `${GLOBAL_BIN}/take-ownership` | `requirement-sudoer-json-file` · privilege trust tiers |
 
@@ -98,7 +101,8 @@ Complete JSON bodies live on `requirement-sudoer-json-file` (add = one folder; u
 
 | Help row | Text intent |
 |----------|-------------|
-| `action --path <folder> --ownership <user:group>` | Recursively take ownership of that folder (no symlink follow). Needs an admin-installed grant for that folder. |
+| `list-folders` | List folders this login may take ownership of |
+| `action --path <folder> --ownership <user:group>` | Recursively take ownership of that folder (no symlink follow). Confirms `--path` is on `list-folders` first. |
 | `remove-project-sudoers [path]` | Delete project-sudoers-file draft only (not `/etc`) |
 | `submit-sudoer-request [--path <folder>] [file]` | Queue a JSON grant for that folder via sudoer-cli (default **update** if this user’s host fragment exists) |
 
@@ -109,6 +113,7 @@ Complete JSON bodies live on `requirement-sudoer-json-file` (add = one folder; u
 | `print-sudoers --path <folder>` | Emit **project-sudoers-file** (draft) for admin install. Requires global install. |
 | `print-sudoers-install-script --path <folder>` | Write admin script for sudo install/uninstall/replace |
 | `generate-sudoer-request --path <folder> [dest]` | Independently write a JSON grant you can read; no `/etc`; no inbound |
+| `generate-sudoer-json --path <folder> [dest]` | Same dest; canonical JSON for tests (`"--ownership","*"`) |
 
 Help **MUST** state: JSON field `action` (add/update) is **not** the CLI verb `action`.
 
@@ -118,7 +123,9 @@ Examples in help **SHOULD** include:
 take-ownership install
 sudo take-ownership install
 take-ownership generate-sudoer-request --path /var/www/html
+take-ownership generate-sudoer-json --path /var/www/html /tmp/gold-sudoer.json
 take-ownership submit-sudoer-request --path /var/www/html
+take-ownership list-folders
 take-ownership action --path /var/www/html --ownership www-data:www-data
 ```
 
@@ -151,6 +158,7 @@ take-ownership action --path /var/www/html --ownership www-data:www-data
 | **Privilege / sudoers SSOT** | `requirement-three-layer-privilege-model` (workflow) · `requirement-sudoer-json-file` (JSON grant body) |
 | **Submit verb** | `submit-sudoer-request` → `to_submit_sudoer_request` |
 | **Generate verb** | `generate-sudoer-request` → `to_generate_sudoer_request` |
+| **Generate JSON alias** | `generate-sudoer-json` → `to_generate_sudoer_request` |
 | **Action verb** | `action` → `to_action` |
 | **Public inbound (sibling)** | `/var/sudoer-cli/sudoer-request` (3773) |
 | **Worked queued basename** | `sudoer-20260825-take-ownership-alice-add-1.json` |
@@ -197,7 +205,7 @@ take-ownership action --path /var/www/html --ownership www-data:www-data
 | ID | Criterion |
 |----|-----------|
 | AC-1 | Four pillars present (subcommands, feature map, help, about) |
-| AC-2 | `action`, grant-emit, remove, and submit listed with peer SSOT pointers |
+| AC-2 | `list-folders`, `action`, grant-emit, remove, and submit listed with peer SSOT pointers |
 | AC-3 | Help lists test-purpose grant-emit verbs **apart** from operational |
 | AC-4 | About lists global-bin presence + sudoer-cli / sudoer-adm / inbound + host fragment |
 | AC-5 | Registered as sole Active domain SSOT |
@@ -229,6 +237,7 @@ take-ownership action --path /var/www/html --ownership www-data:www-data
 | **TP-TAKE-OWNERSHIP-01** | `tests/test_domain_take_ownership.sh` | **todo** — `action` routed; `--path` then `--ownership` |
 | **TP-TAKE-OWNERSHIP-02** | same | **todo** — help lists test-purpose grant-emit apart |
 | **TP-TAKE-OWNERSHIP-03** | same | **todo** — generate/submit refuse when global binary missing |
+| **TP-TAKE-OWNERSHIP-27,27b,28** | same | **have** — `generate-sudoer-json` dirty cwd; globbed submit fail-closed |
 
 **Matrix:** `reviews/requirement-test-matrix.md`  
 **Map:** `reviews/test-plan.md`
@@ -238,9 +247,10 @@ take-ownership action --path /var/www/html --ownership www-data:www-data
 | Date | Status | Note |
 |------|--------|------|
 | 2026-08-25 | Active 1.0.0 | Domain SSOT for take-ownership; supersedes folder-backup domain |
+| 2026-08-26 | Active 1.2.0 | `generate-sudoer-json` test-purpose alias; canonical JSON for tests |
 
 ---
 
-**Last Updated**: 2026-08-25  
+**Last Updated**: 2026-08-26  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

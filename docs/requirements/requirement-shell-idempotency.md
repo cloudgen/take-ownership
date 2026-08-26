@@ -46,7 +46,7 @@ Force policy (`--force` / `FORCE=1`) **MAY** re-apply ensure steps that would ot
 | `uninstall` | Managed binary absent | Success no-op | `--force` skips confirm |
 | `where-is-me` / `version` / `about` / `help` | Read-only | Always safe | N/A |
 | `print-sudoers` | Emit fragment text | Safe re-print (same content for same user/host defaults) | Does not install into `/etc` |
-| `generate-sudoer-request` | Local verified JSON grant at dest path | Overwrite same dest (draft) | Does not write `/etc` or inbound |
+| `generate-sudoer-request` / `generate-sudoer-json` | Local verified JSON grant at dest path | Overwrite same dest (draft) | Does not write `/etc` or inbound |
 | `submit-sudoer-request` | Queue a **new** JSON request (sibling allocates next `n`) | Each success is a new `request_id`; not a no-op | Does not write `/etc`; does not `mkdir` inbound; missing inbound fails closed |
 | `action` | Named folder already has `--ownership` | Success no-op (idempotent chown) | `--force` does **not** bypass refuse-list or missing identity |
 

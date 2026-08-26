@@ -1,6 +1,6 @@
 # take-ownership - Take Unix ownership of a named folder with a narrow sudo grant
 
-![Version](https://img.shields.io/badge/Version-2.0.0-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-2.2.0-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 [![CIAO](https://img.shields.io/badge/Philosophy-CIAO%20(Caution%20%E2%80%A2%20Intentional%20%E2%80%A2%20Anti--fragile%20%E2%80%A2%20Over--engineered)-purple.svg)](https://github.com/cloudgen/ciao)
 [![Stars](https://img.shields.io/github/stars/cloudgen/take-ownership?style=flat-square)](https://github.com/cloudgen/take-ownership)
@@ -16,7 +16,7 @@
 - **Local self-management**: `install`, `uninstall`, `where-is-me`, `version`, `about`, `help`, `menu` / `main` (TTY numbered work list)
 - **Take ownership**: `action --path <folder> --ownership <user:group>` — recursive chown, no symlink follow, refuse system roots
 - **Narrow sudoers**: exact `--path`, `--ownership *`, **global binary only** (no `--allow-test-local`)
-- **Sudoer approval submit**: `generate-sudoer-request --path <folder>` writes a local JSON grant you can review; `submit-sudoer-request` hands it to sudoer-cli (does not write `/etc`, does not `mkdir` inbound)
+- **Sudoer approval submit**: `generate-sudoer-request --path <folder>` (alias `generate-sudoer-json`) writes a local JSON grant you can review; `--ownership` stays `*` (not a directory listing). `submit-sudoer-request` hands it to sudoer-cli (does not write `/etc`, does not `mkdir` inbound)
 - **Fail-closed**: missing global binary, missing user:group, refuse-list paths, swapped flags
 - **CIAO / CIAO-Lite** defensive design (Protection Zones, `out_*` output SSOT)
 
@@ -74,7 +74,9 @@ take-ownership about
 take-ownership --json about
 
 take-ownership generate-sudoer-request --path /var/www/html
+take-ownership generate-sudoer-json --path /var/www/html /tmp/gold-sudoer.json
 take-ownership submit-sudoer-request --path /var/www/html
+take-ownership list-folders
 take-ownership action --path /var/www/html --ownership www-data:www-data
 
 take-ownership uninstall --force
@@ -126,6 +128,8 @@ MIT License — see [`LICENSE.md`](./LICENSE.md).
 
 ## Last Update
 
+2026-08-26 — version **2.2.0** (`generate-sudoer-json`; glob-safe `"--ownership","*"`; inbound exact-args; TP-27/28).
+2026-08-26 — version **2.1.0** (`list-folders`; `action` confirms the same folder list first).
 2026-08-23 — version **1.11.0** (`menu` / `main` numbered work list; TP-CLI-13..16).
 2026-08-23 — version **1.10.0** (`print-sudoers` / JSON emit `backup *` / `restore *`; TP-26; INC-20260823-001).
 2026-08-18 — housekeeping: Description rewritten in people-and-folders voice (no Type-1 lead); install heading says “your own login.” Version still **1.9.0** (no product-source change).

@@ -118,6 +118,9 @@ Status: **have** = automated today · **todo** = needed · **optional** · **n/a
 | TP-FOLDER-BACKUP-24b | generate explicit path; refuse `/etc` | test_domain | three-layer AC-23 | **have** |
 | TP-FOLDER-BACKUP-24c | generated file through real sudoer-cli convert keeps both verbs | test_domain | three-layer AC-23 · sudoer-json-file AC-9 | **have** |
 | TP-FOLDER-BACKUP-24d | generate dest is readable without sudo; suite `cat`s body | test_domain | three-layer §2.3.2a AC-24 · sudoer-json-file AC-10 | **have** |
+| TP-TAKE-OWNERSHIP-27 | `generate-sudoer-json` from dirty cwd (AGENTS.md/docs/src) still emits `"--ownership","*"` | test_domain | sudoer-json-file AC-10 · INC-20260823-002 | **have** |
+| TP-TAKE-OWNERSHIP-27b | same dest has no cwd names | test_domain | sudoer-json-file AC-10 | **have** |
+| TP-TAKE-OWNERSHIP-28 | submit of globbed `--ownership` listing fails closed; names generate-sudoer-json | test_domain | sudoer-json-file AC-11 · operator-readable-error AC-2 | **have** |
 | TP-FOLDER-BACKUP-25 | inbound-fidelity error names incompleteness in operator words | test_domain | operator-readable-error AC-1 | **have** |
 | TP-FOLDER-BACKUP-25b | same error names `generate-sudoer-request` | test_domain | operator-readable-error AC-2 | **have** |
 | TP-FOLDER-BACKUP-25c | same error does not contain `sibling re-encode` | test_domain | operator-readable-error AC-3 | **have** |

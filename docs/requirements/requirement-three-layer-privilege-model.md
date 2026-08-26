@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-three-layer-privilege-model.md  
-**Status**: Active (Version 2.0.0)  
+**Status**: Active (Version 2.1.0)  
 **Area**: architecture  
 **Key**: `requirement-three-layer-privilege-model`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -113,7 +113,7 @@ Any sudoer artifact this product generates **MUST** be producible by a Type 0 su
 
 | Rule | Detail |
 |------|--------|
-| **Subcommand** | `generate-sudoer-request` (JSON) and `print-sudoers` (text dual) |
+| **Subcommand** | `generate-sudoer-request` / `generate-sudoer-json` (JSON) and `print-sudoers` (text dual) |
 | **`--path` required** | Bound folder for the grant |
 | **Readable dest** | Invoking user **MUST** `cat` without sudo |
 | **Default dest** | `${HOME}/.config/take-ownership/sudoer-request-<user>.json` |
@@ -122,7 +122,7 @@ Any sudoer artifact this product generates **MUST** be producible by a Type 0 su
 
 #### 2.3.3 Grant-emit verbs (Type 0)
 
-`print-sudoers`, `print-sudoers-install-script`, `generate-sudoer-request`, `submit-sudoer-request` keep the folder-backup workflow **shape** (no `/etc` write, no inbound `mkdir`, per-user fragment, sibling allocate, host-probe add vs update, `--add`/`--update` override, inbound fidelity, operator-readable fatal copy) with these **take-ownership** fills:
+`print-sudoers`, `print-sudoers-install-script`, `generate-sudoer-request`, `generate-sudoer-json`, `submit-sudoer-request` keep the folder-backup workflow **shape** (no `/etc` write, no inbound `mkdir`, per-user fragment, sibling allocate, host-probe add vs update, `--add`/`--update` override, inbound fidelity, operator-readable fatal copy) with these **take-ownership** fills:
 
 | Concern | This product |
 |---------|----------------|
@@ -192,7 +192,7 @@ If sudo is missing, not authorized for the `action` argv, the global binary is m
 | **Admin install path** | `/etc/sudoers.d/take-ownership-<user>` |
 | **Admin install script** | `/dev/shm/take-ownership-<user>-sudoers-admin.sh` |
 | **Type 2 system user** | None |
-| **Handlers** | `to_print_sudoers`, `to_print_sudoers_install_script`, `to_remove_project_sudoers`, `to_generate_sudoer_request`, `to_submit_sudoer_request` |
+| **Handlers** | `to_print_sudoers`, `to_print_sudoers_install_script`, `to_remove_project_sudoers`, `to_generate_sudoer_request` (`generate-sudoer-json` alias), `to_submit_sudoer_request` |
 | **Independent JSON generate dest** | `${HOME}/.config/take-ownership/sudoer-request-<user>.json` |
 | **Sibling approval CLI** | `sudoer-cli` |
 | **Sibling approver** | `sudoer-adm` |
@@ -249,6 +249,7 @@ If sudo is missing, not authorized for the `action` argv, the global binary is m
 | AC-5 | Independent generate dest is readable without sudo |
 | AC-6 | Per-user installed fragment `/etc/sudoers.d/take-ownership-<user>` |
 | AC-7 | Update appends a folder; does not drop the old one |
+| AC-8 | Readable inbound still has exact `--ownership *` (cwd listings fail closed) |
 
 ---
 
@@ -275,6 +276,7 @@ If sudo is missing, not authorized for the `action` argv, the global binary is m
 | **TP-TAKE-OWNERSHIP-31** | same | **todo** — fragment has no USER_BIN and no `/bin/chown` |
 | **TP-TAKE-OWNERSHIP-32** | same | **todo** — Type 0 does not write `/etc` |
 | **TP-TAKE-OWNERSHIP-33** | same | **todo** — update appends a second `--path` |
+| **TP-TAKE-OWNERSHIP-27,28** | same | **have** — generate-sudoer-json dest; inbound exact-args (AC-8) |
 
 **Matrix:** `reviews/requirement-test-matrix.md`  
 **Map:** `reviews/test-plan.md`
@@ -286,9 +288,10 @@ If sudo is missing, not authorized for the `action` argv, the global binary is m
 | 2026-08-03 | Active | folder-backup Type 0 + narrow deposit |
 | 2026-08-23 | Active 1.12.0 | folder-backup: `backup *` / host-probe / independent generate |
 | 2026-08-25 | Active 2.0.0 | Retarget take-ownership; **global-only** grant; no `--allow-test-local` |
+| 2026-08-26 | Active 2.1.0 | Inbound exact-args; `generate-sudoer-json` independent generate alias |
 
 ---
 
-**Last Updated**: 2026-08-25  
+**Last Updated**: 2026-08-26  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

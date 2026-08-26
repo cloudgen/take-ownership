@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-operator-readable-error.md  
-**Status**: Active (Version 1.0.0)  
+**Status**: Active (Version 1.1.0)  
 **Area**: shell  
 **Key**: `requirement-operator-readable-error`  
 **Optional RQ-ID**: `RQ-OPERATOR-READABLE-ERROR`  
@@ -56,7 +56,7 @@ JSON `message` **MUST** be that same sentence.
 | **Product** | `take-ownership` |
 | **Ship unit** | `src/take-ownership` |
 | **Printer** | `out_die` / `out_error` |
-| **Worked inbound miss** | `Queued sudo request is incomplete: it allows restore but not backup. Do not approve <id>. … generate-sudoer-request` |
+| **Worked inbound miss** | `Queued sudo request is incomplete: args must be action --path <folder> --ownership * (the * is a sudoers operand, not a path). Do not approve <id>. Next: generate-sudoer-json (or generate-sudoer-request)` |
 | **Worked generate `/etc`** | `generate-sudoer-request refuses to write under /etc (Type 0). Use a path under $HOME or /dev/shm.` |
 | **Banned as whole message** | `sibling re-encode?` · `inbound grant lost … verb` |
 | **Class** | software-development — this wording law is required |
@@ -98,7 +98,7 @@ JSON `message` **MUST** be that same sentence.
 | ID | Criterion |
 |----|-----------|
 | AC-1 | Representative fatal inbound-fidelity error names incompleteness in operator words |
-| AC-2 | That error names a next command (`generate-sudoer-request`) |
+| AC-2 | That error names a next command (`generate-sudoer-json` or `generate-sudoer-request`) |
 | AC-3 | That error does not contain `sibling re-encode` as the explanation |
 
 ---
@@ -122,6 +122,7 @@ JSON `message` **MUST** be that same sentence.
 |----------------|-------|--------|
 | **TP-FOLDER-BACKUP-25** | `tests/test_domain_folder_backup.sh` | **have** — inbound-fidelity error is operator-readable (what happened) |
 | **TP-FOLDER-BACKUP-25b** | same | **have** — same error names `generate-sudoer-request` |
+| **TP-TAKE-OWNERSHIP-28** | `tests/test_domain_take_ownership.sh` | **have** — globbed submit names `generate-sudoer-json` / `generate-sudoer-request` |
 | **TP-FOLDER-BACKUP-25c** | same | **have** — same error does not contain `sibling re-encode` |
 
 **Matrix:** `reviews/requirement-test-matrix.md`  
@@ -132,9 +133,10 @@ JSON `message` **MUST** be that same sentence.
 | Date | Status | Note |
 |------|--------|------|
 | 2026-08-17 | Active 1.0.0 | Operator-readable errors; TP-25; class residual |
+| 2026-08-26 | Active 1.1.0 | Globbed `--ownership` inbound copy names `generate-sudoer-json` |
 
 ---
 
-**Last Updated**: 2026-08-17  
+**Last Updated**: 2026-08-26  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

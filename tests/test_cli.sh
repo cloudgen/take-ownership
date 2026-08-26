@@ -42,6 +42,7 @@ run_test_cli() {
     assert_contains "TP-CLI-04 help install" "$_out" "install"
     assert_contains "TP-CLI-04 help uninstall" "$_out" "uninstall"
     assert_contains "TP-CLI-04 help where-is-me" "$_out" "where-is-me"
+    assert_contains "TP-CLI-04 help list-folders" "$_out" "list-folders"
     assert_contains "TP-CLI-04 help action" "$_out" "action --path"
     assert_contains "TP-CLI-04 help --ownership" "$_out" "--ownership"
     assert_not_contains "TP-CLI-04 no backup command" "$_out" "backup <folder>"
@@ -51,6 +52,8 @@ run_test_cli() {
     assert_contains "TP-CLI-04 help remove-project-sudoers" "$_out" "remove-project-sudoers"
     assert_contains "TP-CLI-04 help submit-sudoer-request" "$_out" "submit-sudoer-request"
     assert_contains "TP-CLI-04 help generate-sudoer-request" "$_out" "generate-sudoer-request"
+    assert_contains "TP-CLI-04 help generate-sudoer-json" "$_out" "generate-sudoer-json"
+    assert_contains "TP-CLI-04 help star is operand" "$_out" "not a directory listing"
     assert_contains "TP-CLI-04 help public inbound" "$_out" "/var/sudoer-cli/sudoer-request"
     assert_contains "TP-CLI-04 help --update" "$_out" "--update"
     assert_contains "TP-CLI-04 help --add" "$_out" "--add"
@@ -184,8 +187,9 @@ run_test_cli() {
     if command -v python3 >/dev/null 2>&1; then
         _out=$(PTY_IN="9" ci_pty_run menu)
         assert_contains "TP-CLI-13 TTY menu action row" "$_out" "1. action: Recursively take ownership of a named folder"
-        assert_contains "TP-CLI-13 TTY menu remove row" "$_out" "2. remove-project-sudoers: Remove the local grant draft only"
-        assert_contains "TP-CLI-13 TTY menu submit row" "$_out" "3. submit-sudoer-request: Hand the JSON grant to the approval queue"
+        assert_contains "TP-CLI-13 TTY menu list-folders row" "$_out" "2. list-folders: List folders this login may take ownership of"
+        assert_contains "TP-CLI-13 TTY menu remove row" "$_out" "3. remove-project-sudoers: Remove the local grant draft only"
+        assert_contains "TP-CLI-13 TTY menu submit row" "$_out" "4. submit-sudoer-request: Hand the JSON grant to the approval queue"
         assert_contains "TP-CLI-13 TTY menu Exit 9" "$_out" "9. Exit"
         assert_not_contains "TP-CLI-13 TTY menu no backup row" "$_out" "1. backup:"
 
@@ -204,6 +208,7 @@ run_test_cli() {
         assert_not_contains "TP-CLI-16 no print-sudoers row" "$_out" "print-sudoers: Write a grant file"
         assert_not_contains "TP-CLI-16 no install-script row" "$_out" "print-sudoers-install-script: Write an admin script"
         assert_not_contains "TP-CLI-16 no generate row" "$_out" "generate-sudoer-request: Write a local JSON grant"
+        assert_not_contains "TP-CLI-16 no generate-sudoer-json row" "$_out" "generate-sudoer-json: Write the canonical JSON grant"
         assert_not_contains "TP-CLI-16 no menu row" "$_out" "menu: Show the numbered list"
         assert_not_contains "TP-CLI-16 no main row" "$_out" "main: Same numbered list"
     else

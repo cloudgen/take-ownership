@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-shell-cli-default-interaction.md  
-**Status**: Active (Version 2.0.0)  
+**Status**: Active (Version 2.1.0)  
 **Area**: shell  
 **Key**: `requirement-shell-cli-default-interaction`  
 **Optional RQ-ID**: `RQ-SHELL-CLI-DEFAULT-INTERACTION`  
@@ -15,7 +15,7 @@ This requirement is the **product Single Source of Truth** for take-ownership’
 
 | Box | Meaning | Example |
 |-----|---------|---------|
-| You / this login | Open the list or pick a number | `take-ownership menu` then `1` |
+| You / this login | Open the list or pick a number | `take-ownership menu` then `1` (action) or `2` (list-folders) |
 | The other role | Scripts and CI must not hang on that list | `take-ownership menu` in a pipe → help |
 | Not this file | Empty argv meaning | `requirement-shell-cli-zero-arguments` |
 
@@ -23,8 +23,8 @@ This requirement is the **product Single Source of Truth** for take-ownership’
 |----------|----------|
 | Numbered live work commands | `help` as a row |
 | Line `command: what it does` | `install`, `uninstall`, `where-is-me`, `version`, `about` |
-| Exit as **9** (three command rows) | `setup`, `menu`/`main` as a choice |
-| `main` as the same list | Test-purpose: `print-sudoers`, `print-sudoers-install-script`, `generate-sudoer-request` |
+| Exit as **9** (four command rows) | `setup`, `menu`/`main` as a choice |
+| `main` as the same list | Test-purpose: `print-sudoers`, `print-sudoers-install-script`, `generate-sudoer-request`, `generate-sudoer-json` |
 
 | Surface | What you open | What for |
 |---------|---------------|----------|
@@ -34,7 +34,7 @@ This requirement is the **product Single Source of Truth** for take-ownership’
 
 | You do… | What it means | What you type |
 |---------|---------------|---------------|
-| Open the list at a prompt | The program prints numbers 1–3 then 9 Exit. `--json` is ignored on a real terminal. | `take-ownership menu` |
+| Open the list at a prompt | The program prints numbers 1–4 then 9 Exit. `--json` is ignored on a real terminal. | `take-ownership menu` |
 | Take ownership from the list | Choose `action`, then give folder and `user:group` one field at a time, or read Next. | `1` then `--path /var/www/html` |
 | Run menu in CI | No prompt. Human help, or JSON help with `--json`. | `take-ownership menu </dev/null` |
 
@@ -66,9 +66,9 @@ Measure interactive capability **outside functions** (`TTY=1` only when stdin an
 1. Print a **numbered list** at the start of the interactive menu path.  
 2. Each command row is one live **operational** command that is **not** excluded below, numbered **1 … N** in kept-list order.  
 3. Printed line **MUST** be the kept-list **human-readable** value: **`{{short-descript}}: {{explain}}`** (short-descript = the command token).  
-4. **MUST NOT** list `help`, `menu`, `main`, gap/forbidden names, **diagnostics** (`version`, `about`), **self-managed / install-setup** tokens (`install`, `uninstall`, `where-is-me`, `setup`), or **test-purpose** verbs. On this product the test-purpose verbs **MUST** be `print-sudoers`, `print-sudoers-install-script`, and `generate-sudoer-request`. Those stay on `help`, listed apart from operational work.  
+4. **MUST NOT** list `help`, `menu`, `main`, gap/forbidden names, **diagnostics** (`version`, `about`), **self-managed / install-setup** tokens (`install`, `uninstall`, `where-is-me`, `setup`), or **test-purpose** verbs. On this product the test-purpose verbs **MUST** be `print-sudoers`, `print-sudoers-install-script`, `generate-sudoer-request`, and `generate-sudoer-json`. Those stay on `help`, listed apart from operational work.  
 5. Accept a **number** or the **verb token**. Extra operands: prompt **one field at a time** on TTY, or print `Next: take-ownership <verb> …` and return.  
-6. Last extra row is **Exit** (not a command). For this product **N = 3**, so Exit **MUST** be **9**. Unused integers 4–8 are omitted.  
+6. Last extra row is **Exit** (not a command). For this product **N = 4**, so Exit **MUST** be **9**. Unused integers 5–8 are omitted.  
 7. Exit number, `exit`, or `quit` returns 0 with no further prompt.  
 8. Typical handler: `app_main_menu`.
 
@@ -84,16 +84,17 @@ Measure interactive capability **outside functions** (`TTY=1` only when stdin an
 | **Handler** | `app_main_menu` |
 | **Ship unit** | Implemented — `app_main` routes `menu` / `main` to `app_main_menu` |
 | **Kept list** | `reviews/cli-routed-verb-table.md` |
-| **N** | 3 |
+| **N** | 4 |
 | **Exit** | 9 |
-| **Test-purpose (this product)** | `print-sudoers`, `print-sudoers-install-script`, `generate-sudoer-request` |
+| **Test-purpose (this product)** | `print-sudoers`, `print-sudoers-install-script`, `generate-sudoer-request`, `generate-sudoer-json` |
 
 **Normative menu draft** (operational only; self-managed, diagnostics, and test-purpose omitted):
 
 ```text
 1. action: Recursively take ownership of a named folder
-2. remove-project-sudoers: Remove the local grant draft only
-3. submit-sudoer-request: Hand the JSON grant to the approval queue
+2. list-folders: List folders this login may take ownership of
+3. remove-project-sudoers: Remove the local grant draft only
+4. submit-sudoer-request: Hand the JSON grant to the approval queue
 9. Exit
 ```
 
@@ -120,7 +121,7 @@ On a real terminal those three **MUST** show the list. Off-TTY, `take-ownership 
 
 - **Caution:** Do not steal empty argv; do not hang off-TTY.  
 - **Intentional:** Case 3; labels from the kept list.  
-- **Anti-fragile:** `main` may alias `menu`; Exit 9 when N=3.  
+- **Anti-fragile:** `main` may alias `menu`; Exit 9 when N=4.  
 - **Over-protect:** Self-managed, diagnostics, and test-purpose verbs stay off the list even if they are live.
 
 ---
@@ -131,7 +132,7 @@ On a real terminal those three **MUST** show the list. Off-TTY, `take-ownership 
 
 1. Attach this menu to empty argv while `requirement-shell-cli-zero-arguments` is Active.  
 2. Invent menu labels instead of `command: what it does` from the kept list.  
-3. Put `help`, `install`, `uninstall`, `where-is-me`, `version`, `about`, `setup`, `menu`, `main`, or a test-purpose verb (`print-sudoers`, `print-sudoers-install-script`, `generate-sudoer-request`) on the numbered list.  
+3. Put `help`, `install`, `uninstall`, `where-is-me`, `version`, `about`, `setup`, `menu`, `main`, or a test-purpose verb (`print-sudoers`, `print-sudoers-install-script`, `generate-sudoer-request`, `generate-sudoer-json`) on the numbered list.  
 4. Number Exit as 4 when N=3 (Exit **MUST** be 9).  
 5. Draw the menu in non-interactive mode.  
 6. Treat interactive `take-ownership menu --json` as JSON help.  
@@ -151,7 +152,7 @@ On a real terminal those three **MUST** show the list. Off-TTY, `take-ownership 
 | AC-3 | Interactive `menu` draws the three-row list + Exit 9 |
 | AC-4 | Interactive `menu --json` still draws the list |
 | AC-5 | Non-interactive `menu` is help; `--json` is JSON help |
-| AC-6 | Numbered choices omit help, install, uninstall, where-is-me, version, about, setup, menu, main, and test-purpose (`print-sudoers`, `print-sudoers-install-script`, `generate-sudoer-request`) |
+| AC-6 | Numbered choices omit help, install, uninstall, where-is-me, version, about, setup, menu, main, and test-purpose (`print-sudoers`, `print-sudoers-install-script`, `generate-sudoer-request`, `generate-sudoer-json`) |
 | AC-7 | Labels match kept-list human-readable `verb: explain` |
 
 ---
@@ -190,9 +191,10 @@ On a real terminal those three **MUST** show the list. Off-TTY, `take-ownership 
 | 2026-08-23 | Active 1.1.0 | Colon labels; exclude version/about; test-purpose print-sudoers / generate-sudoer-request / print-sudoers-install-script; N=4 Exit 9 |
 | 2026-08-23 | Active 1.2.0 | Ship unit routes `menu` / `main`; Gap closed |
 | 2026-08-25 | Active 2.0.0 | take-ownership: N=3 (`action`, remove, submit); Exit 9 |
+| 2026-08-26 | Active 2.1.0 | Test-purpose list includes `generate-sudoer-json` (still off the numbered menu; N=4) |
 
 ---
 
-**Last Updated**: 2026-08-23  
+**Last Updated**: 2026-08-26  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

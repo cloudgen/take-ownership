@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-shell-cli-interface.md  
-**Status**: Active (Version 2.0.0)  
+**Status**: Active (Version 2.1.0)  
 **Area**: shell  
 **Key**: `requirement-shell-cli-interface`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -82,10 +82,10 @@ Additional flags **MAY** be added only when documented here (or a superseding re
 
 | Purpose | Verbs |
 |---------|-------|
-| **Operational** | `action`, `remove-project-sudoers`, `submit-sudoer-request`; `menu` / `main` when routed |
+| **Operational** | `list-folders`, `action`, `remove-project-sudoers`, `submit-sudoer-request`; `menu` / `main` when routed |
 | **Self-managed** | `install`, `uninstall`, `where-is-me` |
 | **Diagnostics** | `version`, `about`, `help` |
-| **Test-purpose** | `print-sudoers`, `print-sudoers-install-script`, `generate-sudoer-request` |
+| **Test-purpose** | `print-sudoers`, `print-sudoers-install-script`, `generate-sudoer-request`, `generate-sudoer-json` |
 
 Help **MUST** state: JSON field `action` (add/update) is **not** the CLI verb `action`.
 
@@ -116,11 +116,13 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | `version` | You | `app_version` | Local `VERSION` only; no network |
 | `about` | You | `app_about` | Diagnostics including **global-bin presence**; no channel one-liner |
 | `help` | You | `app_help` | Full usage; test-purpose apart |
-| `action` | You (+ host-change re-exec) | `to_action` | **Operational.** `--path` then `--ownership`; recursive take-ownership |
+| `list-folders` | You | `to_list_folders` | **Operational.** List folders this login may take ownership of |
+| `action` | You (+ host-change re-exec) | `to_action` | **Operational.** `--path` then `--ownership`; confirm against `list-folders` then recursive take-ownership |
 | `print-sudoers` | You | `to_print_sudoers` | **Test-purpose.** `--path` required; **fails closed** without global binary |
 | `print-sudoers-install-script` | You | `to_print_sudoers_install_script` | **Test-purpose.** Admin handoff script |
 | `remove-project-sudoers` | You | `to_remove_project_sudoers` | **Operational.** Draft only |
 | `generate-sudoer-request` | You | `to_generate_sudoer_request` | **Test-purpose.** Independent JSON; `--path` required; global-bin gate |
+| `generate-sudoer-json` | You | `to_generate_sudoer_request` | **Test-purpose alias.** Same handler as `generate-sudoer-request`. Canonical JSON for tests (`--ownership` stays `*`) |
 | `submit-sudoer-request` | You | `to_submit_sudoer_request` | **Operational.** Sibling inbound; global-bin gate |
 | `menu` | You | `app_main_menu` | Numbered operational list |
 | `main` | You | `app_main_menu` | Alias of `menu` |
@@ -190,7 +192,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | AC-4 | No online self-management verbs on the surface |
 | AC-5 | Domain verbs point to domain requirement for deep semantics |
 | AC-6 | `submit-sudoer-request` is Type 0, routed; does not write `/etc` or create inbound |
-| AC-7 | `generate-sudoer-request` is Type 0, independent of submit; dest readable; global-bin gate |
+| AC-7 | `generate-sudoer-request` / `generate-sudoer-json` are Type 0, independent of submit; dest readable; global-bin gate |
 | AC-8 | `menu` and `main` are routed; empty argv stays help |
 | AC-9 | Help lists test-purpose grant-emit **apart** from operational verbs |
 
@@ -230,9 +232,10 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | 2026-08-03 | Active 1.0.0 | folder-backup CLI + domain backup |
 | 2026-08-23 | Active 1.6.0 | folder-backup menu/main routed |
 | 2026-08-25 | Active 2.0.0 | Retarget take-ownership; `action`; retire backup/restore |
+| 2026-08-26 | Active 2.1.0 | `generate-sudoer-json` test-purpose alias of generate-sudoer-request |
 
 ---
 
-**Last Updated**: 2026-08-25  
+**Last Updated**: 2026-08-26  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

@@ -46,6 +46,16 @@ run_test_domain_take_ownership() {
     assert_eq "TP-TAKE-OWNERSHIP-11 refuse /etc exit 1" 1 "$_ec"
     assert_contains "TP-TAKE-OWNERSHIP-11 refuse system path" "$_err" "system path"
 
+    _err=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" sh "${SCRIPT}" action --path /dev --ownership "${_og}" 2>&1 >/dev/null)
+    _ec=$?
+    assert_eq "TP-TAKE-OWNERSHIP-11b refuse /dev exit 1" 1 "$_ec"
+    assert_contains "TP-TAKE-OWNERSHIP-11b refuse /dev text" "$_err" "system path"
+
+    _err=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" sh "${SCRIPT}" action --path /dev/shm --ownership "${_og}" 2>&1 >/dev/null)
+    _ec=$?
+    assert_eq "TP-TAKE-OWNERSHIP-11b refuse /dev/shm mount root exit 1" 1 "$_ec"
+    assert_contains "TP-TAKE-OWNERSHIP-11b refuse /dev/shm text" "$_err" "system path"
+
     _err=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" sh "${SCRIPT}" action --path relative/dir --ownership "${_og}" 2>&1 >/dev/null)
     _ec=$?
     assert_eq "TP-TAKE-OWNERSHIP-11 relative path exit 1" 1 "$_ec"
@@ -94,6 +104,63 @@ run_test_domain_take_ownership() {
     assert_not_contains "TP-TAKE-OWNERSHIP-21 no mkdir" "${_gbody}" "/usr/bin/mkdir"
     assert_not_contains "TP-TAKE-OWNERSHIP-05 no --path star" "${_gbody}" '"--path","*"'
 
+    # TP-TAKE-OWNERSHIP-27 generate-sudoer-json from a dirty cwd (INC-20260823-002).
+    # Fixture names match the globbed inbound that sudoer-cli 1.17.0 queued.
+    _dirty="${CI_HOME}/dirty-cwd"
+    mkdir -p "${_dirty}/docs" "${_dirty}/src"
+    : > "${_dirty}/AGENTS.md"
+    : > "${_dirty}/AGENTS.md.20260809-141209.bak"
+    : > "${_dirty}/AGENTS.md.bak-before-multivault-sync-20260810-124358"
+    _gold="${_dirty}/gold-sudoer.json"
+    _out=$(
+        cd "${_dirty}" || exit 1
+        HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" USER_BIN="${CI_USER_BIN}" \
+            sh "${SCRIPT}" generate-sudoer-json --add --path /dev/shm/genesis-template "${_gold}" 2>&1
+    )
+    _ec=$?
+    assert_eq "TP-TAKE-OWNERSHIP-27 generate-sudoer-json dirty-cwd exit 0" 0 "$_ec"
+    assert_file_exists "TP-TAKE-OWNERSHIP-27 generate-sudoer-json dest exists" "${_gold}"
+    _goldbody=$(cat "${_gold}")
+    assert_contains "TP-TAKE-OWNERSHIP-27 exact --ownership star" "${_goldbody}" '"--ownership","*"'
+    assert_contains "TP-TAKE-OWNERSHIP-27 bound --path" "${_goldbody}" '/dev/shm/genesis-template'
+    assert_contains "TP-TAKE-OWNERSHIP-27 --json twin" "${_goldbody}" '"args":["--json","action","--path","/dev/shm/genesis-template","--ownership","*"]'
+    assert_contains "TP-TAKE-OWNERSHIP-27 verb args" "${_goldbody}" '"args":["action","--path","/dev/shm/genesis-template","--ownership","*"]'
+    assert_not_contains "TP-TAKE-OWNERSHIP-27b no AGENTS.md glob" "${_goldbody}" "AGENTS.md"
+    assert_not_contains "TP-TAKE-OWNERSHIP-27b no docs glob" "${_goldbody}" '"docs"'
+    assert_not_contains "TP-TAKE-OWNERSHIP-27b no src glob" "${_goldbody}" '"src"'
+
+    # TP-TAKE-OWNERSHIP-28 submit of globbed JSON (cwd listing after --ownership) fails closed
+    # before sibling is required. Operator copy names generate-sudoer-json.
+    _glob="${CI_HOME}/globbed-sudoer.json"
+    printf '%s\n' "{\"schema_version\":1,\"purpose\":\"Allow x to take ownership of /dev/shm/genesis-template.\",\"username\":\"x\",\"service\":\"${APP_NAME}\",\"action\":\"add\",\"commands\":[{\"runas\":\"root\",\"tags\":[\"NOPASSWD\"],\"path\":\"${CI_GLOBAL_BIN}/${APP_NAME}\",\"args\":[\"action\",\"--path\",\"/dev/shm/genesis-template\",\"--ownership\",\"AGENTS.md\",\"AGENTS.md.20260809-141209.bak\",\"docs\",\"src\"]},{\"runas\":\"root\",\"tags\":[\"NOPASSWD\"],\"path\":\"${CI_GLOBAL_BIN}/${APP_NAME}\",\"args\":[\"--json\",\"action\",\"--path\",\"/dev/shm/genesis-template\",\"--ownership\",\"AGENTS.md\",\"AGENTS.md.20260809-141209.bak\",\"docs\",\"src\"]}]}" >"${_glob}"
+    _err=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" sh "${SCRIPT}" submit-sudoer-request "${_glob}" 2>&1 >/dev/null)
+    _ec=$?
+    assert_eq "TP-TAKE-OWNERSHIP-28 globbed submit exit 1" 1 "$_ec"
+    assert_contains "TP-TAKE-OWNERSHIP-28 names sudoers operand" "${_err}" "not a path"
+    assert_contains "TP-TAKE-OWNERSHIP-28 names generate-sudoer-json" "${_err}" "generate-sudoer-json"
+    assert_contains "TP-TAKE-OWNERSHIP-28 names generate-sudoer-request" "${_err}" "generate-sudoer-request"
+    assert_not_contains "TP-TAKE-OWNERSHIP-28 no sibling jargon" "${_err}" "sibling re-encode"
+
+    # TP-TAKE-OWNERSHIP-40/41 list-folders (same set action uses)
+    _out=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" sh "${SCRIPT}" list-folders 2>&1)
+    _ec=$?
+    assert_eq "TP-TAKE-OWNERSHIP-40 list-folders exit 0" 0 "$_ec"
+    assert_contains "TP-TAKE-OWNERSHIP-40 lists grant path" "$_out" "/var/www/html"
+    _jout=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" sh "${SCRIPT}" --json list-folders 2>/dev/null)
+    assert_contains "TP-TAKE-OWNERSHIP-41 list-folders json path" "${_jout}" "/var/www/html"
+    assert_contains "TP-TAKE-OWNERSHIP-41 list-folders json folders" "${_jout}" '"folders"'
+
+    mkdir -p "${CI_HOME}/owned"
+    _err=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" sh "${SCRIPT}" action --path "${CI_HOME}/owned" --ownership "${_og}" 2>&1 >/dev/null)
+    _ec=$?
+    assert_eq "TP-TAKE-OWNERSHIP-17 action path not in list exit 1" 1 "$_ec"
+    assert_contains "TP-TAKE-OWNERSHIP-17 names list-folders" "$_err" "list-folders"
+
+    _out=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" USER_BIN="${CI_USER_BIN}" \
+        sh "${SCRIPT}" generate-sudoer-request --update --path "${CI_HOME}/owned2" 2>&1)
+    _ec=$?
+    assert_eq "TP-TAKE-OWNERSHIP-20b update grant for action path exit 0" 0 "$_ec"
+
     _out=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" sh "${SCRIPT}" print-sudoers --path /var/www/html 2>&1)
     _ec=$?
     assert_eq "TP-TAKE-OWNERSHIP-31 print-sudoers exit 0" 0 "$_ec"
@@ -115,6 +182,20 @@ run_test_domain_take_ownership() {
     _ec=$?
     assert_eq "TP-TAKE-OWNERSHIP-14 missing ownership exit 1" 1 "$_ec"
     assert_contains "TP-TAKE-OWNERSHIP-14 names --ownership" "$_err" "--ownership"
+
+    # TP-TAKE-OWNERSHIP-16 ram-drive project tree under /dev/shm is not refuse-list
+    _ram="/dev/shm/take-ownership-ci-owned-$$"
+    if [ -d /dev/shm ] && mkdir -p "${_ram}" 2>/dev/null; then
+        HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" USER_BIN="${CI_USER_BIN}" \
+            sh "${SCRIPT}" generate-sudoer-request --update --path "${_ram}" >/dev/null 2>&1 || true
+        _out=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" sh "${SCRIPT}" action --path "${_ram}" --ownership "${_og}" 2>&1)
+        _ec=$?
+        assert_eq "TP-TAKE-OWNERSHIP-16 ram-drive --path exit 0" 0 "$_ec"
+        assert_not_contains "TP-TAKE-OWNERSHIP-16 not refuse-list" "${_out}" "system path"
+        rmdir "${_ram}" 2>/dev/null || true
+    else
+        t_skip "TP-TAKE-OWNERSHIP-16 ram-drive tree (no writable /dev/shm)"
+    fi
 
     ci_cleanup_env
 }

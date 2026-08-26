@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-sudoer-json-file.md  
-**Status**: Active (Version 2.0.0)  
+**Status**: Active (Version 2.1.0)  
 **Area**: architecture  
 **Key**: `requirement-sudoer-json-file`  
 **Optional RQ-ID**: `RQ-SUDOER-JSON-FILE`  
@@ -45,12 +45,12 @@ Queued **basename** allocation remains sibling-owned. This requirement owns **co
 
 | Surface | What you open | What for |
 |---------|---------------|----------|
-| `take-ownership generate-sudoer-request --path /var/www/html` | command | JSON grant on a readable dest |
+| `take-ownership generate-sudoer-json --path /var/www/html` | command | Canonical JSON grant on a readable dest (test-purpose alias of generate-sudoer-request) |
 | `./src/take-ownership` | ship unit | emit |
 
 | You do… | What it means | What you type |
 |---------|---------------|---------------|
-| Generate the JSON grant for one folder | You can `cat` the dest without sudo. Ownership stays `*`. | `take-ownership generate-sudoer-request --path /var/www/html` |
+| Generate the JSON grant for one folder | You can `cat` the dest without sudo. Ownership stays `*` (not a cwd listing). | `take-ownership generate-sudoer-json --path /var/www/html` |
 
 ---
 
@@ -96,7 +96,7 @@ or the `--json` twin:
 3. The string `*` is **only** allowed as the `--ownership` operand. It is **not** a filesystem path.  
 4. `--json` **MUST** be a **separate** `commands[]` object with `--json` as the **first** arg. Bare `action --path F --ownership *` **MUST NOT** be treated as covering `take-ownership --json action --path F --ownership U:G`.  
 5. **MUST NOT** freeze a specific `user:group` into the grant (runtime operand).  
-6. **MUST NOT** grant `install`, `uninstall`, `print-sudoers`, `print-sudoers-install-script`, `remove-project-sudoers`, `generate-sudoer-request`, or `submit-sudoer-request` as elevated commands.  
+6. **MUST NOT** grant `install`, `uninstall`, `print-sudoers`, `print-sudoers-install-script`, `remove-project-sudoers`, `generate-sudoer-request`, `generate-sudoer-json`, or `submit-sudoer-request` as elevated commands.  
 7. **MUST NOT** grant the binary with **no** verb.  
 8. **MUST NOT** emit short flags (`-p`, `-o`) or swapped `--ownership` before `--path`.  
 9. A second folder **MUST** be additional command pairs (verb + `--json` twin), typically on `"action": "update"`. **MUST NOT** replace `--path` with `*` to “cover all folders.”
@@ -191,11 +191,13 @@ alice ALL=(root) NOPASSWD: /usr/local/bin/take-ownership --json action --path /v
 
 ### 2.7 Submit / emit honesty
 
-1. When `submit-sudoer-request` or `generate-sudoer-request` builds a JSON sudoer file, the body **MUST** satisfy §2.2–2.4.  
+1. When `submit-sudoer-request`, `generate-sudoer-request`, or `generate-sudoer-json` builds a JSON sudoer file, the body **MUST** satisfy §2.2–2.4.  
 2. **MUST** fail closed if `commands` contain a forbidden path, USER_BIN path, OS-tool basename, or `--path *`.  
-3. **MUST NOT** “fix” a forbidden file by submitting it anyway.  
-4. Independent generate dest **MUST** be invoking-user readable. Workflow: `requirement-three-layer-privilege-model`.  
-5. Re-encode / convert **MUST** preserve **every** `commands[]` object (pretty and compact). Silent drop of a folder pair is a different grant — fail closed.
+3. **MUST** fail closed if `commands[].args` after `--ownership` are extra tokens (cwd names such as `AGENTS.md`, `docs`, `src`). JSON `"*"` is a sudoers operand, not a filesystem glob (INC-20260823-002).  
+4. **MUST NOT** “fix” a forbidden file by submitting it anyway.  
+5. Independent generate dest **MUST** be invoking-user readable. Workflow: `requirement-three-layer-privilege-model`. The test-purpose verb **`generate-sudoer-json`** is an alias of `generate-sudoer-request` (same handler, same dest rules) so the suite can lock the canonical body.  
+6. Re-encode / convert **MUST** preserve **every** `commands[]` object (pretty and compact). Silent drop of a folder pair is a different grant — fail closed.  
+7. When a queued inbound file is readable, submit **MUST** apply the same exact-args check. A body whose `--ownership` operand is a directory listing **MUST** fail closed: do not approve; next command is `generate-sudoer-json`.
 
 ### 2.8 Implementation Notes (this project)
 
@@ -209,6 +211,7 @@ alice ALL=(root) NOPASSWD: /usr/local/bin/take-ownership --json action --path /v
 | **Ship unit** | `src/take-ownership` |
 | **Submit verb** | `submit-sudoer-request` → `to_submit_sudoer_request` |
 | **Generate verb** | `generate-sudoer-request` → `to_generate_sudoer_request` |
+| **Generate JSON alias (tests)** | `generate-sudoer-json` → `to_generate_sudoer_request` (same handler) |
 | **Generate dest (default)** | `${HOME}/.config/take-ownership/sudoer-request-<user>.json` |
 | **Service field** | `take-ownership` |
 | **Worked user in samples** | `alice` (illustrative; live emit uses `id -un`) |
@@ -264,6 +267,8 @@ alice ALL=(root) NOPASSWD: /usr/local/bin/take-ownership --json action --path /v
 | AC-7 | Generate/submit of a violating body fails closed |
 | AC-8 | Independent generate dest is readable without sudo |
 | AC-9 | Global binary missing → generate/submit fail closed |
+| AC-10 | `generate-sudoer-json` from a dirty cwd still emits `"--ownership","*"` (not cwd names) |
+| AC-11 | Submit of a globbed `--ownership` listing fails closed and names `generate-sudoer-json` |
 
 ---
 
@@ -290,7 +295,9 @@ alice ALL=(root) NOPASSWD: /usr/local/bin/take-ownership --json action --path /v
 | **TP-TAKE-OWNERSHIP-21** | same | **todo** — no `chown`/`mkdir`/USER_BIN |
 | **TP-TAKE-OWNERSHIP-22** | same | **todo** — args include exact `--path` and `--ownership *` plus `--json` twin |
 | **TP-TAKE-OWNERSHIP-23** | same | **todo** — generate refuses missing global binary |
-| **TP-TAKE-OWNERSHIP-24** | same | **todo** — independent generate dest readable without sudo |
+| **TP-TAKE-OWNERSHIP-24** | same | **have** — independent generate dest readable without sudo |
+| **TP-TAKE-OWNERSHIP-27,27b** | same | **have** — `generate-sudoer-json` dirty cwd keeps `"*"` (AC-10) |
+| **TP-TAKE-OWNERSHIP-28** | same | **have** — globbed submit fails closed (AC-11) |
 
 **Matrix:** `reviews/requirement-test-matrix.md`  
 **Map:** `reviews/test-plan.md`
@@ -302,9 +309,10 @@ alice ALL=(root) NOPASSWD: /usr/local/bin/take-ownership --json action --path /v
 | 2026-08-15 | Active 1.0.0 | folder-backup: `{{PRJ_NAME}}` only; OS-tool commands forbidden |
 | 2026-08-23 | Active 1.4.0 | folder-backup: `--json` twins; verb plus `*` |
 | 2026-08-25 | Active 2.0.0 | Retarget take-ownership: exact `--path`, `--ownership *`, global-only, no test-local |
+| 2026-08-26 | Active 2.1.0 | `generate-sudoer-json` alias; exact-args verify; globbed cwd listings fail closed |
 
 ---
 
-**Last Updated**: 2026-08-25  
+**Last Updated**: 2026-08-26  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

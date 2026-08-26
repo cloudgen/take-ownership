@@ -5,6 +5,29 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.2.0] - 2026-08-26
+
+### Added
+
+- **`generate-sudoer-json`:** Test-purpose alias of `generate-sudoer-request`. Writes the canonical compact JSON grant (readable without sudo) so the suite can lock `args: ["action","--path","<folder>","--ownership","*"]` plus the `--json` twin. The `*` is a sudoers operand, not a cwd listing.
+
+### Changed
+
+- **Grant JSON emit is glob-safe.** Compact `commands[].args` builds `*` via a quoted star token (`printf '%s' '*'`). Running generate from a dirty cwd (AGENTS.md, docs, src) must still emit `"--ownership","*"`.
+- **Inbound / generate verify is exact-args.** Fail closed unless each elev object is the 5-tuple (or `--json` 6-tuple) ending in `"*"`. Extra tokens after `--ownership` (directory listings) do not pass. Submit checks a source file before needing sudoer-cli. Law: `requirement-sudoer-json-file` 2.1.0 · INC-20260823-002. Suite **TP-TAKE-OWNERSHIP-27 / 27b / 28**.
+
+## [2.1.0] - 2026-08-26
+
+### Added
+
+- **`list-folders`:** Type 0 list of folders this login may take ownership of (union of `--path` values from this login’s JSON grant, sudoers draft, readable installed fragment, and `sudo -n -l`). Operational; on the numbered menu as row 2.
+
+### Changed
+
+- **`action` confirms the same list first.** `--path` that is not on `list-folders` fails closed (including already-matching trees). Next step is `list-folders` or `generate-sudoer-request --path`. Law: `requirement-take-ownership-ops` 1.2.0 AC-8/AC-9 · domain 1.1.0 · suite **TP-TAKE-OWNERSHIP-17 / 40 / 41**.
+- **Ram-drive `--path` exception:** `action --path /dev/shm/<project>` is allowed (workspace root on tmpfs). `/dev` and `/dev/shm` (the mount root) stay refuse-list. Law: `requirement-take-ownership-ops` AC-7 · suite **TP-TAKE-OWNERSHIP-11b / 16**.
+- Main menu has four work rows: `action`, `list-folders`, `remove-project-sudoers`, `submit-sudoer-request` (Exit 9).
+
 ## [2.0.0] - 2026-08-26
 
 ### Changed
