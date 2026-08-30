@@ -1,6 +1,6 @@
 # take-ownership - Take Unix ownership of a named folder with a narrow sudo grant
 
-![Version](https://img.shields.io/badge/Version-2.4.0-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-2.5.0-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 [![CIAO](https://img.shields.io/badge/Philosophy-CIAO%20(Caution%20%E2%80%A2%20Intentional%20%E2%80%A2%20Anti--fragile%20%E2%80%A2%20Over--engineered)-purple.svg)](https://github.com/cloudgen/ciao)
 [![Stars](https://img.shields.io/github/stars/cloudgen/take-ownership?style=flat-square)](https://github.com/cloudgen/take-ownership)
@@ -105,6 +105,7 @@ take-ownership uninstall --force
 | `SCRIPT_URL` | Online install channel (default **empty** — local only) |
 | `GLOBAL_BIN` | System bin (default `/usr/local/bin`) — **only this path** is a legal sudoers Cmnd |
 | `USER_BIN` | Per-user bin (default `~/.local/bin`) |
+| `PERSIST_DIR` | Persistence storage (default `~/.local/take-ownership`) |
 | `SUDOER_CLI` | Override path to `sudoer-cli` |
 | `SUDOER_ADM_USER` | Approver login to detect (default `sudoer-adm`) |
 
@@ -142,6 +143,8 @@ MIT License — see [`LICENSE.md`](./LICENSE.md).
 
 ## Last Update
 
+2026-08-30 — version **2.5.0** (storage = cache folder **and** persistence `~/.local/take-ownership`; `about` Persistence storage / `persist_dir`).
+2026-08-30 — version **2.4.1** (`about` Cache folder preferred `/dev/shm/cache/cache-take-ownership`; fallback under XDG `cache-take-ownership`).
 2026-08-30 — version **2.4.0** (empty argv opens the numbered work list on a terminal; off-TTY still help; Type N never install).
 2026-08-30 — version **2.4.0** (menu drops `list-folders`; interactive `action` numbered folder pick + current `user:group`; TP-42/43).
 2026-08-26 — version **2.3.0** (grant `--ownership user:group`; withdraw leftover `*` gold from SSOT; text dual `user\:group`; TP-27/29/31).

@@ -102,6 +102,7 @@ ci_isolated_env() {
     # Local-only product: ensure no channel env is required
     unset SCRIPT_URL 2>/dev/null || true
     unset CHECKSUM 2>/dev/null || true
+    unset PERSIST_DIR 2>/dev/null || true
 }
 
 ci_cleanup_env() {

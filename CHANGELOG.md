@@ -5,6 +5,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.5.0] - 2026-08-30
+
+### Added
+
+- **Persistence storage.** Storage law covers **both** the cache folder and durable per-user app data at `${HOME}/.local/take-ownership/` (not `~/.local/bin`, not cache, not `.config` drafts). `about` prints **Persistence storage**; JSON adds `persist_dir`. Resolver: `util_resolve_persist`. Law: `requirement-shell-cli-storage` **2.0.0**. Suite **TP-CLI-06 / 12 / 18**.
+
+## [2.4.1] - 2026-08-30
+
+### Changed
+
+- **Cache folder labels and preferred path.** `about` prints **Cache folder (preferred)** and **Cache folder (fallback)** (not Storage (effective)/(fallback)). Preferred leaf is `/dev/shm/cache/cache-take-ownership` so it is not confused with a ram-drive project tree. Fallback is `${XDG_CACHE_HOME}/cache-take-ownership`. JSON adds `cache_preferred` / `cache_fallback`. Law: `requirement-shell-cli-storage` **1.1.0**. Suite **TP-CLI-06 / 12**.
+
 ## [2.4.0] - 2026-08-30
 
 ### Changed

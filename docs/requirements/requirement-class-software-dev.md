@@ -93,7 +93,7 @@ Primary language, toolchain, package tools, and runtime **MUST** be declared in 
 | Local self-managed lifecycle | `requirement-shell-local-self-management` | install / uninstall / where-is-me |
 | Output SSOT (`out_*`) | `requirement-shell-output-requirements` | Do not duplicate |
 | Operator-readable error wording | `requirement-operator-readable-error` | Do not duplicate |
-| Scratch/cache storage resolve | `requirement-shell-cli-storage` | Do not duplicate |
+| Cache + persistence storage resolve | `requirement-shell-cli-storage` | Do not duplicate |
 | Idempotency / re-run safety | `requirement-shell-idempotency` | Do not duplicate |
 | Interactive vs non-interactive | `requirement-shell-interactive-vs-noninteractive` | Do not duplicate |
 | Modular prefixes / single-file layout | `requirement-shell-modular-function-design` | Do not duplicate |
@@ -180,7 +180,7 @@ Primary language, toolchain, package tools, and runtime **MUST** be declared in 
 | `requirement-shell-local-self-management` | Local install lifecycle |
 | `requirement-shell-output-requirements` | `out_*` SSOT |
 | `requirement-operator-readable-error` | Operator error wording |
-| `requirement-shell-cli-storage` | Scratch/cache resolve |
+| `requirement-shell-cli-storage` | Cache + persist resolve |
 | `requirement-shell-idempotency` | Re-run safety |
 | `requirement-shell-interactive-vs-noninteractive` | Mode policy |
 | `requirement-shell-modular-function-design` | Prefixes / single-file modularity |

@@ -46,7 +46,7 @@
 | Modular design | `requirement-shell-modular-function-design.md` | `fb_*` domain prefix |
 | Idempotency | `requirement-shell-idempotency.md` | Re-install; next-N archives |
 | Interactive modes | `requirement-shell-interactive-vs-noninteractive.md` | Uninstall / remove-project-sudoers confirm |
-| CLI storage | `requirement-shell-cli-storage.md` | Per-user staging isolation |
+| CLI storage | `requirement-shell-cli-storage.md` | Cache `/dev/shm/cache/cache-${APP_NAME}` **and** persist `${HOME}/.local/${APP_NAME}/`; about Cache folder + Persistence storage |
 | Domain | `requirement-domain-folder-backup.md` | Four pillars; sudoers verbs |
 | Ops backup | `requirement-folder-archive-backup.md` | backup/restore/verify |
 
@@ -78,7 +78,7 @@
 | `fb_print_sudoers_install_script` | Silent `/etc` install; wrong user in fragment; shared installed basename overwrites other users | TP-FOLDER-BACKUP-14 · user=`id -un` · L-SUDOERS-04 |
 | `fb_remove_project_sudoers` | Deletes `/etc` as Type 0; silent without force; multi-draft wrong pick | TP-FOLDER-BACKUP-15 · **15b** |
 | `fb_next_archive_name` | Overwrite archives | L-OVERWRITE-01 · TP-08 |
-| `util_resolve_storage` | Isolation break / stage mismatch vs sudoers | L-STOR-01 · TP-CLI-12 · TP-02 |
+| `util_resolve_storage` / `util_resolve_persist` | Isolation break / persist mixed with USER_BIN or cache | L-STOR-01 · TP-CLI-12 · TP-CLI-18 · TP-02 |
 | `fb_detect_sudoer_inbound` | Home-only `sudoer-approving` or Type 0 inbound `mkdir` | L-INBOUND-01 · TP-FOLDER-BACKUP-21/21b |
 | `fb_submit_sudoer_request` / sibling decode | Pretty JSON inbound restore-only; `[OK]` / S14 / stub `cp` treated as fidelity | L-SUDOERS-06 · L-TEST-REVIEW-01 · TP-22e/22f · S15 |
 | `fb_generate_sudoer_request` | Generate only inside submit; dest under `/etc` or inbound; dest not readable | L-OUTPUT-01 · TP-24/24b/24d · S16 · AC-24 |

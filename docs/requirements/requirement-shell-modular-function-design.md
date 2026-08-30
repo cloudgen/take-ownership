@@ -33,7 +33,7 @@ Ship unit remains a **single executable** at `src/take-ownership`.
 |--------|----------|---------|-------------------|
 | `out_` | Output system | All user-facing and machine-readable output | `out_text`, `out_info`, `out_json`, `out_die` |
 | `inst_` | Installation lifecycle | Local install/uninstall detect and place/remove | `inst_local_install`, `inst_local_uninstall`, `inst_is_installed` |
-| `util_` | General utilities | Path resolve, storage, safe helpers | `util_resolve_storage`, `util_get_install_bin_path` |
+| `util_` | General utilities | Path resolve, storage, safe helpers | `util_resolve_storage`, `util_resolve_persist`, `util_get_install_bin_path` |
 | `app_` | Cross-cutting CLI surface | Entry, dispatch, about/help/version/where-is-me | `app_main`, `app_about`, `app_help`, `app_version`, `app_where_is_me` |
 | `path_` | Shell PATH & environment | Optional PATH ensure after user install | `path_add_shell` |
 | `prompt_` | Interactive prompts | TTY-safe confirmations | `prompt_yes_no` |

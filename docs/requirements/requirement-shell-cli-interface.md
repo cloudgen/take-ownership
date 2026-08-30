@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-shell-cli-interface.md  
-**Status**: Active (Version 2.2.0)  
+**Status**: Active (Version 2.2.1)  
 **Area**: shell  
 **Key**: `requirement-shell-cli-interface`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -114,7 +114,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | `uninstall` | You | `inst_local_uninstall` | Remove managed binary; confirm unless `--force` |
 | `where-is-me` | You | `app_where_is_me` | Running + install paths + installed flag |
 | `version` | You | `app_version` | Local `VERSION` only; no network |
-| `about` | You | `app_about` | Diagnostics including **global-bin presence**; no channel one-liner |
+| `about` | You | `app_about` | Diagnostics including **global-bin presence**; **Cache folder (preferred)** `/dev/shm/cache/cache-${APP_NAME}` and **Cache folder (fallback)**; **Persistence storage** `${HOME}/.local/${APP_NAME}`; no channel one-liner |
 | `help` | You | `app_help` | Full usage; test-purpose apart |
 | `list-folders` | You | `to_list_folders` | **Operational.** List folders this login may take ownership of |
 | `action` | You (+ host-change re-exec) | `to_action` | **Operational.** `--path` then `--ownership`; confirm against `list-folders` then recursive take-ownership. TTY without `--path`: numbered allowed-folder pick. TTY without `--ownership`: current `user:group` (no prompt). Off-TTY still requires both flags |
@@ -234,6 +234,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | 2026-08-25 | Active 2.0.0 | Retarget take-ownership; `action`; retire backup/restore |
 | 2026-08-26 | Active 2.1.0 | `generate-sudoer-json` test-purpose alias of generate-sudoer-request |
 | 2026-08-30 | Active 2.2.0 | Empty argv routes to `app_main_menu` (Type N; not install) |
+| 2026-08-30 | Active 2.2.1 | `about` Persistence storage `${HOME}/.local/${APP_NAME}` |
 
 ---
 

@@ -53,18 +53,19 @@ Status: **have** = automated today · **todo** = needed · **optional** · **n/a
 | TP-CLI-03 | version JSON | test_cli | requirement-shell-output-requirements | **have** |
 | TP-CLI-04 | help local verbs; print-sudoers + install-script + remove-project-sudoers + generate-sudoer-request + submit-sudoer-request; no online | test_cli | requirement-shell-cli-interface · domain | **have** |
 | TP-CLI-05 | help JSON short | test_cli | requirement-shell-output-requirements | **have** |
-| TP-CLI-06 | about JSON storage + domain fields | test_cli | requirement-shell-cli-storage · domain | **have** |
+| TP-CLI-06 | about JSON `cache_preferred`/`cache_fallback`/`persist_dir`; human Cache folder + Persistence storage | test_cli | requirement-shell-cli-storage · domain | **have** |
 | TP-CLI-07 | empty argv Type N never install; off-TTY help | test_cli | requirement-shell-cli-zero-arguments | **have** |
 | TP-CLI-08 | unknown fail-closed | test_cli | requirement-shell-cli-interface | **have** |
 | TP-CLI-09 | quiet suppresses version | test_cli | requirement-shell-output-requirements | **have** |
 | TP-CLI-10 | online verbs rejected | test_cli | requirement-bootstrap-chain | **have** |
 | TP-CLI-11 | env -u HOME version | test_cli | class / defensive | **have** |
-| TP-CLI-12 | storage isolation | test_cli | requirement-shell-cli-storage | **have** |
+| TP-CLI-12 | preferred cache `/dev/shm/cache/cache-${APP_NAME}`; live dir exists; not APP-USERNAME shape | test_cli | requirement-shell-cli-storage | **have** |
 | TP-CLI-13 | interactive `menu` **and** empty argv print three labels + `9. Exit` | test_cli | **shell-cli-default-interaction** AC-3 | **have** |
 | TP-CLI-14 | interactive `menu --json` still prints the list | test_cli | **shell-cli-default-interaction** AC-4 | **have** |
 | TP-CLI-15 | non-interactive `menu` and empty argv are help; `--json` JSON help | test_cli | **shell-cli-default-interaction** AC-5 | **have** |
 | TP-CLI-16 | numbered list omits help/install/uninstall/where-is-me/version/about/test-purpose/menu/`list-folders` | test_cli | **shell-cli-default-interaction** AC-6 | **have** |
 | TP-CLI-17 | help lists test-purpose grant-emit verbs under a heading apart from operational | test_cli | **shell-cli-interface** AC-9 | **todo** |
+| TP-CLI-18 | persist `${HOME}/.local/${APP_NAME}` exists; not USER_BIN; not live cache | test_cli | requirement-shell-cli-storage | **have** |
 
 ### TP-LC (local lifecycle)
 

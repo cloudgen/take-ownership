@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-project-folder.md  
-**Status**: Active (Version 2.0.0)  
+**Status**: Active (Version 2.1.0)  
 **Area**: architecture  
 **Key**: `requirement-project-folder`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -66,21 +66,26 @@ Rules:
 4. Uninstall **MUST** remove only the managed binary path for the install mode used.  
 5. Managed binary mode **MUST** be **`0755`** after install (see `requirement-shell-local-self-management` §2.3.1).
 
-### 2.3 Scratch / cache (CLI own volatile)
+### 2.3 Scratch / cache / persist (CLI own paths)
 
 | Purpose | Pattern |
 |---------|---------|
-| Effective storage root | From `util_resolve_storage` (`requirement-shell-cli-storage`) |
-| Temps | `util_mktemp` under that root |
+| Preferred cache | `/dev/shm/cache/cache-take-ownership` (`requirement-shell-cli-storage`) |
+| Fallback cache | `${XDG_CACHE_HOME}/cache-take-ownership` |
+| Live cache root | From `util_resolve_storage` |
+| Persistence storage | `${HOME}/.local/take-ownership` (`util_resolve_persist`) |
+| Temps | `util_mktemp` under the cache root |
 | Sudoers fragment draft | `${HOME}/.config/take-ownership/sudoers.fragment-<user>` |
 | JSON grant draft | `${HOME}/.config/take-ownership/sudoer-request-<user>.json` |
 
 Rules:
 
-1. Scratch **MUST** be per-user isolated (`APP_NAME` + `USERNAME` from `id -un`).  
-2. Temps **MUST** clean up (`trap`) after success/failure of an `action` run.  
-3. **MUST NOT** auto-write `/etc/sudoers.d`.  
-4. **No** durable `/var/backup` deposit on this product.
+1. Preferred cache **MUST** be `/dev/shm/cache/cache-${APP_NAME}` — **MUST NOT** `/dev/shm/${APP_NAME}` or `/dev/shm/${APP_NAME}-${USERNAME}` (those look like ram-drive project folders).  
+2. Fallback **MUST** be under this login’s XDG cache as `cache-${APP_NAME}`.  
+3. Persistence **MUST** be `${HOME}/.local/${APP_NAME}` — **MUST NOT** `${HOME}/.local/bin` (that is `USER_BIN`).  
+4. Temps **MUST** clean up (`trap`) after success/failure of an `action` run.  
+5. **MUST NOT** auto-write `/etc/sudoers.d`.  
+6. **No** durable `/var/backup` deposit on this product.
 
 ### 2.4 Target folders being taken
 
@@ -97,6 +102,7 @@ Rules:
 | **USER_BIN default** | `${HOME}/.local/bin` |
 | **GLOBAL_BIN default** | `/usr/local/bin` |
 | **Config dir** | `${HOME}/.config/take-ownership/` |
+| **Persistence storage** | `${HOME}/.local/take-ownership/` |
 | **No Type 2 app data tree** | No dedicated system app user |
 | **No BACKUP_ROOT** | Retired with folder-backup domain |
 
@@ -147,7 +153,7 @@ Rules:
 | Key | Relationship |
 |-----|--------------|
 | `requirement-shell-local-self-management` | Place/remove binary |
-| `requirement-shell-cli-storage` | Scratch resolve |
+| `requirement-shell-cli-storage` | Cache + persist resolve |
 | `requirement-domain-take-ownership` | Domain surface |
 | `requirement-three-layer-privilege-model` | Elevation boundary |
 | `docs/requirements/index.md` | Registry |
@@ -160,9 +166,11 @@ Rules:
 |------|--------|------|
 | 2026-08-03 | Active 1.0.0 | folder-backup layout + `/var/backup` |
 | 2026-08-25 | Active 2.0.0 | take-ownership; drop backup deposit |
+| 2026-08-30 | Active 2.0.1 | Preferred cache `/dev/shm/cache/cache-${APP_NAME}` |
+| 2026-08-30 | Active 2.1.0 | Persistence storage `${HOME}/.local/${APP_NAME}/` |
 
 ---
 
-**Last Updated**: 2026-08-25  
+**Last Updated**: 2026-08-30  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).
