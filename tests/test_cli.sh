@@ -53,7 +53,7 @@ run_test_cli() {
     assert_contains "TP-CLI-04 help submit-sudoer-request" "$_out" "submit-sudoer-request"
     assert_contains "TP-CLI-04 help generate-sudoer-request" "$_out" "generate-sudoer-request"
     assert_contains "TP-CLI-04 help generate-sudoer-json" "$_out" "generate-sudoer-json"
-    assert_contains "TP-CLI-04 help star is operand" "$_out" "not a directory listing"
+    assert_contains "TP-CLI-04 help no ownership wildcard" "$_out" "Wildcard * is not allowed"
     assert_contains "TP-CLI-04 help public inbound" "$_out" "/var/sudoer-cli/sudoer-request"
     assert_contains "TP-CLI-04 help --update" "$_out" "--update"
     assert_contains "TP-CLI-04 help --add" "$_out" "--add"
@@ -89,12 +89,15 @@ run_test_cli() {
     assert_not_contains "TP-CLI-06 no CHECKSUM" "$_out" "CHECKSUM"
     assert_not_contains "TP-CLI-06 no SCRIPT_URL" "$_out" "SCRIPT_URL"
 
-    # TP-CLI-07 empty argv = Type N help (not install)
+    # TP-CLI-07 empty argv = Type N (never install). Off-TTY this is help
+    # (same as menu off-TTY). TTY empty argv is the numbered list (TP-CLI-13).
     _out=$(sh "${SCRIPT}" 2>/dev/null)
     _ec=$?
     assert_eq "TP-CLI-07 empty argv exit 0" 0 "$_ec"
-    assert_contains "TP-CLI-07 empty argv is help" "$_out" "Usage:"
-    assert_contains "TP-CLI-07 empty argv mentions Type N or help" "$_out" "help"
+    assert_contains "TP-CLI-07 empty argv off-TTY is help" "$_out" "Usage:"
+    assert_contains "TP-CLI-07 empty argv mentions help" "$_out" "help"
+    assert_not_contains "TP-CLI-07 empty argv off-TTY not numbered list" "$_out" "9. Exit"
+    assert_not_contains "TP-CLI-07 empty argv not install-ensure" "$_out" "already installed"
 
     # TP-CLI-08 unknown command fail-closed
     _err=$(sh "${SCRIPT}" no-such-command 2>&1 >/dev/null)
@@ -154,7 +157,7 @@ run_test_cli() {
     fi
     ci_cleanup_env
 
-    # TP-CLI-15 non-interactive menu is help; --json JSON help; empty argv stays help
+    # TP-CLI-15 non-interactive menu is help; --json JSON help; empty argv off-TTY is help
     _out=$(sh "${SCRIPT}" menu 2>/dev/null)
     _ec=$?
     assert_eq "TP-CLI-15 menu off-TTY exit 0" 0 "$_ec"
@@ -173,8 +176,8 @@ run_test_cli() {
     assert_not_contains "TP-CLI-15 menu --json off-TTY not numbered list" "$_out" "9. Exit"
 
     _out=$(sh "${SCRIPT}" 2>/dev/null)
-    assert_not_contains "TP-CLI-15 empty argv not numbered list" "$_out" "9. Exit"
-    assert_contains "TP-CLI-15 empty argv still help" "$_out" "Usage:"
+    assert_not_contains "TP-CLI-15 empty argv off-TTY not numbered list" "$_out" "9. Exit"
+    assert_contains "TP-CLI-15 empty argv off-TTY is help" "$_out" "Usage:"
 
     _out=$(sh "${SCRIPT}" --quiet menu 2>/dev/null)
     _ec=$?
@@ -187,11 +190,19 @@ run_test_cli() {
     if command -v python3 >/dev/null 2>&1; then
         _out=$(PTY_IN="9" ci_pty_run menu)
         assert_contains "TP-CLI-13 TTY menu action row" "$_out" "1. action: Recursively take ownership of a named folder"
-        assert_contains "TP-CLI-13 TTY menu list-folders row" "$_out" "2. list-folders: List folders this login may take ownership of"
-        assert_contains "TP-CLI-13 TTY menu remove row" "$_out" "3. remove-project-sudoers: Remove the local grant draft only"
-        assert_contains "TP-CLI-13 TTY menu submit row" "$_out" "4. submit-sudoer-request: Hand the JSON grant to the approval queue"
+        assert_contains "TP-CLI-13 TTY menu remove row" "$_out" "2. remove-project-sudoers: Remove the local grant draft only"
+        assert_contains "TP-CLI-13 TTY menu submit row" "$_out" "3. submit-sudoer-request: Hand the JSON grant to the approval queue"
         assert_contains "TP-CLI-13 TTY menu Exit 9" "$_out" "9. Exit"
+        assert_not_contains "TP-CLI-13 TTY menu no list-folders row" "$_out" "list-folders: List folders this login may take ownership of"
         assert_not_contains "TP-CLI-13 TTY menu no backup row" "$_out" "1. backup:"
+
+        _out=$(PTY_IN="9" ci_pty_run)
+        assert_contains "TP-CLI-13 TTY empty argv action row" "$_out" "1. action: Recursively take ownership of a named folder"
+        assert_contains "TP-CLI-13 TTY empty argv remove row" "$_out" "2. remove-project-sudoers: Remove the local grant draft only"
+        assert_contains "TP-CLI-13 TTY empty argv submit row" "$_out" "3. submit-sudoer-request: Hand the JSON grant to the approval queue"
+        assert_contains "TP-CLI-13 TTY empty argv Exit 9" "$_out" "9. Exit"
+        assert_not_contains "TP-CLI-13 TTY empty argv no list-folders row" "$_out" "list-folders: List folders this login may take ownership of"
+        assert_not_contains "TP-CLI-13 TTY empty argv not help Usage" "$_out" "Usage:"
 
         _out=$(PTY_IN="9" ci_pty_run --json menu)
         assert_contains "TP-CLI-14 TTY menu --json still numbered list" "$_out" "9. Exit"
@@ -211,8 +222,9 @@ run_test_cli() {
         assert_not_contains "TP-CLI-16 no generate-sudoer-json row" "$_out" "generate-sudoer-json: Write the canonical JSON grant"
         assert_not_contains "TP-CLI-16 no menu row" "$_out" "menu: Show the numbered list"
         assert_not_contains "TP-CLI-16 no main row" "$_out" "main: Same numbered list"
+        assert_not_contains "TP-CLI-16 no list-folders row" "$_out" "2. list-folders:"
     else
-        t_skip "TP-CLI-13 TTY menu (no python3 for PTY)"
+        t_skip "TP-CLI-13 TTY menu / empty argv (no python3 for PTY)"
         t_skip "TP-CLI-14 TTY menu --json (no python3 for PTY)"
         t_skip "TP-CLI-16 TTY exclusions (no python3 for PTY)"
     fi

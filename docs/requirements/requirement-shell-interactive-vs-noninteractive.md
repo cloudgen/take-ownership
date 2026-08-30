@@ -91,7 +91,7 @@ prompt_ask() {
 |--------|-------------|-----------------|
 | `uninstall` | Confirm unless `--force` | **Fail closed** without `--force` (`confirm_required`) |
 | `install` | May inform; no required confirm for first install | Proceed without hang |
-| `action` | TTY: one field at a time if `--path` / `--ownership` missing | No prompts; fail loud on missing operands / sudo failure; **MUST NOT** hang |
+| `action` | TTY: numbered allowed-folder list if `--path` missing; current `user:group` if `--ownership` missing (no ownership prompt) | No prompts; fail loud on missing operands / sudo failure; **MUST NOT** hang |
 | `print-sudoers` | Print fragment | Print fragment (stdout/file); no `/etc` write |
 | `generate-sudoer-request` / `generate-sudoer-json` | May show path + verify via `out_*` | No prompts; write + verify; no hang |
 | `submit-sudoer-request` | May show detect/submit via `out_*` | No prompts; fail closed if sudoer-cli / inbound missing; no hang |

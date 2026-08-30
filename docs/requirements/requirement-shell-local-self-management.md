@@ -155,7 +155,7 @@ This product ships as a **POSIX shell script** (interpreted). Execution by any n
 | Key | Relationship |
 |-----|--------------|
 | `requirement-shell-cli-interface` | Command table + flags |
-| `requirement-shell-cli-zero-arguments` | Type N empty argv |
+| `requirement-shell-cli-zero-arguments` | Type N empty argv (never install; menu path) |
 | `requirement-project-folder` | Path defaults |
 | `requirement-shell-idempotency` | Already installed / uninstalled |
 | `requirement-bootstrap-chain` | Why online package is absent |

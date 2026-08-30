@@ -17,8 +17,8 @@ Status: **have** = automated today · **todo** = needed · **optional** · **n/a
 |------|--------|----------|
 | Syntax `sh -n` | have | TP-CLI-01 |
 | version / help / about human + JSON | have | TP-CLI-02..06 |
-| Type N empty argv = help | have | TP-CLI-07 |
-| `menu`/`main` TTY list / off-TTY help | have | TP-CLI-13..16 |
+| Type N empty argv (never install; off-TTY help; TTY menu) | have | TP-CLI-07, **13**, **15** |
+| empty argv / `menu`/`main` TTY list / off-TTY help | have | TP-CLI-13..16 |
 | Unknown + quiet + set -u HOME | have | TP-CLI-08..11 |
 | Storage isolation | have | TP-CLI-12 |
 | No online verbs / no SCRIPT_URL UX | have | TP-CLI-04, TP-CLI-10 |
@@ -54,16 +54,16 @@ Status: **have** = automated today · **todo** = needed · **optional** · **n/a
 | TP-CLI-04 | help local verbs; print-sudoers + install-script + remove-project-sudoers + generate-sudoer-request + submit-sudoer-request; no online | test_cli | requirement-shell-cli-interface · domain | **have** |
 | TP-CLI-05 | help JSON short | test_cli | requirement-shell-output-requirements | **have** |
 | TP-CLI-06 | about JSON storage + domain fields | test_cli | requirement-shell-cli-storage · domain | **have** |
-| TP-CLI-07 | empty argv Type N help | test_cli | requirement-shell-cli-zero-arguments | **have** |
+| TP-CLI-07 | empty argv Type N never install; off-TTY help | test_cli | requirement-shell-cli-zero-arguments | **have** |
 | TP-CLI-08 | unknown fail-closed | test_cli | requirement-shell-cli-interface | **have** |
 | TP-CLI-09 | quiet suppresses version | test_cli | requirement-shell-output-requirements | **have** |
 | TP-CLI-10 | online verbs rejected | test_cli | requirement-bootstrap-chain | **have** |
 | TP-CLI-11 | env -u HOME version | test_cli | class / defensive | **have** |
 | TP-CLI-12 | storage isolation | test_cli | requirement-shell-cli-storage | **have** |
-| TP-CLI-13 | interactive `menu` prints four labels + `9. Exit` | test_cli | **shell-cli-default-interaction** AC-3 | **have** |
+| TP-CLI-13 | interactive `menu` **and** empty argv print three labels + `9. Exit` | test_cli | **shell-cli-default-interaction** AC-3 | **have** |
 | TP-CLI-14 | interactive `menu --json` still prints the list | test_cli | **shell-cli-default-interaction** AC-4 | **have** |
-| TP-CLI-15 | non-interactive `menu` is help; `--json` JSON help | test_cli | **shell-cli-default-interaction** AC-5 | **have** |
-| TP-CLI-16 | numbered list omits help/install/uninstall/where-is-me/version/about/test-purpose/menu | test_cli | **shell-cli-default-interaction** AC-6 | **have** |
+| TP-CLI-15 | non-interactive `menu` and empty argv are help; `--json` JSON help | test_cli | **shell-cli-default-interaction** AC-5 | **have** |
+| TP-CLI-16 | numbered list omits help/install/uninstall/where-is-me/version/about/test-purpose/menu/`list-folders` | test_cli | **shell-cli-default-interaction** AC-6 | **have** |
 | TP-CLI-17 | help lists test-purpose grant-emit verbs under a heading apart from operational | test_cli | **shell-cli-interface** AC-9 | **todo** |
 
 ### TP-LC (local lifecycle)
@@ -118,9 +118,12 @@ Status: **have** = automated today · **todo** = needed · **optional** · **n/a
 | TP-FOLDER-BACKUP-24b | generate explicit path; refuse `/etc` | test_domain | three-layer AC-23 | **have** |
 | TP-FOLDER-BACKUP-24c | generated file through real sudoer-cli convert keeps both verbs | test_domain | three-layer AC-23 · sudoer-json-file AC-9 | **have** |
 | TP-FOLDER-BACKUP-24d | generate dest is readable without sudo; suite `cat`s body | test_domain | three-layer §2.3.2a AC-24 · sudoer-json-file AC-10 | **have** |
-| TP-TAKE-OWNERSHIP-27 | `generate-sudoer-json` from dirty cwd (AGENTS.md/docs/src) still emits `"--ownership","*"` | test_domain | sudoer-json-file AC-10 · INC-20260823-002 | **have** |
+| TP-TAKE-OWNERSHIP-27 | `generate-sudoer-json` from dirty cwd (AGENTS.md/docs/src) still emits `"--ownership","<user:group>"` (not `"*"`) | test_domain | sudoer-json-file AC-10 · incorrect-ownership AC-3 · INC-20260823-002 | **have** |
 | TP-TAKE-OWNERSHIP-27b | same dest has no cwd names | test_domain | sudoer-json-file AC-10 | **have** |
 | TP-TAKE-OWNERSHIP-28 | submit of globbed `--ownership` listing fails closed; names generate-sudoer-json | test_domain | sudoer-json-file AC-11 · operator-readable-error AC-2 | **have** |
+| TP-TAKE-OWNERSHIP-42 | TTY `action` without `--path` prints numbered allowed folders | test_domain | take-ownership-ops AC-6 | **have** |
+| TP-TAKE-OWNERSHIP-43 | TTY pick uses current `user:group` with no ownership prompt | test_domain | take-ownership-ops AC-6 | **have** |
+| TP-TAKE-OWNERSHIP-44 | Granted `--path` whose directory is missing is not a live TTY `action` row; `action --path` fail-closed names recreate-then-action (not generate) | test_domain | take-ownership-ops §2.2/§2.5a · operator-readable-error · INC-20260830-001 · L-OPS-01 | **todo** |
 | TP-FOLDER-BACKUP-25 | inbound-fidelity error names incompleteness in operator words | test_domain | operator-readable-error AC-1 | **have** |
 | TP-FOLDER-BACKUP-25b | same error names `generate-sudoer-request` | test_domain | operator-readable-error AC-2 | **have** |
 | TP-FOLDER-BACKUP-25c | same error does not contain `sibling re-encode` | test_domain | operator-readable-error AC-3 | **have** |

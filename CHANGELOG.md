@@ -5,6 +5,23 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.4.0] - 2026-08-30
+
+### Changed
+
+- **Empty argv opens the numbered work list.** On a real terminal, `take-ownership` with no command is the same path as `menu` / `main`. Off-TTY, empty argv is still help (no hang). Type N: empty argv **MUST NOT** install. Explicit `help` remains full usage. Law: **requirement-shell-cli-zero-arguments** 1.1.0 · **requirement-shell-cli-default-interaction** 2.2.0 · CLI-interface **2.2.0**. Suite **TP-CLI-07 / 13 / 15**.
+- **Main menu no longer lists `list-folders`.** Numbered work rows are `action`, `remove-project-sudoers`, `submit-sudoer-request` (Exit 9). `list-folders` stays a live Type 0 command on `help`.
+- **Interactive `action` picks a numbered allowed folder.** On a real terminal, missing `--path` prints this login’s granted folders as `1. /path`. Ownership is this login’s `user:group` (`id -un`:`id -gn`) with **no prompt**. Off-TTY still requires `--path` and `--ownership`. Law: `requirement-take-ownership-ops` 1.3.0 · default-interaction **2.2.0**. Suite **TP-CLI-13/16** · **TP-TAKE-OWNERSHIP-42/43**.
+
+## [2.3.0] - 2026-08-26
+
+### Changed
+
+- **Grant `--ownership` is a real `user:group`.** Generate / print / submit emit require `--ownership user:group`. JSON and sudoers text **MUST NOT** use `*`. Incorrect operands (`*`, cwd names such as `AGENTS.md` / `docs` / `src`) fail closed; do not approve that inbound. Law: `requirement-incorrect-ownership-parameter` 1.0.0 · sudoer-json **2.4.0**. Suite **TP-TAKE-OWNERSHIP-29 / 27 / 28 / 28b**.
+- **Withdraw leftover `--ownership *` gold.** 2.0.0/2.2.0 taught JSON `"*"` as the canonical ownership operand (folder-backup `backup *` copy). Live SSOT, domain help, AC-10, TP-27, molds, and operate/design skills now say `"--ownership","<user:group>"`. CHANGELOG 2.0.0/2.2.0 rows stay historical.
+- **Sudoers text dual escapes `:`.** Cmnd lines write `user\:group` so visudo parses; JSON `args` stay the live argv `user:group`. Suite **TP-TAKE-OWNERSHIP-31**.
+- **One recursive folder per sudoers line.** `--path` is a directory, not a file list. A later folder is a later submission: generate reads the unique existing `--path` list, skips duplicates, and emits a **replacement** (1 folder → 1 line, 2 folders → 2 lines). **MUST NOT** put two folders on one line. Suite **TP-TAKE-OWNERSHIP-33 / 33b / 34**.
+
 ## [2.2.0] - 2026-08-26
 
 ### Added

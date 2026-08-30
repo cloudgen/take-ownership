@@ -39,8 +39,8 @@
 | **JSON sudoer file** | `requirement-sudoer-json-file.md` | `folder-backup` backup/**and** restore; §2.7a re-encode; pretty JSON legal; **independent generate dest AC-10** |
 | **Operator-readable error** | `requirement-operator-readable-error.md` | Blocking `[ERROR]` what-happened + next step; no jargon-only |
 | CLI interface | `requirement-shell-cli-interface.md` | Commands, flags, dispatch (incl. **generate-sudoer-request**); test-purpose grant-emit listed **apart** |
-| Default interaction | `requirement-shell-cli-default-interaction.md` | Case 3 `menu`/`main` implemented; colon labels; no version/about/test-purpose on numbered list |
-| Empty argv Type N | `requirement-shell-cli-zero-arguments.md` | Empty = help |
+| Default interaction | `requirement-shell-cli-default-interaction.md` | Case 3 empty argv + `menu`/`main`; colon labels; no version/about/test-purpose on numbered list |
+| Empty argv Type N | `requirement-shell-cli-zero-arguments.md` | Never install; empty argv → `app_main_menu` |
 | Local self-management | `requirement-shell-local-self-management.md` | install/uninstall; global preferred for elev |
 | Output SSOT | `requirement-shell-output-requirements.md` | `out_*`; JSON errors |
 | Modular design | `requirement-shell-modular-function-design.md` | `fb_*` domain prefix |

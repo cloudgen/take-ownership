@@ -1,8 +1,11 @@
-# Review reports index — folder-backup
+# Review reports index — take-ownership
 
 | Date | Report | Scope | Verdict | Suite |
 |------|--------|-------|---------|-------|
-| 2026-08-26 | 2.2.0 generate-sudoer-json | Canonical JSON grant; dirty-cwd `"*"`; inbound exact-args; TP-27/28 | living | 2.2.0 |
+| 2026-08-30 | INC-20260830-001 | Interactive `action` listed a granted `--path` that is not an existing directory (ram-drive dest gone; grant remains). L-OPS-01. | **Open** | product pick-list / copy / TP-44 |
+| 2026-08-30 | `reports/2026-08-30-knowledge-and-product-review.md` | Harness knowledge + current 2.3.0 tree (ownership fence). Audit-only. | **Block** (maps genesis) / **Revise** (product plans) | PASS=207 FAIL=0 SKIP=0 |
+| 2026-08-26 | 2.3.0 ownership user:group | Withdraw `--ownership *` gold; dirty-cwd emits `user:group`; text dual `\:`; TP-27/29/31 | living | 2.3.0 |
+| 2026-08-26 | 2.2.0 generate-sudoer-json | Canonical JSON grant; dirty-cwd then taught `"*"` (**withdrawn** 2.3.0); inbound exact-args; TP-27/28 | living (historical `*` gold) | 2.2.0 |
 | 2026-08-23 | `cli-routed-verb-table.md` | Live dispatcher inventory + human-readable `verb: explain`; test-purpose grant-emit verbs; `menu`/`main` routed | living | 1.11.0 |
 | 2026-08-17 | `reports/2026-08-17-review-revision-test-plans.md` | Review/test-plan revision vs 1.9.0 generate + operator-readable errors | **PASS** (plans aligned; suite green) | PASS=242 FAIL=0 SKIP=2 |
 | 2026-08-17 | 1.9.0 generate-sudoer-request | Local verified compact JSON; submit compact handoff; TP-24 | living | 1.9.0 |

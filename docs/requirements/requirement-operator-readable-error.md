@@ -56,7 +56,7 @@ JSON `message` **MUST** be that same sentence.
 | **Product** | `take-ownership` |
 | **Ship unit** | `src/take-ownership` |
 | **Printer** | `out_die` / `out_error` |
-| **Worked inbound miss** | `Queued sudo request is incomplete: args must be action --path <folder> --ownership * (the * is a sudoers operand, not a path). Do not approve <id>. Next: generate-sudoer-json (or generate-sudoer-request)` |
+| **Worked inbound miss** | `Queued sudo request is incomplete: args must be action --path <folder> --ownership <user:group> (not * and not extra filenames). Do not approve <id>. Next: generate-sudoer-json --path <folder> --ownership user:group` |
 | **Worked generate `/etc`** | `generate-sudoer-request refuses to write under /etc (Type 0). Use a path under $HOME or /dev/shm.` |
 | **Banned as whole message** | `sibling re-encode?` · `inbound grant lost … verb` |
 | **Class** | software-development — this wording law is required |

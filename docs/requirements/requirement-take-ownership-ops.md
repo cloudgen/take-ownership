@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-take-ownership-ops.md  
-**Status**: Active (Version 1.2.0)  
+**Status**: Active (Version 1.3.0)  
 **Area**: domain-ops  
 **Key**: `requirement-take-ownership-ops`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -34,7 +34,8 @@ It is **not** the domain four-pillar file (`requirement-domain-take-ownership`).
 | You do… | What it means | What you type |
 |---------|---------------|---------------|
 | Take a web root | The tree becomes `www-data:www-data` | `take-ownership action --path /var/www/html --ownership www-data:www-data` |
-| Miss a switch on a real terminal | The program asks **one field at a time** | answer folder, then `user:group` |
+| Miss `--path` on a real terminal | Numbered list of allowed folders; pick a number | `1` |
+| Miss `--ownership` on a real terminal | Uses this login’s `user:group` (`id -un`:`id -gn`); **no prompt** | (none) |
 | Miss a switch in a pipe | Fail closed; no hang | `take-ownership action --path /var/www/html` → error |
 
 ---
@@ -55,7 +56,7 @@ take-ownership --json action --path <folder> --ownership <user:group>
 | **Verb** | `action` only for this ops path |
 | **Long flags only** | `--path` and `--ownership`. **MUST NOT** accept `-p` / `-o` on this verb (sudoers would miss) |
 | **Order** | `--path` **then** `--ownership`. Swapped order **MUST** fail closed (same reason) |
-| **Absolute path** | `--path` **MUST** be an absolute directory path. Relative paths fail closed |
+| **Absolute path** | `--path` **MUST** be **one** absolute **directory** (recursive contents are **not** extra sudoers args). Relative paths and **files** fail closed |
 | **Trailing slash** | Strip a single trailing `/` except for path `/` (which is refused anyway) |
 | **Ownership grammar** | Exactly `user:group` (one colon, both sides non-empty). `user`, `user:`, `:group` fail closed |
 
@@ -63,16 +64,16 @@ Global `--json` / `--quiet` / `--debug` / `--force` stay on `requirement-shell-c
 
 ### 2.2 Guided input (Question 12b — both)
 
-When **interactive** (`TTY=1`) and a field is missing, **MUST** prompt **one field at a time** (`prompt_ask`):
+When **interactive** (`TTY=1`, not `--json`) and a field is missing:
 
-| Field | Secret? | Prompt label | Default | Skip-if |
-|-------|---------|--------------|---------|---------|
-| `path` | no | Folder whose ownership to take (absolute path) | none | `--path` already set |
-| `ownership` | no | Unix user:group for the new owner (example `www-data:www-data`) | none | `--ownership` already set |
+| Field | MUST | MUST NOT |
+|-------|------|----------|
+| `path` | Print a **numbered list** of this login’s allowed folders (same set as `list-folders`) and accept a **number** (or an exact listed path). Empty set → fail closed; next step `generate-sudoer-request` | Ask for a free-typed absolute path; hang |
+| `ownership` | Use this login’s current `user:group` (`id -un`:`id -gn`, or `SUDO_USER` after re-exec) with **no prompt** | Ask for `user:group`; use `*` |
 
-Intention: the operator is not forced to assemble the flag list from memory.
+Skip-if: `--path` / `--ownership` already set (including explicit flags and sudo re-exec argv).
 
-When **non-interactive** (`TTY=0`, `--json`, pipes, CI) and a field is missing: **MUST** fail closed with operator-readable usage. **MUST NOT** hang.
+When **non-interactive** (`TTY=0`, `--json`, pipes, CI) and a field is missing: **MUST** fail closed with operator-readable usage. **MUST NOT** hang. **MUST NOT** default ownership.
 
 ### 2.3 Path validation (fail closed)
 
@@ -119,7 +120,7 @@ Before any chown:
 | **Union sources** | Readable JSON grant `~/.config/take-ownership/sudoer-request-<user>.json`; readable sudoers draft `sudoers.fragment-<user>` (and unsuffixed legacy); readable installed fragment; `sudo -n -l` lines that name this program (only when `SUDOERS_D_DIR` is `/etc/sudoers.d`, so tests can isolate) |
 | **Values** | Absolute `--path` tokens only (same normalize as `action`: strip trailing `/`, refuse `*`) |
 | **Empty set** | `list-folders` exits 0 and says there are no folders. `action` **MUST** fail closed |
-| **Not in set** | `action` **MUST** fail closed; next step `list-folders` or `generate-sudoer-request --path` |
+| **Not in set** | `action` **MUST** fail closed; next step `list-folders` or `generate-sudoer-request --path <folder> --ownership <user:group>` |
 | **Exact match** | Grant folder is exact (not a parent prefix). `/var/www` does **not** authorize `/var/www/html` |
 | **JSON** | `list-folders --json` reports `user`, `count`, `folders` (array) |
 
@@ -132,7 +133,7 @@ This gate is **in addition to** sudoers exact-argv at re-exec. Type 0 lists from
 | You (unprivileged) | Parse flags, guided input, validate path/owner **without** changing inodes that need root |
 | Already root (`id -u` = 0) | Run recursive chown **directly** (no `sudo`) |
 | Not root | Re-exec **`sudo -n ${GLOBAL_BIN}/take-ownership action --path <folder> --ownership <user:group>`** (same order). **MUST NOT** `sudo /bin/chown` |
-| Missing grant / sudo | Fail closed; operator-readable next step: `generate-sudoer-request --path <folder>` then `submit-sudoer-request` |
+| Missing grant / sudo | Fail closed; operator-readable next step: `generate-sudoer-request --path <folder> --ownership <user:group>` then `submit-sudoer-request` |
 
 In-tool `sudo` **MUST** go through `requirement-shell-sudo-command` (`util_sudo`). Already-root **MUST NOT** wrap `sudo`.
 
@@ -208,7 +209,7 @@ Operator **MAY** type `sudo take-ownership action --path … --ownership …` th
 | AC-3 | Missing user/group / missing dir / refuse-list → fail closed |
 | AC-4 | Already matching → success no-op |
 | AC-5 | Non-root re-execs **global** binary via `sudo -n`; already-root does not sudo |
-| AC-6 | TTY missing fields → one-at-a-time prompts; non-TTY missing fields → fail, no hang |
+| AC-6 | TTY missing `--path` → numbered allowed-folder list; TTY missing `--ownership` → current `user:group` with no prompt; non-TTY missing fields → fail, no hang |
 | AC-7 | `/dev/shm/<project>` ram-drive trees are **not** refuse-list; `/dev` and `/dev/shm` (mount root) **are** |
 | AC-8 | `list-folders` prints this login’s allowed `--path` set (empty set is success with a next step) |
 | AC-9 | `action` fails closed when `--path` is missing from that set, including already-matching trees |
@@ -240,6 +241,8 @@ Operator **MAY** type `sudo take-ownership action --path … --ownership …` th
 | **TP-TAKE-OWNERSHIP-13** | same | **todo** — already matching is success |
 | **TP-TAKE-OWNERSHIP-14** | same | **todo** — non-TTY missing flag does not hang |
 | **TP-TAKE-OWNERSHIP-15** | same | **todo** — swapped flag order fail closed |
+| **TP-TAKE-OWNERSHIP-42** | same | **have** — TTY `action` without `--path` prints numbered allowed folders |
+| **TP-TAKE-OWNERSHIP-43** | same | **have** — TTY pick uses current `user:group` with no ownership prompt |
 
 **Matrix:** `reviews/requirement-test-matrix.md`  
 **Map:** `reviews/test-plan.md`
@@ -249,9 +252,10 @@ Operator **MAY** type `sudo take-ownership action --path … --ownership …` th
 | Date | Status | Note |
 |------|--------|------|
 | 2026-08-25 | Active 1.0.0 | Ops SSOT for take-ownership; replaces folder-archive-backup on this product |
+| 2026-08-30 | Active 1.3.0 | Interactive `action`: numbered allowed-folder pick; current `user:group` with no prompt |
 
 ---
 
-**Last Updated**: 2026-08-25  
+**Last Updated**: 2026-08-30  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

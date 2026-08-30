@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-shell-cli-interface.md  
-**Status**: Active (Version 2.1.0)  
+**Status**: Active (Version 2.2.0)  
 **Area**: shell  
 **Key**: `requirement-shell-cli-interface`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -12,7 +12,7 @@ It defines a **you-centric local self-managed shell CLI** plus **domain take-own
 
 ### 1.1 Human-facing
 
-**In one sentence:** You type `take-ownership` plus a listed command; empty argv prints help; `action` is the live take-ownership work.
+**In one sentence:** You type `take-ownership` plus a listed command; typing only the name opens the numbered work list on a terminal (help in a pipe); `action` is the live take-ownership work.
 
 | Box | Meaning | Example |
 |-----|---------|---------|
@@ -33,7 +33,7 @@ It defines a **you-centric local self-managed shell CLI** plus **domain take-own
 | You do… | What it means | What you type |
 |---------|---------------|---------------|
 | See the catalog | Help lists operational work apart from grant testers | `take-ownership help` |
-| Open the numbered list | `menu` / `main` — not empty argv | `take-ownership menu` |
+| Open the numbered list | empty argv or `menu` / `main` | `take-ownership` or `take-ownership menu` |
 
 ---
 
@@ -70,7 +70,7 @@ Additional flags **MAY** be added only when documented here (or a superseding re
 
 1. **Single entry:** `app_main` **MUST** parse global flags and route commands.  
 2. **Unknown command:** **MUST** fail loudly with pointer to `help` (via output SSOT).  
-3. **Empty argv:** **Type N → help** (`requirement-shell-cli-zero-arguments.md`).  
+3. **Empty argv:** **Type N → `app_main_menu`** (`requirement-shell-cli-zero-arguments.md`). Never install. TTY list / off-TTY help (`requirement-shell-cli-default-interaction.md`).  
 4. **No raw user I/O:** User-facing messages **MUST** go through `out_*`.  
 5. Script end **MUST** call `app_main "$@"` (no basename gate that blocks dispatch).
 
@@ -109,7 +109,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 
 | Command | Type | Handler family | Required behavior |
 |---------|------|----------------|-------------------|
-| *(no args — empty argv)* | You | `app_main` → `app_help` | **Type N help** — not install |
+| *(no args — empty argv)* | You | `app_main` → `app_main_menu` | **Type N** — numbered list on TTY; help off-TTY; not install |
 | `install` | You | `inst_local_install` | Copy running ship unit to privilege-correct bin |
 | `uninstall` | You | `inst_local_uninstall` | Remove managed binary; confirm unless `--force` |
 | `where-is-me` | You | `app_where_is_me` | Running + install paths + installed flag |
@@ -117,7 +117,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | `about` | You | `app_about` | Diagnostics including **global-bin presence**; no channel one-liner |
 | `help` | You | `app_help` | Full usage; test-purpose apart |
 | `list-folders` | You | `to_list_folders` | **Operational.** List folders this login may take ownership of |
-| `action` | You (+ host-change re-exec) | `to_action` | **Operational.** `--path` then `--ownership`; confirm against `list-folders` then recursive take-ownership |
+| `action` | You (+ host-change re-exec) | `to_action` | **Operational.** `--path` then `--ownership`; confirm against `list-folders` then recursive take-ownership. TTY without `--path`: numbered allowed-folder pick. TTY without `--ownership`: current `user:group` (no prompt). Off-TTY still requires both flags |
 | `print-sudoers` | You | `to_print_sudoers` | **Test-purpose.** `--path` required; **fails closed** without global binary |
 | `print-sudoers-install-script` | You | `to_print_sudoers_install_script` | **Test-purpose.** Admin handoff script |
 | `remove-project-sudoers` | You | `to_remove_project_sudoers` | **Operational.** Draft only |
@@ -130,7 +130,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 #### Dispatcher acceptance criteria
 
 1. Unknown token after flag parse → `out_die` with pointer to `take-ownership help`.  
-2. Zero-arg → help (not install, not `action`).  
+2. Zero-arg → `app_main_menu` (not install, not `action`; off-TTY help).  
 3. Command routing table in `app_main` **must** include every **Implemented** row above.  
 4. Help text **must** stay aligned. Test-purpose verbs **MUST** appear under a heading **apart**.  
 5. Domain catalog detail is owned by `requirement-domain-take-ownership.md`.
@@ -169,14 +169,14 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 **Future AI assistants, Grok, or maintainers MUST NOT**:
 
 1. Add online lifecycle commands without an explicit product-mode change and registry update.  
-2. Change empty argv away from Type N help while install mode remains local-only.  
+2. Change empty argv to install-ensure while install mode remains local-only.  
 3. List commands in help that are not routed (or route commands not listed).  
 4. Bypass `out_*` for product user messages.  
 5. Run the entire CLI as root by default instead of narrow `action` elevation.  
 6. Put full chown semantics only here and omit the ops SSOT.  
 7. Mix test-purpose grant-emit verbs into operational help grouping, or put them on the numbered main menu.  
 8. Reintroduce `backup` / `restore` or `--allow-test-local`.  
-9. Attach the numbered list to empty argv.
+9. Route interactive empty argv to help while the claimed numbered list is Active.
 
 **Violating this rule is a critical CLI interface regression.**
 
@@ -188,12 +188,12 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 |----|-----------|
 | AC-1 | All **Implemented** commands in the table are routed and listed in help |
 | AC-2 | Global flags wire QUIET/JSON/DEBUG/FORCE/TO_PATH/TO_OWNERSHIP as specified |
-| AC-3 | Empty argv is help (Type N) |
+| AC-3 | Empty argv is Type N (not install) and routes to `app_main_menu` |
 | AC-4 | No online self-management verbs on the surface |
 | AC-5 | Domain verbs point to domain requirement for deep semantics |
 | AC-6 | `submit-sudoer-request` is Type 0, routed; does not write `/etc` or create inbound |
 | AC-7 | `generate-sudoer-request` / `generate-sudoer-json` are Type 0, independent of submit; dest readable; global-bin gate |
-| AC-8 | `menu` and `main` are routed; empty argv stays help |
+| AC-8 | Empty argv, `menu`, and `main` are routed to `app_main_menu` |
 | AC-9 | Help lists test-purpose grant-emit **apart** from operational verbs |
 
 ---
@@ -202,8 +202,8 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 
 | Key | Relationship |
 |-----|--------------|
-| `requirement-shell-cli-zero-arguments` | Empty argv Type N |
-| `requirement-shell-cli-default-interaction` | Claimed `menu`/`main` numbered list |
+| `requirement-shell-cli-zero-arguments` | Empty argv Type N; routes to `app_main_menu` |
+| `requirement-shell-cli-default-interaction` | Claimed numbered list on empty argv and `menu`/`main` |
 | `requirement-shell-local-self-management` | install/uninstall/where-is-me |
 | `requirement-shell-output-requirements` | `out_*` catalog |
 | `requirement-domain-take-ownership` | Domain four pillars |
@@ -219,7 +219,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | TP family / ID | Suite | Status |
 |----------------|-------|--------|
 | **TP-CLI-01..12** | `tests/test_cli.sh` | **todo** — retarget from folder-backup names |
-| **TP-CLI-13..16** | same | **todo** — `menu`/`main` with three operational rows |
+| **TP-CLI-13..16** | same | **have** — `menu`/`main` and empty argv; three operational rows |
 | **TP-CLI-17** | same | **todo** — help lists test-purpose grant-emit apart |
 
 **Matrix:** `reviews/requirement-test-matrix.md`  
@@ -233,9 +233,10 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | 2026-08-23 | Active 1.6.0 | folder-backup menu/main routed |
 | 2026-08-25 | Active 2.0.0 | Retarget take-ownership; `action`; retire backup/restore |
 | 2026-08-26 | Active 2.1.0 | `generate-sudoer-json` test-purpose alias of generate-sudoer-request |
+| 2026-08-30 | Active 2.2.0 | Empty argv routes to `app_main_menu` (Type N; not install) |
 
 ---
 
-**Last Updated**: 2026-08-26  
+**Last Updated**: 2026-08-30  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

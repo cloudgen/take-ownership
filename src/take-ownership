@@ -15,9 +15,10 @@
 # - requirement-project-folder.md
 # - requirement-three-layer-privilege-model.md
 # - requirement-sudoer-json-file.md  (JSON sudoer file: global take-ownership only)
+# - requirement-incorrect-ownership-parameter.md  (--ownership user:group; never *)
 # - requirement-shell-cli-interface.md
-# - requirement-shell-cli-zero-arguments.md  (Type N empty argv = help)
-# - requirement-shell-cli-default-interaction.md  (menu/main numbered list)
+# - requirement-shell-cli-zero-arguments.md  (Type N empty argv → app_main_menu)
+# - requirement-shell-cli-default-interaction.md  (empty argv / menu / main numbered list)
 # - requirement-shell-local-self-management.md
 # - requirement-shell-cli-storage.md
 # - requirement-shell-idempotency.md
@@ -34,7 +35,7 @@
 # Single-file ship unit under src/; local install to ~/.local/bin.
 #
 # APP NAME: hard-assign APP_NAME="take-ownership"
-# VERSION: hard-assign VERSION="2.2.0"
+# VERSION: hard-assign VERSION="2.4.0"
 #
 # =============================================================================
 
@@ -51,8 +52,8 @@ APP_NAME="take-ownership"
 : "${SHORT_DESCRIPTION:=${APP_DESC}}"
 : "${DESCRIPTION:=POSIX /bin/sh local CLI: install, uninstall, where-is-me, version, about, help, menu, main, list-folders, action, print-sudoers, print-sudoers-install-script, remove-project-sudoers, generate-sudoer-request, generate-sudoer-json, submit-sudoer-request.}"
 # Product version SSOT (semver). Extractors use: grep '^VERSION="'
-VERSION="2.2.0"
-: "${VERSION:=2.2.0}"
+VERSION="2.4.0"
+: "${VERSION:=2.4.0}"
 # Repository identity SSOT (git host owner/repo for project-repository alignment).
 # Install remains local-only: SCRIPT_URL stays empty (no online curl|sh channel).
 : "${REPO_USER:=cloudgen}"
@@ -1586,6 +1587,9 @@ to_refuse_system_path() {
 to_validate_ownership() {
     _og="${1:-}"
     case "${_og}" in
+        ''|'*')
+            return 1
+            ;;
         *:*)
             ;;
         *)
@@ -1615,6 +1619,35 @@ to_validate_ownership() {
         return 0
     fi
     grep -q "^${_g}:" /etc/group 2>/dev/null
+}
+
+# =============================================================================
+# to_fence_ownership_operand() - Fail closed on * / glob names / missing user:group
+# =============================================================================
+#
+# ALIGNMENT: requirement-incorrect-ownership-parameter.md
+# Last updated: 2026-08-26
+# =============================================================================
+to_fence_ownership_operand() {
+    _og="${1:-}"
+    _ctx="${2:-ownership}"
+    : "${APP_NAME:=take-ownership}"
+    case "${_og}" in
+        ''|'*')
+            out_die "--ownership must be an existing user:group (example www-data:www-data). Wildcard * is not allowed. You passed: ${_og:-empty}. Next: ${APP_NAME} ${_ctx} --path <folder> --ownership user:group"
+            ;;
+    esac
+    case "${_og}" in
+        *:*)
+            ;;
+        *)
+            out_die "--ownership must be user:group, not a filename or glob. You passed: ${_og}. Next: ${APP_NAME} ${_ctx} --path <folder> --ownership user:group"
+            ;;
+    esac
+    if ! to_validate_ownership "${_og}"; then
+        out_die "--ownership must be an existing host user:group (example www-data:www-data). You passed: ${_og}"
+    fi
+    return 0
 }
 
 # =============================================================================
@@ -1682,29 +1715,129 @@ to_chown_recursive() {
 }
 
 # =============================================================================
-# to_collect_missing_action_fields() - TTY walk or fail closed
+# to_current_login_ownership() - Class B: id -un:id -gn of the grant subject
 # =============================================================================
 #
+# ALIGNMENT: requirement-take-ownership-ops.md §2.2
+# Last updated: 2026-08-30
+# =============================================================================
+to_current_login_ownership() {
+    _u=$(to_grant_subject_user)
+    _g=""
+    if [ -n "${_u}" ]; then
+        _g=$(id -gn "${_u}" 2>/dev/null || true)
+    fi
+    if [ -z "${_g}" ]; then
+        _g=$(id -gn 2>/dev/null || true)
+    fi
+    if [ -z "${_u}" ] || [ -z "${_g}" ]; then
+        return 1
+    fi
+    printf '%s:%s' "${_u}" "${_g}"
+}
+
+# =============================================================================
+# to_prompt_allowed_folder_choice() - TTY numbered pick from list-folders set
+# =============================================================================
+#
+# ALIGNMENT: requirement-take-ownership-ops.md §2.2
+# Last updated: 2026-08-30
+# =============================================================================
+to_prompt_allowed_folder_choice() {
+    : "${APP_NAME:=take-ownership}"
+    _list=$(util_mktemp allowed-pick)
+    to_emit_allowed_folders >"${_list}"
+    _count=0
+    while IFS= read -r _p; do
+        [ -n "${_p}" ] || continue
+        _count=$((_count + 1))
+    done <"${_list}"
+    if [ "${_count}" -eq 0 ]; then
+        rm -f "${_list}"
+        out_die "This login has no take-ownership folders yet. Next: ${APP_NAME} generate-sudoer-request --path <folder> --ownership user:group"
+    fi
+    out_info "Folders this login may take ownership of (${_count}):"
+    _i=0
+    while IFS= read -r _p; do
+        [ -n "${_p}" ] || continue
+        _i=$((_i + 1))
+        out_plain "${_i}. ${_p}"
+    done <"${_list}"
+
+    while true; do
+        if ! prompt_line "Choice"; then
+            rm -f "${_list}"
+            out_die "No folder chosen. Next: ${APP_NAME} action --path /var/www/html --ownership user:group"
+        fi
+        _pick="${_prompt_line}"
+        case "${_pick}" in
+            ''|0|q|Q|quit|QUIT|cancel|Cancel)
+                rm -f "${_list}"
+                out_die "No folder chosen. Next: ${APP_NAME} action --path /var/www/html --ownership user:group"
+                ;;
+        esac
+        _chosen=""
+        case "${_pick}" in
+            *[!0-9]*)
+                while IFS= read -r _p; do
+                    if [ "${_p}" = "${_pick}" ]; then
+                        _chosen="${_p}"
+                        break
+                    fi
+                done <"${_list}"
+                ;;
+            *)
+                if [ "${_pick}" -ge 1 ] && [ "${_pick}" -le "${_count}" ]; then
+                    _i=0
+                    while IFS= read -r _p; do
+                        [ -n "${_p}" ] || continue
+                        _i=$((_i + 1))
+                        if [ "${_i}" -eq "${_pick}" ]; then
+                            _chosen="${_p}"
+                            break
+                        fi
+                    done <"${_list}"
+                fi
+                ;;
+        esac
+        if [ -n "${_chosen}" ]; then
+            TO_PATH="${_chosen}"
+            export TO_PATH
+            rm -f "${_list}"
+            return 0
+        fi
+        out_warn "Not a listed folder. Type a number 1-${_count}, or 0 to leave."
+    done
+}
+
+# =============================================================================
+# to_collect_missing_action_fields() - TTY pick or fail closed
+# =============================================================================
+#
+# Interactive: numbered allowed-folder list; ownership is current user:group
+# with no prompt. Non-interactive: fail closed (no hang).
+#
 # ALIGNMENT: requirement-take-ownership-ops.md §2.2 (Question 12b)
-# Last updated: 2026-08-26
+# Last updated: 2026-08-30
 # =============================================================================
 to_collect_missing_action_fields() {
     : "${TTY:=0}"
     : "${JSON:=0}"
     : "${TO_PATH:=}"
     : "${TO_OWNERSHIP:=}"
+    : "${APP_NAME:=take-ownership}"
     if [ -z "${TO_PATH}" ]; then
         if [ "${TTY}" -eq 1 ] && [ "${JSON}" -ne 1 ]; then
-            prompt_line "Folder whose ownership to take (absolute path)" || true
-            TO_PATH="${_prompt_line}"
-            export TO_PATH
+            to_prompt_allowed_folder_choice
         fi
     fi
     if [ -z "${TO_OWNERSHIP}" ]; then
         if [ "${TTY}" -eq 1 ] && [ "${JSON}" -ne 1 ]; then
-            prompt_line "Unix user:group for the new owner (example www-data:www-data)" || true
-            TO_OWNERSHIP="${_prompt_line}"
+            TO_OWNERSHIP=$(to_current_login_ownership) || TO_OWNERSHIP=""
             export TO_OWNERSHIP
+            if [ -n "${TO_OWNERSHIP}" ]; then
+                out_info "Taking ownership as ${TO_OWNERSHIP}"
+            fi
         fi
     fi
     if [ -z "${TO_PATH}" ]; then
@@ -1909,15 +2042,16 @@ to_list_folders() {
 #
 # GENERAL PURPOSE:
 # Validate --path and --ownership, confirm --path is in list-folders, then
-# chown -R without following symlinks. Non-root re-execs the global binary
-# via sudo -n. Already-root chowns directly.
+# chown -R without following symlinks. Interactive: numbered allowed-folder
+# pick; ownership defaults to current user:group (no prompt). Non-root
+# re-execs the global binary via sudo -n. Already-root chowns directly.
 #
 # ALIGNMENT:
 # - requirement-take-ownership-ops.md
 # - requirement-shell-sudo-command.md
 # - requirement-three-layer-privilege-model.md
 #
-# Last updated: 2026-08-26
+# Last updated: 2026-08-30
 # =============================================================================
 to_action() {
     : "${APP_NAME:=take-ownership}"
@@ -1952,9 +2086,7 @@ to_action() {
     if [ ! -d "${TO_PATH}" ]; then
         out_die "--path is not an existing directory: ${TO_PATH}"
     fi
-    if ! to_validate_ownership "${TO_OWNERSHIP}"; then
-        out_die "--ownership must be an existing host user:group (example www-data:www-data). You passed: ${TO_OWNERSHIP}"
-    fi
+    to_fence_ownership_operand "${TO_OWNERSHIP}" "action"
     to_require_allowed_folder "${TO_PATH}"
 
     if to_tree_already_owned "${TO_PATH}" "${TO_OWNERSHIP}"; then
@@ -2066,6 +2198,28 @@ to_require_grant_path() {
     _gp=$(to_require_absolute_path "${TO_PATH}") || out_die "--path must be an absolute folder (not *). You passed: ${TO_PATH}"
     TO_PATH="${_gp}"
     export TO_PATH
+    if [ -e "${TO_PATH}" ] && [ ! -d "${TO_PATH}" ]; then
+        out_die "--path must be a folder (recursive take-ownership), not a file. You passed: ${TO_PATH}"
+    fi
+}
+
+to_require_grant_ownership() {
+    : "${TTY:=0}"
+    : "${JSON:=0}"
+    : "${TO_OWNERSHIP:=}"
+    : "${APP_NAME:=take-ownership}"
+    if [ -z "${TO_OWNERSHIP}" ]; then
+        if [ "${TTY}" -eq 1 ] && [ "${JSON}" -ne 1 ]; then
+            prompt_line "Unix user:group this grant will allow (example www-data:www-data; not *)" || true
+            TO_OWNERSHIP="${_prompt_line}"
+            export TO_OWNERSHIP
+        fi
+    fi
+    if [ -z "${TO_OWNERSHIP}" ]; then
+        out_die "This command needs --ownership <user:group> (the owner the grant will allow). Wildcard * is not allowed. Next: ${APP_NAME} generate-sudoer-json --path /var/www/html --ownership www-data:www-data"
+    fi
+    to_fence_ownership_operand "${TO_OWNERSHIP}" "generate-sudoer-json"
+    export TO_OWNERSHIP
 }
 
 to_list_grant_paths() {
@@ -2073,12 +2227,21 @@ to_list_grant_paths() {
     : "${SUBMIT_ACTION:=add}"
     _seen_file="${1:-}"
     _tmp=$(util_mktemp paths)
+    # Replacement grant: one unique folder per line. Read prior --path
+    # values (one submission each) and add this --path if it is new.
     if [ "${SUBMIT_ACTION}" = "update" ] && [ -n "${_seen_file}" ] && [ -f "${_seen_file}" ]; then
-        sed -n 's/.*"--path", *"\([^"]*\)".*/\1/p' "${_seen_file}" >>"${_tmp}" 2>/dev/null || true
+        # Compact JSON is one line; do not use greedy sed (that keeps only the last --path).
+        to_extract_grant_paths_from_text <"${_seen_file}" >>"${_tmp}" 2>/dev/null || true
     fi
     printf '%s\n' "${TO_PATH}" >>"${_tmp}"
     awk 'NF && !seen[$0]++' "${_tmp}"
     rm -f "${_tmp}"
+}
+
+# sudoers(5): a raw ':' after NOPASSWD: starts another Tag_Spec. JSON args stay
+# the live argv (user:group). Text dual MUST write user\:group.
+to_sudoers_escape_operand() {
+    printf '%s' "${1-}" | sed 's/\\/\\\\/g; s/:/\\:/g'
 }
 
 to_sudoers_fragment_text() {
@@ -2087,21 +2250,24 @@ to_sudoers_fragment_text() {
     : "${GLOBAL_BIN:=/usr/local/bin}"
     : "${USER_BIN:=${HOME}/.local/bin}"
     : "${TO_PATH:=}"
+    : "${TO_OWNERSHIP:=}"
 
     _user=$(id -un 2>/dev/null || echo "unknown")
     _tier=$(to_sudoers_trust_tier)
     _global_path="${GLOBAL_BIN}/${APP_NAME}"
     _local_path="${USER_BIN}/${APP_NAME}"
     _installed=$(to_default_installed_sudoers_path)
-    _purpose="Allow ${_user} to take ownership of ${TO_PATH} (any user:group)."
+    _own="${TO_OWNERSHIP}"
+    _own_esc=$(to_sudoers_escape_operand "${_own}")
+    _purpose="Allow ${_user} to take ownership of ${TO_PATH} as ${_own}."
 
     _trust_banner="# Trust tier: production (global managed binary: ${_global_path})
-# Residual: elevating action as root can chown that folder tree to any existing user:group.
+# Residual: elevating action as root can chown that folder tree to the granted user:group.
 # Does NOT elevate ${_local_path} (user-rewritable — security leak).
 # Multi-user: install as ${_installed} (per-user suffix; do not overwrite other users)."
 
     printf '%s\n' "# Purpose: ${_purpose}"
-    printf '%s\n' "# ${APP_NAME} — action --path <folder> --ownership * only (review before install)"
+    printf '%s\n' "# ${APP_NAME} — action --path <folder> --ownership <user:group> only (review before install)"
     printf '%s\n' "# Target user: ${_user}"
     printf '%s\n' "# Install: sudo install -m 0440 <this-file> ${_installed}"
     printf '%s\n' "# Validate: sudo visudo -c -f ${_installed}"
@@ -2110,27 +2276,12 @@ to_sudoers_fragment_text() {
     printf '%s\n' "#"
     printf '%s\n' "# Grant is the project command only. Does NOT elevate ${_local_path}."
     printf '%s\n' "# Does NOT allowlist chown/mkdir/cp/tar/rm/install/chmod."
-    printf '%s\n' "# --ownership * = any existing user:group operand. --path is exact."
+    printf '%s\n' "# --ownership is an existing user:group. Wildcard * is not allowed. --path is exact."
     to_list_grant_paths "${1:-}" | while IFS= read -r _gp; do
         [ -n "${_gp}" ] || continue
-        printf '%s ALL=(root) NOPASSWD: %s action --path %s --ownership *\n' "${_user}" "${_global_path}" "${_gp}"
-        printf '%s ALL=(root) NOPASSWD: %s --json action --path %s --ownership *\n' "${_user}" "${_global_path}" "${_gp}"
+        printf '%s ALL=(root) NOPASSWD: %s action --path %s --ownership %s\n' "${_user}" "${_global_path}" "${_gp}" "${_own_esc}"
+        printf '%s ALL=(root) NOPASSWD: %s --json action --path %s --ownership %s\n' "${_user}" "${_global_path}" "${_gp}" "${_own_esc}"
     done
-}
-
-# =============================================================================
-# to_sudoers_star_token() - sudoers one-operand wildcard (never a glob)
-# =============================================================================
-#
-# GENERAL PURPOSE:
-# Emit the single character * as a string. JSON/sudoers * is an operand
-# wildcard, not a filesystem path. Callers MUST keep the result quoted.
-#
-# ALIGNMENT: requirement-sudoer-json-file.md §2.3 · INC-20260823-002
-# Last updated: 2026-08-26
-# =============================================================================
-to_sudoers_star_token() {
-    printf '%s' '*'
 }
 
 # =============================================================================
@@ -2139,9 +2290,9 @@ to_sudoers_star_token() {
 #
 # GENERAL PURPOSE:
 # Compact JSON command object. $1 = bound --path. $2 = 0 verb-first, 1 --json first.
-# Ownership operand is always the star token (not cwd names).
+# Ownership operand is TO_OWNERSHIP (existing user:group). Never * and never cwd names.
 #
-# ALIGNMENT: requirement-sudoer-json-file.md §2.3
+# ALIGNMENT: requirement-sudoer-json-file.md §2.3 · requirement-incorrect-ownership-parameter.md
 # Last updated: 2026-08-26
 # =============================================================================
 to_sudoers_json_command_object() {
@@ -2149,12 +2300,13 @@ to_sudoers_json_command_object() {
     _json_first="${2:-0}"
     : "${APP_NAME:=take-ownership}"
     : "${GLOBAL_BIN:=/usr/local/bin}"
+    : "${TO_OWNERSHIP:=}"
     _global_path="${GLOBAL_BIN}/${APP_NAME}"
-    _star="$(to_sudoers_star_token)"
+    _own="${TO_OWNERSHIP}"
     if [ "${_json_first}" = "1" ]; then
-        printf '%s' "{\"runas\":\"root\",\"tags\":[\"NOPASSWD\"],\"path\":\"${_global_path}\",\"args\":[\"--json\",\"action\",\"--path\",\"${_gp}\",\"--ownership\",\"${_star}\"]}"
+        printf '%s' "{\"runas\":\"root\",\"tags\":[\"NOPASSWD\"],\"path\":\"${_global_path}\",\"args\":[\"--json\",\"action\",\"--path\",\"${_gp}\",\"--ownership\",\"${_own}\"]}"
     else
-        printf '%s' "{\"runas\":\"root\",\"tags\":[\"NOPASSWD\"],\"path\":\"${_global_path}\",\"args\":[\"action\",\"--path\",\"${_gp}\",\"--ownership\",\"${_star}\"]}"
+        printf '%s' "{\"runas\":\"root\",\"tags\":[\"NOPASSWD\"],\"path\":\"${_global_path}\",\"args\":[\"action\",\"--path\",\"${_gp}\",\"--ownership\",\"${_own}\"]}"
     fi
 }
 
@@ -2216,7 +2368,7 @@ to_sudoers_refuse_forbidden_grant() {
     _gb=$(cat "${_gf}" 2>/dev/null || true)
     case "${_gb}" in
         *"/usr/bin/mkdir"*|*"/bin/mkdir"*|*"/usr/bin/cp"*|*"/bin/cp"*|*"/usr/bin/tar"*|*"/bin/tar"*|*"/bin/rm "*|*"/usr/bin/rm "*|*"/usr/bin/install"*|*"/usr/bin/chmod"*|*"/bin/chmod"*|*"/usr/bin/chown"*|*"/bin/chown"*|*".local/bin/${APP_NAME}"*)
-            out_die "refusing sudoer grant with OS-tool commands or a user-bin path (need ${GLOBAL_BIN}/${APP_NAME} action --path <folder> --ownership * only)"
+            out_die "refusing sudoer grant with OS-tool commands or a user-bin path (need ${GLOBAL_BIN}/${APP_NAME} action --path <folder> --ownership <user:group> only)"
             ;;
     esac
     case "${_gb}" in
@@ -2224,11 +2376,16 @@ to_sudoers_refuse_forbidden_grant() {
             out_die "refusing sudoer grant with --path * (folder must be exact). Path: ${_gf}"
             ;;
     esac
+    case "${_gb}" in
+        *'"--ownership","*"'*|*'--ownership", "*"'*)
+            out_die "refusing sudoer grant with --ownership * (wildcard is not allowed). Path: ${_gf}. Next: ${APP_NAME} generate-sudoer-json --path <folder> --ownership user:group"
+            ;;
+    esac
     return 0
 }
 
-# Fail closed unless args are exactly action --path F --ownership * plus --json twin.
-# $2 = queued request id (optional). INC-20260823-002: cwd listings must not pass.
+# Fail closed unless args are exactly action --path F --ownership user:group plus --json twin.
+# $2 = queued request id (optional). * and cwd listings must not pass.
 to_sudoers_verify_grant_verbs() {
     _gf="${1:-}"
     _queued="${2:-}"
@@ -2239,7 +2396,7 @@ to_sudoers_verify_grant_verbs() {
     fi
     _head="Sudoer file is incomplete"
     _tail="Path: ${_gf}."
-    _next="Next: ${APP_NAME} generate-sudoer-json --path <folder>   (or generate-sudoer-request)"
+    _next="Next: ${APP_NAME} generate-sudoer-json --path <folder> --ownership user:group   (or generate-sudoer-request)"
     if [ -n "${_queued}" ]; then
         _head="Queued sudo request is incomplete"
         _tail="Do not approve ${_queued}."
@@ -2251,18 +2408,50 @@ to_sudoers_verify_grant_verbs() {
         *) out_die "${_head}: it does not name ${GLOBAL_BIN}/${APP_NAME}. ${_tail}" ;;
     esac
     case "${_norm}" in
-        *'"args":["action","--path",'*',"--ownership","*"]'*) ;;
-        *) out_die "${_head}: args must be action --path <folder> --ownership * (the * is a sudoers operand, not a path). ${_tail} ${_next}" ;;
-    esac
-    case "${_norm}" in
-        *'"args":["--json","action","--path",'*',"--ownership","*"]'*) ;;
-        *) out_die "${_head}: missing --json twin with --ownership *. ${_tail} ${_next}" ;;
-    esac
-    case "${_norm}" in
-        *'"--ownership","*",'*)
-            out_die "${_head}: --ownership * was expanded to extra arguments (looks like a directory listing). The * is a sudoers operand, not a path. ${_tail} ${_next}"
+        *'"--ownership","*"'*|*'--ownership","*",'*)
+            out_die "${_head}: --ownership * is not allowed (wildcard, or a directory listing from an expanded *). Use an existing user:group. ${_tail} ${_next}"
             ;;
     esac
+    case "${_norm}" in
+        *'"args":["action","--path",'*',"--ownership","'*:*'"]'*) ;;
+        *) out_die "${_head}: args must be action --path <folder> --ownership <user:group> (not * and not extra filenames). ${_tail} ${_next}" ;;
+    esac
+    case "${_norm}" in
+        *'"args":["--json","action","--path",'*',"--ownership","'*:*'"]'*) ;;
+        *) out_die "${_head}: missing --json twin with --ownership <user:group>. ${_tail} ${_next}" ;;
+    esac
+    _ops=$(printf '%s\n' "${_norm}" | grep -o '"--ownership","[^"]*"' 2>/dev/null || true)
+    if [ -z "${_ops}" ]; then
+        out_die "${_head}: it does not include --ownership. ${_tail} ${_next}"
+    fi
+    while IFS= read -r _tok; do
+        [ -n "${_tok}" ] || continue
+        _val=${_tok#*'"--ownership","'}
+        _val=${_val%'"'}
+        case "${_val}" in
+            *:*)
+                ;;
+            *)
+                out_die "${_head}: --ownership must be user:group, not a filename or glob (${_val}). ${_tail} ${_next}"
+                ;;
+        esac
+        if ! to_validate_ownership "${_val}"; then
+            out_die "${_head}: --ownership ${_val} is not an existing host user:group. ${_tail} ${_next}"
+        fi
+    done <<EOF
+${_ops}
+EOF
+    # One sudoers line = one folder. Unique --path count must equal the
+    # number of action objects (each folder has one verb line; --json is twin).
+    _paths=$(printf '%s\n' "${_norm}" | grep -o '"--path","[^"]*"' 2>/dev/null | sed 's/"--path",//;s/"//g' || true)
+    _nuniq=$(printf '%s\n' "${_paths}" | awk 'NF && !seen[$0]++' | wc -l | tr -d ' ')
+    _nact=$(printf '%s\n' "${_norm}" | grep -o '"args":\["action"' 2>/dev/null | wc -l | tr -d ' ')
+    if [ -z "${_nuniq}" ] || [ "${_nuniq}" = "0" ]; then
+        out_die "${_head}: grant must name one folder per line. ${_tail} ${_next}"
+    fi
+    if [ "${_nuniq}" != "${_nact}" ]; then
+        out_die "${_head}: each folder needs its own sudoers line (one --path per action object). Do not put files or extra folders on one line. ${_tail} ${_next}"
+    fi
     return 0
 }
 
@@ -2333,6 +2522,7 @@ to_print_sudoers() {
     : "${TO_PATH:=}"
 
     to_require_grant_path
+    to_require_grant_ownership
     to_sudoers_require_emit_trust "print-sudoers"
 
     _user=$(id -un 2>/dev/null || echo "unknown")
@@ -2377,7 +2567,7 @@ to_print_sudoers() {
         return 0
     fi
 
-    out_info "Sudoers fragment for user ${_user} → ${GLOBAL_BIN}/${APP_NAME} action --path ${TO_PATH} --ownership * (trust_tier=${_tier})"
+    out_info "Sudoers fragment for user ${_user} → ${GLOBAL_BIN}/${APP_NAME} action --path ${TO_PATH} --ownership ${TO_OWNERSHIP} (trust_tier=${_tier})"
     out_info "Admin steps: review → visudo -c -f FILE → install -m 0440 FILE ${_installed}"
     out_empty_line
     out_plain "${_fragment}"
@@ -2545,7 +2735,7 @@ to_sudoers_require_emit_trust() {
 #
 # GENERAL PURPOSE:
 # Write this product's sudoer JSON to a local path (default under ~/.config),
-# verify action --path --ownership * plus --json twin, and when sudoer-cli
+# verify action --path --ownership user:group plus --json twin, and when sudoer-cli
 # exists convert the file. Does not write /etc or inbound.
 #
 # ALIGNMENT:
@@ -2573,6 +2763,7 @@ to_generate_sudoer_request() {
     esac
 
     to_require_grant_path
+    to_require_grant_ownership
     _out_path="${1:-}"
     _user=$(id -un 2>/dev/null || echo "unknown")
 
@@ -2646,7 +2837,9 @@ to_generate_sudoer_request() {
     fi
 
     out_success "Wrote verified sudoer file to ${_out_path}"
-    out_info "Grant allows: ${APP_NAME} action --path ${TO_PATH} --ownership * (JSON action=${SUBMIT_ACTION}; * is not a path)"
+    _nfold=$(to_list_grant_paths "${_out_path}" | awk 'NF' | wc -l | tr -d ' ')
+    out_info "Grant allows: ${APP_NAME} action --path <folder> --ownership ${TO_OWNERSHIP} (${_nfold} folder line(s); JSON action=${SUBMIT_ACTION})"
+    out_info "This --path is ${TO_PATH}. One sudoers line per unique folder. Extra files on one line are not allowed."
     if [ "${_convert}" = "ok" ]; then
         out_info "Convert check: action --path still present after sudoer-cli json-to-sudoers"
     else
@@ -2763,6 +2956,7 @@ to_submit_sudoer_request() {
         _cleanup_tmp=0
     else
         to_require_grant_path
+        to_require_grant_ownership
         to_sudoers_require_emit_trust "submit-sudoer-request"
         if [ -z "${EFFECTIVE_STORAGE_DIR}" ]; then
             EFFECTIVE_STORAGE_DIR=$(util_resolve_storage)
@@ -2820,7 +3014,7 @@ to_submit_sudoer_request() {
     fi
 
     # When inbound is readable, queued body MUST still be the exact grant
-    # (action --path F --ownership * plus --json twin). Purpose text and
+    # (action --path F --ownership user:group plus --json twin). Purpose text and
     # [OK] submitted are not completeness. INC-20260817-001 · INC-20260823-002.
     if [ -n "${_rid}" ] && [ -r "${_inbound}/${_rid}" ]; then
         to_sudoers_verify_grant_verbs "${_inbound}/${_rid}" "${_rid}"
@@ -3039,6 +3233,7 @@ to_print_sudoers_install_script() {
     : "${TO_PATH:=}"
 
     to_require_grant_path
+    to_require_grant_ownership
     _user=$(to_current_login_user)
     _draft=$(to_default_project_sudoers_path)
     _script_out="${1:-}"
@@ -3576,14 +3771,15 @@ app_about() {
 # =============================================================================
 #
 # GENERAL PURPOSE:
-# Print the four operational work rows plus Exit 9. Labels are the kept-list
-# human-readable form (verb: explain). Self-managed, diagnostics, and
-# test-purpose verbs are omitted.
+# Print the three operational work rows plus Exit 9. Labels are the kept-list
+# human-readable form (verb: explain). list-folders stays a live verb on
+# help, not on this list. Self-managed, diagnostics, and test-purpose verbs
+# are omitted.
 #
 # ALIGNMENT:
 # - requirement-shell-cli-default-interaction.md
 #
-# Last updated: 2026-08-23
+# Last updated: 2026-08-30
 # =============================================================================
 app_main_menu_print() {
     : "${APP_NAME:=take-ownership}"
@@ -3592,9 +3788,8 @@ app_main_menu_print() {
 
     out_info "${APP_NAME} — numbered list of live work commands"
     out_plain "1. action: Recursively take ownership of a named folder"
-    out_plain "2. list-folders: List folders this login may take ownership of"
-    out_plain "3. remove-project-sudoers: Remove the local grant draft only"
-    out_plain "4. submit-sudoer-request: Hand the JSON grant to the approval queue"
+    out_plain "2. remove-project-sudoers: Remove the local grant draft only"
+    out_plain "3. submit-sudoer-request: Hand the JSON grant to the approval queue"
     out_plain "9. Exit"
 }
 
@@ -3610,7 +3805,7 @@ app_main_menu_print() {
 # ALIGNMENT:
 # - requirement-shell-cli-default-interaction.md
 #
-# Last updated: 2026-08-23
+# Last updated: 2026-08-30
 # =============================================================================
 app_main_menu_run_pick() {
     _pick="${1-}"
@@ -3625,13 +3820,10 @@ app_main_menu_run_pick() {
             export TO_PATH TO_OWNERSHIP
             to_action
             ;;
-        2|list-folders)
-            to_list_folders
-            ;;
-        3|remove-project-sudoers)
+        2|remove-project-sudoers)
             to_remove_project_sudoers "${_a}"
             ;;
-        4|submit-sudoer-request)
+        3|submit-sudoer-request)
             to_submit_sudoer_request "${_a}"
             ;;
         9|exit|quit|Exit|QUIT)
@@ -3648,16 +3840,16 @@ app_main_menu_run_pick() {
 # =============================================================================
 #
 # GENERAL PURPOSE:
-# Commands menu / main. On a real terminal: ignore --json, show the numbered
-# list, run one pick. Off-TTY: help (JSON help when --json). Never hang.
-# Empty argv stays help (this function is not empty-argv).
+# Empty argv, menu, and main. On a real terminal: ignore --json, show the
+# numbered list, run one pick. Off-TTY: help (JSON help when --json). Never hang.
+# Type N: empty argv MUST NOT install.
 #
 # ALIGNMENT:
 # - requirement-shell-cli-default-interaction.md
 # - requirement-shell-interactive-vs-noninteractive.md
 # - requirement-shell-cli-zero-arguments.md
 #
-# Last updated: 2026-08-23
+# Last updated: 2026-08-30
 # =============================================================================
 app_main_menu() {
     : "${TTY:=0}"
@@ -3732,7 +3924,7 @@ app_help() {
     if [ "${JSON}" -eq 1 ]; then
         out_json "success" "Help text available in human-readable mode. Run without --json." \
             "command" "help" \
-            "note" "Use --json with version, about, install, uninstall, where-is-me, list-folders, action. menu/main off-TTY uses this help."
+            "note" "Use --json with version, about, install, uninstall, where-is-me, list-folders, action. Empty argv and menu/main off-TTY use this help."
         return 0
     fi
     if [ "${QUIET}" -eq 1 ]; then
@@ -3754,13 +3946,15 @@ app_help() {
     out_plain "  about                Show diagnostics (incl. sudoers trust tier)"
     out_plain "  help                 Show this help"
     out_plain "  menu                 Numbered list of live work commands (TTY; off-TTY is help)"
-    out_plain "  main                 Same as menu"
+    out_plain "  main                 Same as menu (empty argv is the same path)"
     out_empty_line
     out_info "Work (operational):"
     out_plain "  list-folders         List folders this login may take ownership of"
     out_plain "  action --path <folder> --ownership <user:group>"
     out_plain "                       Recursively take ownership (no symlink follow)."
     out_plain "                       Confirms --path is on list-folders first."
+    out_plain "                       On a real terminal with no --path: numbered folder list."
+    out_plain "                       Then uses this login's user:group (no ownership prompt)."
     out_plain "                       Needs a grant for that folder and the global binary."
     out_plain "  remove-project-sudoers [path]"
     out_plain "                       Remove project-sudoers-file draft only (not host elev)"
@@ -3769,17 +3963,16 @@ app_help() {
     out_plain "                       (does not write /etc; does not mkdir inbound)"
     out_empty_line
     out_info "Grant testers (test-purpose — not on the main menu):"
-    out_plain "  print-sudoers --path <folder> [dest]"
+    out_plain "  print-sudoers --path <folder> --ownership <user:group> [dest]"
     out_plain "                       Emit project-sudoers-file (draft). Requires global install."
     out_plain "  print-sudoers-install-script --path <folder> [path]"
     out_plain "                       Write admin script to install|uninstall|replace the fragment"
-    out_plain "  generate-sudoer-request --path <folder> [dest]"
-    out_plain "  generate-sudoer-json    --path <folder> [dest]"
+    out_plain "  generate-sudoer-request --path <folder> --ownership <user:group> [dest]"
+    out_plain "  generate-sudoer-json    --path <folder> --ownership <user:group> [dest]"
     out_plain "                       Independent JSON grant you can read without sudo."
     out_plain "                       Canonical body for tests: args stay"
-    out_plain "                       action --path <folder> --ownership *"
-    out_plain "                       plus --json twin. The * is a sudoers operand,"
-    out_plain "                       not a directory listing (INC-20260823-002)."
+    out_plain "                       action --path <folder> --ownership <user:group>"
+    out_plain "                       plus --json twin. Wildcard * is not allowed."
     out_plain "                       JSON field action (add/update) is not the CLI verb action."
     out_empty_line
     out_info "Global Options:"
@@ -3788,7 +3981,7 @@ app_help() {
     out_plain "  --force              Force reinstall / skip uninstall confirm"
     out_plain "  --global             Install to GLOBAL_BIN (required before grant emit)"
     out_plain "  --path PATH          Absolute folder (action and grant-emit)"
-    out_plain "  --ownership user:group  New Unix owner (action only; grant uses *)"
+    out_plain "  --ownership user:group  Unix owner (action and grant-emit; never *)"
     out_plain "  --update             Force submit/generate JSON action=update"
     out_plain "  --add                Force submit/generate JSON action=add"
     out_plain "  --debug              Debug diagnostics on stderr"
@@ -3802,16 +3995,18 @@ app_help() {
     out_plain "  SUDOERS_D_DIR           host sudoers.d dir (default /etc/sudoers.d; tests)"
     out_empty_line
     out_info "Examples:"
+    out_plain "  ${APP_NAME}"
     out_plain "  ${APP_NAME} menu"
     out_plain "  ${APP_NAME} install"
     out_plain "  sudo ${APP_NAME} install"
-    out_plain "  ${APP_NAME} generate-sudoer-request --path /var/www/html"
-    out_plain "  ${APP_NAME} generate-sudoer-json --path /var/www/html /tmp/gold-sudoer.json"
-    out_plain "  ${APP_NAME} submit-sudoer-request --path /var/www/html"
+    out_plain "  ${APP_NAME} generate-sudoer-request --path /var/www/html --ownership www-data:www-data"
+    out_plain "  ${APP_NAME} generate-sudoer-json --path /var/www/html --ownership www-data:www-data /tmp/gold-sudoer.json"
+    out_plain "  ${APP_NAME} submit-sudoer-request --path /var/www/html --ownership www-data:www-data"
     out_plain "  ${APP_NAME} list-folders"
     out_plain "  ${APP_NAME} action --path /var/www/html --ownership www-data:www-data"
     out_empty_line
-    out_info "Empty argv shows help (Type N — local-only; no curl|sh install-ensure)."
+    out_info "Empty argv opens the numbered work list on a terminal (same as menu)."
+    out_info "Off-TTY, empty argv is this help. Type N — local-only; no curl|sh install-ensure."
     out_info "Only ${GLOBAL_BIN}/${APP_NAME} may appear in sudoers (not ~/.local/bin)."
 }
 
@@ -3821,7 +4016,7 @@ app_help() {
 #
 # GENERAL PURPOSE:
 # Single dispatcher for take-ownership (specialized from folder-backup; local Type 0 + action).
-# Empty argv = Type N help (not install-ensure).
+# Empty argv = Type N app_main_menu (not install-ensure).
 #
 # ALIGNMENT:
 # - requirement-shell-cli-interface.md
@@ -3831,7 +4026,7 @@ app_help() {
 #
 # !!! DO NOT MODIFY OR SIMPLIFY THIS FUNCTION !!!
 #
-# Last updated: 2026-08-26
+# Last updated: 2026-08-30
 # =============================================================================
 app_main() {
     : "${COMMAND:=help}"
@@ -3859,9 +4054,9 @@ app_main() {
     export EFFECTIVE_STORAGE_DIR STORAGE_DIR
     export TMPDIR="${EFFECTIVE_STORAGE_DIR}"
 
-    # Type N: empty argv → help
+    # Type N: empty argv → same handler as menu/main (TTY list; off-TTY help)
     if [ $# -eq 0 ]; then
-        app_help
+        app_main_menu
         return 0
     fi
 
@@ -3988,6 +4183,6 @@ app_main() {
 # BOOTSTRAP
 # =============================================================================
 # Always invoke app_main. No basename gate (pipe-safe entry).
-# Product law: requirement-shell-cli-zero-arguments.md (Type N).
+# Product law: requirement-shell-cli-zero-arguments.md (Type N empty argv → menu).
 # =============================================================================
 app_main "$@"

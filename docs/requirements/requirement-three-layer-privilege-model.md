@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-three-layer-privilege-model.md  
-**Status**: Active (Version 2.1.0)  
+**Status**: Active (Version 2.2.0)  
 **Area**: architecture  
 **Key**: `requirement-three-layer-privilege-model`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -20,14 +20,14 @@ Domain catalog lives in `requirement-domain-take-ownership`. Recursive chown liv
 
 | Box | Meaning | Example |
 |-----|---------|---------|
-| You / this login | Generate/submit; run `action` after install | `take-ownership generate-sudoer-request --path /var/www/html` |
+| You / this login | Generate/submit; run `action` after install | `take-ownership generate-sudoer-request --path /var/www/html --ownership www-data:www-data` |
 | Admin | Validate and install under `/etc/sudoers.d/` | `visudo -c` then mode `0440` |
 | Not this file | JSON command list shape | `requirement-sudoer-json-file` |
 
 | Includes | Excludes |
 |----------|----------|
 | Grant names **only** `/usr/local/bin/take-ownership` | `${HOME}/.local/bin/take-ownership` in sudoers |
-| Exact `--path` + `--ownership *` | `--allow-test-local`; `NOPASSWD: ALL` |
+| Exact `--path` + `--ownership user:group` | `--allow-test-local`; `NOPASSWD: ALL`; `--ownership *` |
 | Non-interactive `sudo -n` of the matching line | Blaming “no TTY” when the grant is too narrow |
 
 | Surface | What you open | What for |
@@ -99,13 +99,13 @@ Domain catalog lives in `requirement-domain-take-ownership`. Recursive chown liv
 | Step | Who | Action |
 |------|-----|--------|
 | 1 | User / admin | **Global** install (`sudo take-ownership install`) |
-| 2 | User | `take-ownership generate-sudoer-request --path <folder>` — independent JSON, readable without sudo |
-| 3 | User (when sudoer-cli + sudoer-adm are present) | `take-ownership submit-sudoer-request --path <folder>` (or pass the reviewed file). Type 0; no `/etc` write; no inbound `mkdir` |
+| 2 | User | `take-ownership generate-sudoer-request --path <folder> --ownership <user:group>` — independent JSON, readable without sudo |
+| 3 | User (when sudoer-cli + sudoer-adm are present) | `take-ownership submit-sudoer-request --path <folder> --ownership <user:group>` (or pass the reviewed file). Type 0; no `/etc` write; no inbound `mkdir` |
 | 4 | **Admin** | Review; `visudo -c` + `install -m 0440`, **or** `sudo sh <admin-script> install`, **or** approve via sudoer-cli |
 | 5 | User | `take-ownership action --path <folder> --ownership <user:group>` — in-tool `sudo -n` of the **global** binary |
 | 6 | Admin (leave elev) | `sudo sh <admin-script> uninstall` (or `sudo rm /etc/sudoers.d/take-ownership-<user>`) |
 
-Optional: `print-sudoers --path <folder>` (test-purpose text dual) and `print-sudoers-install-script --path <folder>`. Same global-bin gate.
+Optional: `print-sudoers --path <folder> --ownership <user:group>` (test-purpose text dual) and `print-sudoers-install-script --path <folder>`. Same global-bin gate. Generate / print / submit **MUST** take the same `--ownership` `action` will use.
 
 #### 2.3.2a Independent sudoer generate (sacred)
 
@@ -115,6 +115,7 @@ Any sudoer artifact this product generates **MUST** be producible by a Type 0 su
 |------|--------|
 | **Subcommand** | `generate-sudoer-request` / `generate-sudoer-json` (JSON) and `print-sudoers` (text dual) |
 | **`--path` required** | Bound folder for the grant |
+| **`--ownership` required** | Same existing `user:group` `action` will use. Never `*` |
 | **Readable dest** | Invoking user **MUST** `cat` without sudo |
 | **Default dest** | `${HOME}/.config/take-ownership/sudoer-request-<user>.json` |
 | **Forbidden dest** | `/etc/**`; sibling inbound; a deleted submit temp |
@@ -135,7 +136,7 @@ Any sudoer artifact this product generates **MUST** be producible by a Type 0 su
 | Sibling approver | `sudoer-adm` (`SUDOER_ADM_USER`) |
 | Preferred inbound | `/var/sudoer-cli/sudoer-request` (3773) — **MUST NOT** mkdir |
 | Default add vs update | Host probe of **this user’s** `/etc/sudoers.d/take-ownership-<user>` (legacy `/etc/sudoers.d/take-ownership`) |
-| Later folders | **update appends** another `--path` command pair (verb + `--json` twin). **MUST NOT** drop the old folder |
+| Later folders | **Next submission** generates a **replacement**: unique prior `--path` lines plus the new folder (skip duplicates). **One line per folder.** **MUST NOT** put two folders or files on one line |
 | Body SSOT | `requirement-sudoer-json-file` |
 | Test-local flag | **Absent** — do not implement `--allow-test-local` |
 
@@ -146,11 +147,13 @@ Any sudoer artifact this product generates **MUST** be producible by a Type 0 su
 Match the JSON grant:
 
 ```text
-<user> ALL=(root) NOPASSWD: /usr/local/bin/take-ownership action --path /var/www/html --ownership *
-<user> ALL=(root) NOPASSWD: /usr/local/bin/take-ownership --json action --path /var/www/html --ownership *
+<user> ALL=(root) NOPASSWD: /usr/local/bin/take-ownership action --path /var/www/html --ownership www-data\:www-data
+<user> ALL=(root) NOPASSWD: /usr/local/bin/take-ownership --json action --path /var/www/html --ownership www-data\:www-data
 ```
 
-**MUST NOT:** USER_BIN path, `/bin/chown`, `NOPASSWD: ALL`, shells, `--path *`, verb-only `action` with no `--path`.
+JSON `args` keep `"www-data:www-data"` (live argv). Sudoers text **MUST** write `www-data\:www-data` so `visudo -c` parses (raw `:` after `NOPASSWD:` is a tag separator). Body SSOT: `requirement-sudoer-json-file`.
+
+**MUST NOT:** USER_BIN path, `/bin/chown`, `NOPASSWD: ALL`, shells, `--path *`, `--ownership *`, verb-only `action` with no `--path`.
 
 Worked user in comments: `alice` (illustrative; live emit uses `id -un`).
 
@@ -176,7 +179,7 @@ Worked user in comments: `alice` (illustrative; live emit uses `id -un`).
 If sudo is missing, not authorized for the `action` argv, the global binary is missing, or chown cannot complete:
 
 1. `action` **MUST** fail with non-zero exit.  
-2. Human error **MUST** name the missing grant and next commands (`generate-sudoer-request --path …`, `submit-sudoer-request`).  
+2. Human error **MUST** name the missing grant and next commands (`generate-sudoer-request --path <folder> --ownership <user:group>`, `submit-sudoer-request`).  
 3. **MUST NOT** silently skip chown and claim success.  
 4. **MUST NOT** fall back to `${USER_BIN}/take-ownership` as the elevated Cmnd.
 
@@ -244,12 +247,12 @@ If sudo is missing, not authorized for the `action` argv, the global binary is m
 |----|-----------|
 | AC-1 | Layer map: you / host-change `action` / Type 2 unused |
 | AC-2 | Grant emit fails closed without `/usr/local/bin/take-ownership` |
-| AC-3 | Fragment path is global binary + `action --path F --ownership *` plus `--json` twin |
+| AC-3 | Fragment path is global binary + `action --path F --ownership user:group` plus `--json` twin |
 | AC-4 | Type 0 never writes `/etc` or mkdirs inbound |
 | AC-5 | Independent generate dest is readable without sudo |
 | AC-6 | Per-user installed fragment `/etc/sudoers.d/take-ownership-<user>` |
-| AC-7 | Update appends a folder; does not drop the old one |
-| AC-8 | Readable inbound still has exact `--ownership *` (cwd listings fail closed) |
+| AC-7 | Replacement union: extra unique folder = extra line; skip duplicates; never files on one line |
+| AC-8 | Readable inbound still has exact `--ownership user:group` (`*` and cwd listings fail closed) |
 
 ---
 
@@ -258,6 +261,7 @@ If sudo is missing, not authorized for the `action` argv, the global binary is m
 | Key | Relationship |
 |-----|--------------|
 | `requirement-sudoer-json-file` | JSON grant body |
+| `requirement-incorrect-ownership-parameter` | `--ownership` fence (`user:group`; no `*`) |
 | `requirement-domain-take-ownership` | Verb catalog |
 | `requirement-take-ownership-ops` | Runtime `action` |
 | `requirement-shell-sudo-command` | In-tool sudo wrap |
@@ -289,6 +293,7 @@ If sudo is missing, not authorized for the `action` argv, the global binary is m
 | 2026-08-23 | Active 1.12.0 | folder-backup: `backup *` / host-probe / independent generate |
 | 2026-08-25 | Active 2.0.0 | Retarget take-ownership; **global-only** grant; no `--allow-test-local` |
 | 2026-08-26 | Active 2.1.0 | Inbound exact-args; `generate-sudoer-json` independent generate alias |
+| 2026-08-26 | Active 2.2.0 | Workflow copy requires `--ownership user:group`. Text dual escapes `:`. No leftover `--ownership *` gold. |
 
 ---
 

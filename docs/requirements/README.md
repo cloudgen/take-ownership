@@ -16,7 +16,8 @@ Authoritative specialized product law for **take-ownership** lives here.
 | Install mode | **Local-only** / non-online-installable |
 | Ops | `requirement-take-ownership-ops` — recursive chown, no symlink follow |
 | Domain surface | `requirement-domain-take-ownership` — four pillars; ops deferred |
-| JSON sudoer file | `requirement-sudoer-json-file` — global binary only; `action --path <folder> --ownership *` plus `--json` twin |
+| JSON sudoer file | `requirement-sudoer-json-file` — global binary only; `action --path <folder> --ownership <user:group>` plus `--json` twin |
+| Incorrect ownership | `requirement-incorrect-ownership-parameter` — no `*`; no cwd listings |
 
 ## Class requirement gate
 

@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-class-software-dev.md  
-**Status**: Active (Version 2.0.0 – take-ownership residual)  
+**Status**: Active (Version 2.0.1 – take-ownership residual)  
 **Area**: class  
 **Key**: `requirement-class-software-dev`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -89,7 +89,7 @@ Primary language, toolchain, package tools, and runtime **MUST** be declared in 
 | Bootstrap lineage / keep-extend | `requirement-bootstrap-chain` | A0=cli-template → A1=folder-backup → B |
 | Project layout / ship path | `requirement-project-folder` | `src/` + bin targets |
 | Type 0 CLI surface / flags / dispatch | `requirement-shell-cli-interface` | Do not duplicate |
-| Empty argv Type N help | `requirement-shell-cli-zero-arguments` | Local-only |
+| Empty argv Type N (menu path) | `requirement-shell-cli-zero-arguments` | Local-only; never install; empty argv → `app_main_menu` |
 | Local self-managed lifecycle | `requirement-shell-local-self-management` | install / uninstall / where-is-me |
 | Output SSOT (`out_*`) | `requirement-shell-output-requirements` | Do not duplicate |
 | Operator-readable error wording | `requirement-operator-readable-error` | Do not duplicate |
@@ -98,7 +98,8 @@ Primary language, toolchain, package tools, and runtime **MUST** be declared in 
 | Interactive vs non-interactive | `requirement-shell-interactive-vs-noninteractive` | Do not duplicate |
 | Modular prefixes / single-file layout | `requirement-shell-modular-function-design` | Do not duplicate |
 | Privilege layers + sudoers **files** | `requirement-three-layer-privilege-model` | You + narrow `action`; global-only grant |
-| JSON sudoer file (grant body) | `requirement-sudoer-json-file` | `take-ownership` only; exact `--path`; `--ownership *` |
+| JSON sudoer file (grant body) | `requirement-sudoer-json-file` | `take-ownership` only; exact `--path`; `--ownership user:group` |
+| Incorrect ownership parameter | `requirement-incorrect-ownership-parameter` | Product grant/inbound fence: no `*`, no cwd listings |
 | Take-ownership **operations** | `requirement-take-ownership-ops` | Recursive chown; no symlink follow |
 | Domain surface (verbs, help, about) | `requirement-domain-take-ownership` | Four pillars only; ops pointer |
 | Actor / role / subject / approver | **this file** (residual) | **considered — no dest approver and no approval subject**. This product has no dest approval machine. Sibling `sudoer-cli` dest is **not** this product. **MUST NOT** invent an approver. |
@@ -175,7 +176,7 @@ Primary language, toolchain, package tools, and runtime **MUST** be declared in 
 | `requirement-shell-script-coding` | Coding-style specialize-in |
 | `requirement-shell-sudo-command` | In-tool sudo |
 | `requirement-shell-cli-interface` | Command surface, flags, dispatch |
-| `requirement-shell-cli-zero-arguments` | Type N empty argv |
+| `requirement-shell-cli-zero-arguments` | Type N empty argv (routes to menu) |
 | `requirement-shell-local-self-management` | Local install lifecycle |
 | `requirement-shell-output-requirements` | `out_*` SSOT |
 | `requirement-operator-readable-error` | Operator error wording |
@@ -197,9 +198,10 @@ Primary language, toolchain, package tools, and runtime **MUST** be declared in 
 |------|--------|------|
 | 2026-08-19 | Active (1.1.0) | folder-backup residual: no dest approver / no dest fences |
 | 2026-08-25 | Active (2.0.0) | take-ownership residual; coding-style + sudo-wrap peers; backup ops superseded |
+| 2026-08-30 | Active (2.0.1) | Residual pointer: empty argv Type N routes to menu |
 
 ---
 
-**Last Updated**: 2026-08-25  
+**Last Updated**: 2026-08-30  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

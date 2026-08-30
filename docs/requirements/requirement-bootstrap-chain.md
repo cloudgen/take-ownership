@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-bootstrap-chain.md  
-**Status**: Active (Version 3.0.0)  
+**Status**: Active (Version 3.1.0)  
 **Area**: architecture  
 **Key**: `requirement-bootstrap-chain`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -77,7 +77,7 @@ B **MUST** inherit structural contracts:
 | Integrity companion | **Absent** |
 | Online lifecycle | **Absent** |
 | Local lifecycle | **Keep** local `install` / `uninstall` / `where-is-me` |
-| Empty argv | **Keep** Type N help |
+| Empty argv | **Keep** Type N (never install); **extend** empty argv → numbered list |
 | Sudoers submit workflow | **Keep** generate / submit / print / per-user fragment / sibling inbound |
 | Domain | **Replace** backup/restore with `action` |
 
@@ -91,7 +91,7 @@ B **MUST** inherit structural contracts:
 | Storage resolve | **Keep / adapt** | Scratch for temps; no tar staging as product purpose |
 | Idempotency / interactive modes | **Keep / retarget** | `action` idempotent when already matching |
 | Online channel | **Absent (inherited)** | Not install source |
-| Type O empty argv | **Absent (inherited)** | Empty argv = Type N help |
+| Type O empty argv | **Absent (inherited)** | Empty argv = Type N; routes to `app_main_menu` |
 | Remote `version-check` / `self-update` / `self-uninstall` | **Absent (inherited)** | Unknown commands |
 | Companion `.sha256` product law | **Absent (inherited)** | No channel integrity package |
 | Local `install` / `uninstall` / `where-is-me` | **Keep** | Local self-managed package |
@@ -172,7 +172,7 @@ B **MUST** inherit structural contracts:
 |-----|--------------|
 | `requirement-class-software-dev` | Class gate |
 | `requirement-shell-local-self-management` | Local lifecycle inherited |
-| `requirement-shell-cli-zero-arguments` | Type N empty argv inherited |
+| `requirement-shell-cli-zero-arguments` | Type N empty argv inherited; product routes to menu |
 | `requirement-domain-take-ownership` | Domain replace |
 | `docs/requirements/index.md` | Registry |
 
@@ -183,7 +183,7 @@ B **MUST** inherit structural contracts:
 | TP family / ID | Suite | Status | Note |
 |----------------|-------|--------|------|
 | **TP-CLI-04,10** | `tests/test_cli.sh` | **todo** | online verbs absent |
-| **TP-CLI-07** | `tests/test_cli.sh` | **todo** | Type N empty argv |
+| **TP-CLI-07** | `tests/test_cli.sh` | **have** | Type N empty argv (off-TTY help; TTY menu) |
 | **TP-TAKE-OWNERSHIP-*** | `tests/test_domain_take_ownership.sh` | **todo** | domain replace |
 
 **Matrix:** `reviews/requirement-test-matrix.md`  
@@ -195,9 +195,10 @@ B **MUST** inherit structural contracts:
 |------|--------|------|
 | 2026-08-13 | Active 2.0.0 | folder-backup: A=cli-template → B=folder-backup |
 | 2026-08-25 | Active 3.0.0 | take-ownership: A0=cli-template → A1=folder-backup → B=take-ownership (domain replace) |
+| 2026-08-30 | Active 3.1.0 | Empty argv stays Type N (never install) and routes to the numbered list |
 
 ---
 
-**Last Updated**: 2026-08-25  
+**Last Updated**: 2026-08-30  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).
