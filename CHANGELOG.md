@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - **Main menu family `sudoers`.** Numbered work rows are **action** (**1**) then family **sudoers** (**2**); Exit **9**. Pick **2** or type `sudoers` at the prompt to open the grant/draft submenu: generate-sudoer-request, submit-sudoer-request, print-sudoers, print-sudoers-install-script, remove-project-sudoers (Back **8**, Exit **9**). `take-ownership sudoers` stays unknown. The five member verbs remain live CLI commands. Header board title is the product short description (not “numbered list of live work commands”). Test-purpose is only `generate-sudoer-json` (off both lists). Law: `requirement-shell-cli-default-interaction` **2.4.0** · `requirement-shell-cli-interface` **2.3.0** · `requirement-domain-take-ownership` **1.4.0**. Suite **TP-CLI-13** · **TP-CLI-17** · **TP-CLI-19**.
+- **README main-menu example look.** Product README shows the operator-visible main menu (plain `take-ownership(2.7.0)`, numbered rows, `Choice:`) immediately before Usage.
 
 ## [2.6.0] - 2026-09-03
 

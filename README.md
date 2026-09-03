@@ -63,24 +63,14 @@ sudo sh /dev/shm/take-ownership-<user>-sudoers-admin.sh uninstall
 
 This product is **local-only** for its install *channel* (no default `SCRIPT_URL` online install). Global vs local here means install *location*, not an online channel.
 
-After install, on a terminal:
+After install, on a terminal (`take-ownership` with no arguments) the main menu looks like:
 
 ```text
-$ take-ownership
-[INFO] **take-ownership**(*2.7.0*) — Take Unix ownership of a named folder with a narrow global-only sudo grant
-1. action: *Recursively take ownership of a named folder*
-2. sudoers: *Grant and drafts*
+[INFO] take-ownership(2.7.0) — Take Unix ownership of a named folder with a narrow global-only sudo grant
+1. action: Recursively take ownership of a named folder
+2. sudoers: Grant and drafts
 9. Exit
-Choice: 2
-[INFO] **take-ownership**(*2.7.0*) — sudoers (grant and drafts)
-1. generate-sudoer-request: *Write a JSON grant you can read*
-2. submit-sudoer-request: *Queue the JSON grant inbound*
-3. print-sudoers: *Emit sudoers draft*
-4. print-sudoers-install-script: *Write admin install script*
-5. remove-project-sudoers: *Remove sudoers draft only*
-8. Back
-9. Exit
-Choice: 9
+Choice:
 ```
 
 Choose a number, or type the command name. Pick **2** / `sudoers` for grant/drafts (`8` goes back; `9` leaves). `take-ownership sudoers` is not a command — type the member verb instead. In a pipe, `take-ownership` prints help instead.
@@ -152,6 +142,7 @@ MIT License — see [`LICENSE.md`](./LICENSE.md).
 
 ## Last Update
 
+2026-09-03 — README main-menu example look (plain `take-ownership(2.7.0)`, Choice) immediately before Usage.
 2026-09-03 — version **2.7.0** (main-menu family **sudoers** + five-verb submenu; `sudoers` is not a typed command; TP-CLI-13/17/19).
 2026-09-03 — version **2.6.0** (default CLI main menu style: **take-ownership**(*version*) header; gray italic descriptions; TP-CLI-19).
 2026-08-30 — version **2.5.0** (storage = cache folder **and** persistence `~/.local/take-ownership`; `about` Persistence storage / `persist_dir`).

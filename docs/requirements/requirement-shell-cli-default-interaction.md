@@ -89,7 +89,7 @@ Normative **main** order:
 
 | # | Token | Label |
 |---|-------|-------|
-| *(header)* | — | `**take-ownership**(*VERSION*) — Take Unix ownership of a named folder with a narrow global-only sudo grant` |
+| *(header)* | — | `take-ownership(VERSION) — Take Unix ownership of a named folder with a narrow global-only sudo grant` |
 | 1 | `action` | `action: Recursively take ownership of a named folder` |
 | 2 | family `sudoers` | `sudoers: Grant and drafts` |
 | **9** | **Exit** | leave the menu |
@@ -138,13 +138,14 @@ The five grouped verbs **MUST** remain live dispatcher commands (`requirement-sh
 | **Back** | 8 (submenu only) |
 | **Test-purpose (this product)** | `generate-sudoer-json` (off both lists; stays on `help` apart) |
 
-**Normative menu draft** (operational only; self-managed, diagnostics, and test-purpose omitted). README / this fence transcribe markdown emphasis; the live TTY uses SGR, never paste CSI here:
+**Normative menu draft** (operational only; self-managed, diagnostics, and test-purpose omitted). README example look uses these **plain glyphs** (no CSI, no markdown restyle); the live TTY uses SGR:
 
 ```text
-[INFO] **take-ownership**(*VERSION*) — Take Unix ownership of a named folder with a narrow global-only sudo grant
+[INFO] take-ownership(VERSION) — Take Unix ownership of a named folder with a narrow global-only sudo grant
 1. action: Recursively take ownership of a named folder
 2. sudoers: Grant and drafts
 9. Exit
+Choice:
 ```
 
 **Invocation samples (CI-M1a):**
