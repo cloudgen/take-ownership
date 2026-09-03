@@ -1,6 +1,6 @@
 # take-ownership - Take Unix ownership of a named folder with a narrow sudo grant
 
-![Version](https://img.shields.io/badge/Version-2.6.0-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-2.7.0-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 [![CIAO](https://img.shields.io/badge/Philosophy-CIAO%20(Caution%20%E2%80%A2%20Intentional%20%E2%80%A2%20Anti--fragile%20%E2%80%A2%20Over--engineered)-purple.svg)](https://github.com/cloudgen/ciao)
 [![Stars](https://img.shields.io/github/stars/cloudgen/take-ownership?style=flat-square)](https://github.com/cloudgen/take-ownership)
@@ -13,7 +13,7 @@
 
 ## Features
 
-- **Local self-management**: `install`, `uninstall`, `where-is-me`, `version`, `about`, `help`, `menu` / `main` (TTY numbered work list: action, remove-project-sudoers, submit-sudoer-request; empty argv is the same list)
+- **Local self-management**: `install`, `uninstall`, `where-is-me`, `version`, `about`, `help`, `menu` / `main` (TTY numbered work list: action, then family **sudoers** with a grant/draft submenu; empty argv is the same list)
 - **Take ownership**: `action --path <folder> --ownership <user:group>` — recursive chown, no symlink follow, refuse system roots. On a real terminal, `action` (or menu `1`) lists granted folders by number and uses this login’s `user:group` with no extra prompt
 - **Narrow sudoers**: exact `--path`, exact `--ownership user:group`, **global binary only** (no `--allow-test-local`)
 - **Sudoer approval submit**: `generate-sudoer-request --path <folder> --ownership <user:group>` (alias `generate-sudoer-json`) writes a local JSON grant you can review. `--ownership` is an existing `user:group` (never `*`, never a directory listing). `submit-sudoer-request` hands it to sudoer-cli (does not write `/etc`, does not `mkdir` inbound)
@@ -67,15 +67,23 @@ After install, on a terminal:
 
 ```text
 $ take-ownership
-[INFO] **take-ownership**(*2.6.0*) — numbered list of live work commands
+[INFO] **take-ownership**(*2.7.0*) — Take Unix ownership of a named folder with a narrow global-only sudo grant
 1. action: *Recursively take ownership of a named folder*
-2. remove-project-sudoers: *Remove the local grant draft only*
-3. submit-sudoer-request: *Hand the JSON grant to the approval queue*
+2. sudoers: *Grant and drafts*
+9. Exit
+Choice: 2
+[INFO] **take-ownership**(*2.7.0*) — sudoers (grant and drafts)
+1. generate-sudoer-request: *Write a JSON grant you can read*
+2. submit-sudoer-request: *Queue the JSON grant inbound*
+3. print-sudoers: *Emit sudoers draft*
+4. print-sudoers-install-script: *Write admin install script*
+5. remove-project-sudoers: *Remove sudoers draft only*
+8. Back
 9. Exit
 Choice: 9
 ```
 
-Choose a number, or type the command name. `9` exits. In a pipe, `take-ownership` prints help instead.
+Choose a number, or type the command name. Pick **2** / `sudoers` for grant/drafts (`8` goes back; `9` leaves). `take-ownership sudoers` is not a command — type the member verb instead. In a pipe, `take-ownership` prints help instead.
 
 Config identity: `REPO_USER=cloudgen`, `REPO_NAME=take-ownership` (override with env if needed; does not enable online install while `SCRIPT_URL` is empty).
 
@@ -144,6 +152,7 @@ MIT License — see [`LICENSE.md`](./LICENSE.md).
 
 ## Last Update
 
+2026-09-03 — version **2.7.0** (main-menu family **sudoers** + five-verb submenu; `sudoers` is not a typed command; TP-CLI-13/17/19).
 2026-09-03 — version **2.6.0** (default CLI main menu style: **take-ownership**(*version*) header; gray italic descriptions; TP-CLI-19).
 2026-08-30 — version **2.5.0** (storage = cache folder **and** persistence `~/.local/take-ownership`; `about` Persistence storage / `persist_dir`).
 2026-08-30 — version **2.4.1** (`about` Cache folder preferred `/dev/shm/cache/cache-take-ownership`; fallback under XDG `cache-take-ownership`).

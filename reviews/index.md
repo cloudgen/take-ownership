@@ -2,6 +2,7 @@
 
 | Date | Report | Scope | Verdict | Suite |
 |------|--------|-------|---------|-------|
+| 2026-09-03 | `cli-routed-verb-table.md` 2.7.0 | Family **sudoers** submenu; five grant/draft verbs operational; `sudoers` not dispatched | living | PASS=266 FAIL=0 SKIP=0 |
 | 2026-08-30 | INC-20260830-001 | Interactive `action` listed a granted `--path` that is not an existing directory (ram-drive dest gone; grant remains). L-OPS-01. | **Open** | product pick-list / copy / TP-44 |
 | 2026-08-30 | `reports/2026-08-30-knowledge-and-product-review.md` | Harness knowledge + current 2.3.0 tree (ownership fence). Audit-only. | **Block** (maps genesis) / **Revise** (product plans) | PASS=207 FAIL=0 SKIP=0 |
 | 2026-08-26 | 2.3.0 ownership user:group | Withdraw `--ownership *` gold; dirty-cwd emits `user:group`; text dual `\:`; TP-27/29/31 | living | 2.3.0 |

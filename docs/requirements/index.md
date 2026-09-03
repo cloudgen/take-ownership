@@ -15,9 +15,9 @@
 | requirement-take-ownership-ops | **Ops SSOT**: recursive chown, no symlink follow; `--path` then `--ownership`; refuse-list; TTY numbered folder pick + current `user:group` | domain-ops | Active (1.3.0) | `requirement-take-ownership-ops.md` | 2026-08-30 |
 | requirement-shell-script-coding | POSIX `/bin/sh` coding-style specialize-in (without it, portable lessons arrive raw) | shell | Active (1.0.0) | `requirement-shell-script-coding.md` | 2026-08-25 |
 | requirement-shell-sudo-command | In-tool `util_sudo`; check before sudo; chmod example; `action` re-execs global binary | shell | Active (1.0.0) | `requirement-shell-sudo-command.md` | 2026-08-25 |
-| requirement-shell-cli-interface | Shell CLI interface (commands, flags, dispatch, modes); `action`; submit `--add`/`--update`; generate; empty argv + `menu`/`main` → numbered list; about persist | shell | Active (2.2.1) | `requirement-shell-cli-interface.md` | 2026-08-30 |
+| requirement-shell-cli-interface | Shell CLI interface (commands, flags, dispatch, modes); `action`; submit `--add`/`--update`; generate; empty argv + `menu`/`main` → numbered list; five sudoers verbs live; `sudoers` not dispatched | shell | Active (2.3.0) | `requirement-shell-cli-interface.md` | 2026-09-03 |
 | requirement-shell-cli-zero-arguments | Empty argv Type N (never install); routes to `app_main_menu` | shell | Active (1.1.0) | `requirement-shell-cli-zero-arguments.md` | 2026-08-30 |
-| requirement-shell-cli-default-interaction | Claimed TTY numbered list on empty argv and `menu`/`main` (case 3; three work rows; default CLI main menu style; `list-folders` off the list) | shell | Active (2.3.0) | `requirement-shell-cli-default-interaction.md` | 2026-09-03 |
+| requirement-shell-cli-default-interaction | Claimed TTY numbered list on empty argv and `menu`/`main` (case 3; family **sudoers** + submenu; default CLI main menu style; `list-folders` off the list) | shell | Active (2.4.0) | `requirement-shell-cli-default-interaction.md` | 2026-09-03 |
 | requirement-shell-local-self-management | Local install / uninstall / where-is-me; mode **0755** multi-user; global required before grant emit | shell | Active (1.2.0) | `requirement-shell-local-self-management.md` | 2026-08-25 |
 | requirement-shell-output-requirements | Central `out_*` output SSOT; `util_app_ident` / `out_menu_choice` | shell | Active (1.1.0) | `requirement-shell-output-requirements.md` | 2026-09-03 |
 | requirement-operator-readable-error | Operator-facing error wording (what happened / next step) | shell | Active (1.0.0) | `requirement-operator-readable-error.md` | 2026-08-25 |
@@ -25,7 +25,7 @@
 | requirement-shell-idempotency | Re-run safety; `action` already-matching success | shell | Active | `requirement-shell-idempotency.md` | 2026-08-25 |
 | requirement-shell-interactive-vs-noninteractive | Interactive vs non-interactive / confirm policy; `action` TTY walk | shell | Active | `requirement-shell-interactive-vs-noninteractive.md` | 2026-08-25 |
 | requirement-shell-cli-storage | Cache `/dev/shm/cache/cache-${APP_NAME}` **and** persist `${HOME}/.local/${APP_NAME}/`; about Cache folder + Persistence storage | shell | Active (2.0.0) | `requirement-shell-cli-storage.md` | 2026-08-30 |
-| requirement-domain-take-ownership | Domain **surface** SSOT (four pillars); ops defer to take-ownership-ops; submit public inbound; independent generate; grant-emit **test-purpose**; `--ownership user:group` | domain | Active (1.3.0) | `requirement-domain-take-ownership.md` | 2026-08-26 |
+| requirement-domain-take-ownership | Domain **surface** SSOT (four pillars); ops defer to take-ownership-ops; submit public inbound; independent generate; five grant/draft verbs operational (sudoers submenu); `generate-sudoer-json` test-purpose; `--ownership user:group` | domain | Active (1.4.0) | `requirement-domain-take-ownership.md` | 2026-09-03 |
 
 ## Superseded (lineage only — not live law)
 

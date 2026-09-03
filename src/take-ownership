@@ -35,7 +35,7 @@
 # Single-file ship unit under src/; local install to ~/.local/bin.
 #
 # APP NAME: hard-assign APP_NAME="take-ownership"
-# VERSION: hard-assign VERSION="2.6.0"
+# VERSION: hard-assign VERSION="2.7.0"
 #
 # =============================================================================
 
@@ -52,8 +52,8 @@ APP_NAME="take-ownership"
 : "${SHORT_DESCRIPTION:=${APP_DESC}}"
 : "${DESCRIPTION:=POSIX /bin/sh local CLI: install, uninstall, where-is-me, version, about, help, menu, main, list-folders, action, print-sudoers, print-sudoers-install-script, remove-project-sudoers, generate-sudoer-request, generate-sudoer-json, submit-sudoer-request.}"
 # Product version SSOT (semver). Extractors use: grep '^VERSION="'
-VERSION="2.6.0"
-: "${VERSION:=2.6.0}"
+VERSION="2.7.0"
+: "${VERSION:=2.7.0}"
 # Repository identity SSOT (git host owner/repo for project-repository alignment).
 # Install remains local-only: SCRIPT_URL stays empty (no online curl|sh channel).
 : "${REPO_USER:=cloudgen}"
@@ -3899,11 +3899,11 @@ app_about() {
 # =============================================================================
 #
 # GENERAL PURPOSE:
-# Print the three operational work rows plus Exit 9. Labels are the kept-list
-# human-readable form (verb: explain). Header is take-ownership(VERSION).
-# On a TTY, explain text is italic + light gray. list-folders stays a live
-# verb on help, not on this list. Self-managed, diagnostics, and test-purpose
-# verbs are omitted.
+# Print daily work plus family row sudoers, then Exit 9. Header is
+# take-ownership(VERSION) and SHORT_DESCRIPTION. On a TTY, explain text is
+# italic + light gray. list-folders stays a live verb on help, not on this
+# list. Self-managed, diagnostics, and test-purpose verbs are omitted.
+# Family row sudoers is menu-only (not a live dispatcher token).
 #
 # ALIGNMENT:
 # - requirement-shell-cli-default-interaction.md
@@ -3915,27 +3915,54 @@ app_main_menu_print() {
     : "${APP_NAME:=take-ownership}"
     : "${JSON:=0}"
     : "${QUIET:=0}"
+    : "${SHORT_DESCRIPTION:=${APP_DESC:-Take Unix ownership of a named folder with a narrow global-only sudo grant}}"
 
-    out_info "$(util_app_ident) — numbered list of live work commands"
+    out_info "$(util_app_ident) — ${SHORT_DESCRIPTION}"
     out_menu_choice 1 action "Recursively take ownership of a named folder"
-    out_menu_choice 2 remove-project-sudoers "Remove the local grant draft only"
-    out_menu_choice 3 submit-sudoer-request "Hand the JSON grant to the approval queue"
+    out_menu_choice 2 sudoers "Grant and drafts"
     out_menu_choice 9 Exit
 }
 
 # =============================================================================
-# app_main_menu_run_pick() - Run one menu choice (number or verb)
+# app_main_menu_print_sudoers() - Sudoers family submenu (TTY)
 # =============================================================================
 #
 # GENERAL PURPOSE:
-# Map a numbered pick or verb token to a live operational handler. Missing
-# required operands: prompt one field at a time, or print Next: and return.
+# Print the grant/draft list grouped behind main-menu family row sudoers.
+#
+# ALIGNMENT:
+# - requirement-shell-cli-default-interaction.md
+#
+# Last updated: 2026-09-03
+# =============================================================================
+app_main_menu_print_sudoers() {
+    : "${APP_NAME:=take-ownership}"
+    : "${JSON:=0}"
+    : "${QUIET:=0}"
+
+    out_info "$(util_app_ident) — sudoers (grant and drafts)"
+    out_menu_choice 1 generate-sudoer-request "Write a JSON grant you can read"
+    out_menu_choice 2 submit-sudoer-request "Queue the JSON grant inbound"
+    out_menu_choice 3 print-sudoers "Emit sudoers draft"
+    out_menu_choice 4 print-sudoers-install-script "Write admin install script"
+    out_menu_choice 5 remove-project-sudoers "Remove sudoers draft only"
+    out_menu_choice 8 Back
+    out_menu_choice 9 Exit
+}
+
+# =============================================================================
+# app_main_menu_run_pick() - Run one main-menu choice (number or verb)
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# Map a main-list pick to a live handler. Family row sudoers is not handled
+# here (caller opens the submenu). Submenu verbs MAY run as a shortcut.
 # Returns 1 if the pick is not on the list (caller re-prompts).
 #
 # ALIGNMENT:
 # - requirement-shell-cli-default-interaction.md
 #
-# Last updated: 2026-08-30
+# Last updated: 2026-09-03
 # =============================================================================
 app_main_menu_run_pick() {
     _pick="${1-}"
@@ -3950,13 +3977,22 @@ app_main_menu_run_pick() {
             export TO_PATH TO_OWNERSHIP
             to_action
             ;;
-        2|remove-project-sudoers)
-            to_remove_project_sudoers "${_a}"
+        generate-sudoer-request)
+            to_generate_sudoer_request "${_a}"
             ;;
-        3|submit-sudoer-request)
+        submit-sudoer-request)
             to_submit_sudoer_request "${_a}"
             ;;
-        9|exit|quit|Exit|QUIT)
+        print-sudoers)
+            to_print_sudoers "${_a}"
+            ;;
+        print-sudoers-install-script)
+            to_print_sudoers_install_script "${_a}"
+            ;;
+        remove-project-sudoers)
+            to_remove_project_sudoers "${_a}"
+            ;;
+        9|99|exit|quit|Exit|QUIT)
             ;;
         *)
             return 1
@@ -3966,20 +4002,108 @@ app_main_menu_run_pick() {
 }
 
 # =============================================================================
+# app_main_menu_run_sudoers_pick() - Run one sudoers-submenu choice
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# Map a submenu number or member verb to the live handler. Back/Exit are
+# owned by the submenu loop. Returns 1 if the pick is not a member.
+#
+# ALIGNMENT:
+# - requirement-shell-cli-default-interaction.md
+#
+# Last updated: 2026-09-03
+# =============================================================================
+app_main_menu_run_sudoers_pick() {
+    _pick="${1-}"
+    _a="${2-}"
+
+    case "${_pick}" in
+        1|generate-sudoer-request)
+            to_generate_sudoer_request "${_a}"
+            ;;
+        2|submit-sudoer-request)
+            to_submit_sudoer_request "${_a}"
+            ;;
+        3|print-sudoers)
+            to_print_sudoers "${_a}"
+            ;;
+        4|print-sudoers-install-script)
+            to_print_sudoers_install_script "${_a}"
+            ;;
+        5|remove-project-sudoers)
+            to_remove_project_sudoers "${_a}"
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+    return 0
+}
+
+# =============================================================================
+# app_main_menu_sudoers_loop() - Interactive sudoers submenu
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# Show the grant/draft list. Back returns 1 (main list). Exit or a run
+# returns 0 (leave menu). Never hangs off-TTY (caller is TTY-only).
+#
+# ALIGNMENT:
+# - requirement-shell-cli-default-interaction.md
+#
+# Last updated: 2026-09-03
+# =============================================================================
+app_main_menu_sudoers_loop() {
+    : "${APP_NAME:=take-ownership}"
+    : "${_menu_json:=0}"
+    : "${_menu_quiet:=0}"
+    _argv_a="${1-}"
+
+    while true; do
+        JSON=0
+        QUIET=0
+        export JSON QUIET
+        app_main_menu_print_sudoers
+        if ! prompt_line "Choice"; then
+            return 0
+        fi
+        _pick="${_prompt_line}"
+        case "${_pick}" in
+            8|back|Back)
+                return 1
+                ;;
+            9|99|exit|quit|Exit|QUIT)
+                return 0
+                ;;
+        esac
+        JSON="${_menu_json}"
+        QUIET="${_menu_quiet}"
+        export JSON QUIET
+        if app_main_menu_run_sudoers_pick "${_pick}" "${_argv_a}"; then
+            return 0
+        fi
+        out_warn "Not a menu choice. Type 1-5, 8 back, 9 to leave, or a listed command name. Next: ${APP_NAME} menu"
+        _argv_a=""
+    done
+}
+
+# =============================================================================
 # app_main_menu() - Default interaction: TTY numbered menu / off-TTY help
 # =============================================================================
 #
 # GENERAL PURPOSE:
 # Empty argv, menu, and main. On a real terminal: ignore --json, show the
-# numbered list, run one pick. Off-TTY: help (JSON help when --json). Never hang.
-# Type N: empty argv MUST NOT install.
+# numbered list, run one pick (or open the sudoers submenu). Off-TTY: help
+# (JSON help when --json). Never hang. Type N: empty argv MUST NOT install.
+# Family token sudoers is not a live CLI command.
 #
 # ALIGNMENT:
 # - requirement-shell-cli-default-interaction.md
 # - requirement-shell-interactive-vs-noninteractive.md
 # - requirement-shell-cli-zero-arguments.md
 #
-# Last updated: 2026-08-30
+# Last updated: 2026-09-03
 # =============================================================================
 app_main_menu() {
     : "${TTY:=0}"
@@ -4021,20 +4145,40 @@ app_main_menu() {
             _pick="${_prompt_line}"
         fi
         case "${_pick}" in
-            9|exit|quit|Exit|QUIT)
+            9|99|exit|quit|Exit|QUIT)
                 JSON="${_menu_json}"
                 QUIET="${_menu_quiet}"
                 export JSON QUIET
                 return 0
                 ;;
+            2|sudoers)
+                JSON="${_menu_json}"
+                QUIET="${_menu_quiet}"
+                export JSON QUIET
+                if app_main_menu_sudoers_loop "${_argv_a}"; then
+                    JSON="${_menu_json}"
+                    QUIET="${_menu_quiet}"
+                    export JSON QUIET
+                    return 0
+                fi
+                JSON=0
+                QUIET=0
+                export JSON QUIET
+                _argv_a=""
+                _argv_b=""
+                continue
+                ;;
         esac
+        JSON="${_menu_json}"
+        QUIET="${_menu_quiet}"
+        export JSON QUIET
         if app_main_menu_run_pick "${_pick}" "${_argv_a}" "${_argv_b}"; then
-            JSON="${_menu_json}"
-            QUIET="${_menu_quiet}"
-            export JSON QUIET
             return 0
         fi
-        out_warn "Not a menu choice. Type 1-3, 9 to leave, or a command name."
+        JSON=0
+        QUIET=0
+        export JSON QUIET
+        out_warn "Not a menu choice. Type 1-2, 9 to leave, or a listed command name."
         out_info "Next: ${APP_NAME} menu"
         _argv_a=""
         _argv_b=""
@@ -4045,7 +4189,7 @@ app_main_menu() {
 # app_help() - Usage (local Type 0 + domain)
 # =============================================================================
 #
-# Last updated: 2026-08-23
+# Last updated: 2026-09-03
 # =============================================================================
 app_help() {
     : "${SHORT_DESCRIPTION:=${APP_DESC:-Take Unix ownership of a named folder with a narrow global-only sudo grant}}"
@@ -4086,24 +4230,26 @@ app_help() {
     out_plain "                       On a real terminal with no --path: numbered folder list."
     out_plain "                       Then uses this login's user:group (no ownership prompt)."
     out_plain "                       Needs a grant for that folder and the global binary."
-    out_plain "  remove-project-sudoers [path]"
-    out_plain "                       Remove project-sudoers-file draft only (not host elev)"
-    out_plain "  submit-sudoer-request [--path <folder>] [file]"
-    out_plain "                       Queue a JSON grant via sudoer-cli into /var/sudoer-cli/sudoer-request"
-    out_plain "                       (does not write /etc; does not mkdir inbound)"
-    out_empty_line
-    out_info "Grant testers (test-purpose — not on the main menu):"
-    out_plain "  print-sudoers --path <folder> --ownership <user:group> [dest]"
-    out_plain "                       Emit project-sudoers-file (draft). Requires global install."
-    out_plain "  print-sudoers-install-script --path <folder> [path]"
-    out_plain "                       Write admin script to install|uninstall|replace the fragment"
     out_plain "  generate-sudoer-request --path <folder> --ownership <user:group> [dest]"
-    out_plain "  generate-sudoer-json    --path <folder> --ownership <user:group> [dest]"
-    out_plain "                       Independent JSON grant you can read without sudo."
-    out_plain "                       Canonical body for tests: args stay"
-    out_plain "                       action --path <folder> --ownership <user:group>"
-    out_plain "                       plus --json twin. Wildcard * is not allowed."
+    out_plain "                       Write a JSON grant you can read (no /etc; no inbound)."
     out_plain "                       JSON field action (add/update) is not the CLI verb action."
+    out_plain "  submit-sudoer-request [--path <folder>] [file]"
+    out_plain "                       Queue the JSON grant inbound via sudoer-cli"
+    out_plain "                       into /var/sudoer-cli/sudoer-request"
+    out_plain "                       (does not write /etc; does not mkdir inbound)"
+    out_plain "  print-sudoers --path <folder> --ownership <user:group> [dest]"
+    out_plain "                       Emit sudoers draft. Requires global install."
+    out_plain "  print-sudoers-install-script --path <folder> [path]"
+    out_plain "                       Write admin install script to install|uninstall|replace"
+    out_plain "  remove-project-sudoers [path]"
+    out_plain "                       Remove sudoers draft only (not host elev)"
+    out_empty_line
+    out_info "Grant testers (test-purpose — not on the main menu or sudoers submenu):"
+    out_plain "  generate-sudoer-json --path <folder> --ownership <user:group> [dest]"
+    out_plain "                       Same dest as generate-sudoer-request. Canonical JSON"
+    out_plain "                       for tests: args stay action --path <folder>"
+    out_plain "                       --ownership <user:group> plus --json twin."
+    out_plain "                       Wildcard * is not allowed."
     out_empty_line
     out_info "Global Options:"
     out_plain "  --quiet, -q          Suppress info/success (errors still shown)"

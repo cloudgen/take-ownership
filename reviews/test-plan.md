@@ -3,9 +3,9 @@
 Maps **TP-*** coverage to `tests/`.  
 **Suite entry:** `./tests/run.sh`  
 **Ship unit:** `src/take-ownership`  
-**Product VERSION:** 2.6.0  
+**Product VERSION:** 2.7.0  
 **Last plan update:** 2026-09-03  
-**Last suite run:** `./tests/run.sh` (2.6.0: PASS=251 FAIL=0 SKIP=0 — menu look **TP-CLI-19**)
+**Last suite run:** `./tests/run.sh` (2.7.0: PASS=266 FAIL=0 SKIP=0 — family **sudoers** **TP-CLI-13/17/19**)
 
 Status: **have** = automated today · **todo** = needed · **optional** · **n/a** · **skip** (environment)
 
@@ -61,11 +61,11 @@ Status: **have** = automated today · **todo** = needed · **optional** · **n/a
 | TP-CLI-10 | online verbs rejected | test_cli | requirement-bootstrap-chain | **have** |
 | TP-CLI-11 | env -u HOME version | test_cli | class / defensive | **have** |
 | TP-CLI-12 | preferred cache `/dev/shm/cache/cache-${APP_NAME}`; live dir exists; not APP-USERNAME shape | test_cli | requirement-shell-cli-storage | **have** |
-| TP-CLI-13 | interactive `menu` **and** empty argv print three labels + `9. Exit` | test_cli | **shell-cli-default-interaction** AC-3 | **have** |
+| TP-CLI-13 | interactive `menu` **and** empty argv print `action` + family `sudoers` + `9. Exit`; submenu Back/Exit; `sudoers` unknown | test_cli | **shell-cli-default-interaction** AC-3 / AC-10 / AC-11 | **have** |
 | TP-CLI-14 | interactive `menu --json` still prints the list | test_cli | **shell-cli-default-interaction** AC-4 | **have** |
 | TP-CLI-15 | non-interactive `menu` and empty argv are help; `--json` JSON help | test_cli | **shell-cli-default-interaction** AC-5 | **have** |
 | TP-CLI-16 | numbered list omits help/install/uninstall/where-is-me/version/about/test-purpose/menu/`list-folders`; no `$()` of prompt helpers | test_cli | **shell-cli-default-interaction** AC-6 / AC-9 | **have** |
-| TP-CLI-17 | help lists test-purpose grant-emit verbs under a heading apart from operational | test_cli | **shell-cli-interface** AC-9 | **todo** |
+| TP-CLI-17 | help lists test-purpose `generate-sudoer-json` under a heading apart from operational | test_cli | **shell-cli-interface** AC-9 | **have** |
 | TP-CLI-18 | persist `${HOME}/.local/${APP_NAME}` exists; not USER_BIN; not live cache | test_cli | requirement-shell-cli-storage | **have** |
 | TP-CLI-19 | default CLI main menu style: header `APP_NAME(VERSION)` bold/italic; numbered explain italic + light gray; no CSI off-TTY (portable **TP-CLI-17** alias) | test_cli | **shell-cli-default-interaction** AC-8 · **shell-output-requirements** AC-5 | **have** |
 

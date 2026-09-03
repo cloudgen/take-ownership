@@ -38,8 +38,8 @@
 | **Privilege / sudoers** | `requirement-three-layer-privilege-model.md` | Type 0/1; **trust tiers S13**; print-sudoers; **install-script**; **remove-project-sudoers**; **generate-sudoer-request** (§2.3.2a / AC-23/24); **submit-sudoer-request** public inbound; **inbound fidelity AC-21**; **host-probe add/update AC-22**; no ALL ALL |
 | **JSON sudoer file** | `requirement-sudoer-json-file.md` | `folder-backup` backup/**and** restore; §2.7a re-encode; pretty JSON legal; **independent generate dest AC-10** |
 | **Operator-readable error** | `requirement-operator-readable-error.md` | Blocking `[ERROR]` what-happened + next step; no jargon-only |
-| CLI interface | `requirement-shell-cli-interface.md` | Commands, flags, dispatch (incl. **generate-sudoer-request**); test-purpose grant-emit listed **apart** |
-| Default interaction | `requirement-shell-cli-default-interaction.md` | Case 3 empty argv + `menu`/`main`; colon labels; no version/about/test-purpose on numbered list |
+| CLI interface | `requirement-shell-cli-interface.md` | Commands, flags, dispatch (five sudoers verbs live; `sudoers` unknown); test-purpose `generate-sudoer-json` listed **apart** |
+| Default interaction | `requirement-shell-cli-default-interaction.md` | Case 3 empty argv + `menu`/`main`; family **sudoers** + submenu; colon labels; no version/about/test-purpose on numbered list |
 | Empty argv Type N | `requirement-shell-cli-zero-arguments.md` | Never install; empty argv → `app_main_menu` |
 | Local self-management | `requirement-shell-local-self-management.md` | install/uninstall; global preferred for elev |
 | Output SSOT | `requirement-shell-output-requirements.md` | `out_*`; JSON errors |
