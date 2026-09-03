@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-shell-cli-default-interaction.md  
-**Status**: Active (Version 2.2.0)  
+**Status**: Active (Version 2.3.0)  
 **Area**: shell  
 **Key**: `requirement-shell-cli-default-interaction`  
 **Optional RQ-ID**: `RQ-SHELL-CLI-DEFAULT-INTERACTION`  
@@ -11,7 +11,7 @@ This requirement is the **product Single Source of Truth** for take-ownership’
 
 ### 1.1 Human-facing
 
-**In one sentence:** At a real terminal, type `take-ownership` (or `take-ownership menu`) to see a numbered list of live work commands; in a pipe you get help, never a hanging prompt.
+**In one sentence:** At a real terminal, type `take-ownership` (or `take-ownership menu`) to see a numbered list of live work commands with the program name and live version on the first line; in a pipe you get help, never a hanging prompt.
 
 | Box | Meaning | Example |
 |-----|---------|---------|
@@ -23,6 +23,7 @@ This requirement is the **product Single Source of Truth** for take-ownership’
 |----------|----------|
 | Numbered live work commands | `help` as a row |
 | Line `command: what it does` | `install`, `uninstall`, `where-is-me`, `version`, `about` |
+| First line names **take-ownership** and the live version; descriptions after the colon are gray and italic on a real terminal | A bare `take-ownership` on that first line; color codes in a pipe |
 | Exit as **9** (three command rows) | `setup`, `menu`/`main` as a choice; `list-folders` (help verb, not a menu row) |
 | Empty argv **and** `menu` / `main` as the same list | Test-purpose: `print-sudoers`, `print-sudoers-install-script`, `generate-sudoer-request`, `generate-sudoer-json` |
 
@@ -35,7 +36,7 @@ This requirement is the **product Single Source of Truth** for take-ownership’
 
 | You do… | What it means | What you type |
 |---------|---------------|---------------|
-| Open the list at a prompt | The program prints numbers 1–3 then 9 Exit. `--json` is ignored on a real terminal for `menu`/`main`. | `take-ownership` or `take-ownership menu` |
+| Open the list at a prompt | The first line is **take-ownership**(*live version*); then numbers 1–3 and 9 Exit. `--json` is ignored on a real terminal for `menu`/`main`. | `take-ownership` or `take-ownership menu` |
 | Take ownership from the list | Choose `action`, then pick a numbered allowed folder. Ownership is this login’s `user:group` (no prompt). | `1` then `1` |
 | Run menu in CI | No prompt. Human help, or JSON help with `--json` on the `menu` verb. | `take-ownership menu </dev/null` |
 
@@ -66,12 +67,14 @@ Measure interactive capability **outside functions** (`TTY=1` only when stdin an
 
 ### 2.3 Numbered list (when the case says menu)
 
+0. **Look (mandatory):** the numbered list **MUST** use the default CLI main menu style. Header **MUST** print live `take-ownership(VERSION)` (no space; same Config scalars as `version`) then the board title. On a TTY the name is **bold** and the version *italic*. Each numbered `explain` **MUST** be *italic* and light gray on a TTY (SGR 3 + 37). Number and command name stay unstyled. Off-TTY / JSON: **plain** — **MUST NOT** emit CSI. Typical helpers: `util_app_ident` then `out_menu_choice`. **MUST NOT** a bare `take-ownership` on that header. **MUST NOT** print `explain` unstyled on a TTY.  
 1. Print a **numbered list** at the start of the interactive menu path.  
 2. Each command row is one live **operational** command that is **not** excluded below, numbered **1 … N** in kept-list order.  
 3. Printed line **MUST** be the kept-list **human-readable** value: **`command: what it does`** (short-descript = the command token).  
 4. **MUST NOT** list `help`, `menu`, `main`, gap/forbidden names, **diagnostics** (`version`, `about`), **self-managed / install-setup** tokens (`install`, `uninstall`, `where-is-me`, `setup`), or **test-purpose** verbs. On this product the test-purpose verbs **MUST** be `print-sudoers`, `print-sudoers-install-script`, `generate-sudoer-request`, and `generate-sudoer-json`. Those stay on `help`, listed apart from operational work.  
 5. Accept a **number** or the **verb token**. Extra operands: prompt **one field at a time** on TTY, or print `Next: take-ownership <verb> …` and return.  
-6. Last extra row is **Exit** (not a command). For this product **N = 3**, so Exit **MUST** be **9**. Unused integers 4–8 are omitted. `list-folders` is a live operational verb on `help` and **MUST NOT** appear on this numbered list.  
+5b. **Do not capture `read`:** the choice **MUST** be read in the **current shell**. Typical: `prompt_line "Choice"` then `_pick="${_prompt_line}"`. **MUST NOT** `_pick=$(prompt_line …)` / `_pick=$(prompt_ask …)` / `$()` / backticks of **any** function whose body contains `read`. stderr+$() is **not** a license.  
+6. Last extra row is **Exit** (not a command). For this product **N = 3**, so Exit **MUST** be **9**. Unused integers 4–8 are omitted. `list-folders` is a live operational verb on `help` and **MUST NOT** appear on this numbered list. Exit row is not a command explain; gray-italic is not required on `Exit`.  
 7. Exit number, `exit`, or `quit` returns 0 with no further prompt.  
 8. Typical handler: `app_main_menu`.
 
@@ -87,13 +90,16 @@ Measure interactive capability **outside functions** (`TTY=1` only when stdin an
 | **Handler** | `app_main_menu` |
 | **Ship unit** | Implemented — `app_main` routes empty argv, `menu`, and `main` to `app_main_menu` |
 | **Kept list** | `reviews/cli-routed-verb-table.md` |
+| **Look** | Default CLI main menu style — header `take-ownership(VERSION)`; TTY italic + light-gray explain; `out_menu_choice` / `util_app_ident` |
+| **Choice read** | Current-shell `prompt_line` → `_prompt_line` (not `$()`) |
 | **N** | 3 |
 | **Exit** | 9 |
 | **Test-purpose (this product)** | `print-sudoers`, `print-sudoers-install-script`, `generate-sudoer-request`, `generate-sudoer-json` |
 
-**Normative menu draft** (operational only; self-managed, diagnostics, and test-purpose omitted):
+**Normative menu draft** (operational only; self-managed, diagnostics, and test-purpose omitted). README / this fence transcribe markdown emphasis; the live TTY uses SGR, never paste CSI here:
 
 ```text
+[INFO] **take-ownership**(*VERSION*) — numbered list of live work commands
 1. action: Recursively take ownership of a named folder
 2. remove-project-sudoers: Remove the local grant draft only
 3. submit-sudoer-request: Hand the JSON grant to the approval queue
@@ -141,7 +147,10 @@ On a real terminal those four **MUST** show the list (`--json` is ignored for `m
 6. Treat interactive `take-ownership menu --json` as JSON help.  
 7. Claim the ship unit lacks the menu while `app_main` routes empty argv / `menu` / `main`.  
 8. Auto-write `/etc` from a menu choice (print/submit stay Type 0 drafts).  
-9. Turn empty argv into install-ensure.
+9. Turn empty argv into install-ensure.  
+10. Print the header as a bare `take-ownership` without the live version, or emit CSI off-TTY.  
+11. Print TTY `explain` unstyled, or bypass `out_menu_choice` for numbered-choice rows.  
+12. Capture the menu choice with `$()` / backticks of a `read` helper.
 
 **Violating this rule is a critical dispatcher / hang / honesty regression.**
 
@@ -158,6 +167,8 @@ On a real terminal those four **MUST** show the list (`--json` is ignored for `m
 | AC-5 | Non-interactive `menu` and empty argv are help; `menu --json` is JSON help |
 | AC-6 | Numbered choices omit help, install, uninstall, where-is-me, version, about, setup, menu, main, list-folders, and test-purpose (`print-sudoers`, `print-sudoers-install-script`, `generate-sudoer-request`, `generate-sudoer-json`) |
 | AC-7 | Labels match kept-list human-readable `verb: explain` |
+| AC-8 | Header is live `take-ownership(VERSION)` (bold name, italic version on TTY); numbered `explain` is italic + light gray on TTY; no CSI off-TTY |
+| AC-9 | Menu choice is read in the current shell; **MUST NOT** `$()` a `read` helper |
 
 ---
 
@@ -168,7 +179,7 @@ On a real terminal those four **MUST** show the list (`--json` is ignored for `m
 | `requirement-shell-cli-zero-arguments` | Empty argv Type N; routes to this handler |
 | `requirement-shell-cli-interface` | Dual mention: empty argv + `menu` / `main` on the command table |
 | `requirement-shell-interactive-vs-noninteractive` | `TTY`; no hang |
-| `requirement-shell-output-requirements` | `out_*`; reuse `app_help` |
+| `requirement-shell-output-requirements` | `out_*` / `util_app_ident` / `out_menu_choice`; reuse `app_help` |
 | `requirement-shell-local-self-management` | install/uninstall/where-is-me stay on help, not this list |
 | `docs/requirements/index.md` | Registry |
 
@@ -182,7 +193,8 @@ On a real terminal those four **MUST** show the list (`--json` is ignored for `m
 | **TP-CLI-13** | `tests/test_cli.sh` | **have** — interactive `menu` **and** interactive empty argv print the three labels + `9. Exit`; no `list-folders` row (AC-3) |
 | **TP-CLI-14** | same | **have** — interactive `menu --json` still prints the list (AC-4) |
 | **TP-CLI-15** | same | **have** — non-interactive `menu` and empty argv are help; `--json` JSON help (AC-5) |
-| **TP-CLI-16** | same | **have** — numbered list omits help/install/uninstall/where-is-me/version/about/test-purpose/menu (AC-6) |
+| **TP-CLI-16** | same | **have** — numbered list omits help/install/uninstall/where-is-me/version/about/test-purpose/menu (AC-6); static no `$()` of `read` (AC-9) |
+| **TP-CLI-19** | same | **have** — default CLI main menu style: header `take-ownership(VERSION)` bold/italic; numbered explain italic + light gray; no CSI off-TTY (AC-8; product alias of portable **TP-CLI-17**) |
 
 **Matrix:** `reviews/requirement-test-matrix.md`  
 **Map:** `reviews/test-plan.md`
@@ -197,9 +209,10 @@ On a real terminal those four **MUST** show the list (`--json` is ignored for `m
 | 2026-08-25 | Active 2.0.0 | take-ownership: N=3 (`action`, remove, submit); Exit 9 |
 | 2026-08-26 | Active 2.1.0 | Test-purpose list includes `generate-sudoer-json` (still off the numbered menu; N=4) |
 | 2026-08-30 | Active 2.2.0 | Empty argv routes to `app_main_menu` (same as `menu`/`main`); Case 3 kept; Type N still never install; N=3 (`list-folders` off the numbered list, still a live help verb) |
+| 2026-09-03 | Active 2.3.0 | Default CLI main menu style: header `take-ownership(VERSION)` bold/italic; TTY gray italic explain; `out_menu_choice` / `util_app_ident`; do-not-capture-read |
 
 ---
 
-**Last Updated**: 2026-08-30  
+**Last Updated**: 2026-09-03  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

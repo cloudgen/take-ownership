@@ -82,6 +82,11 @@ _trunc() {
     printf '%s' "$1" | tr '\n' ' ' | cut -c1-160
 }
 
+ci_strip_ansi() {
+    _esc=$(printf '\033')
+    printf '%s' "$1" | sed "s/${_esc}\\[[0-9;]*m//g"
+}
+
 # Isolated HOME + USER_BIN + GLOBAL_BIN for install tests.
 # GLOBAL_BIN is redirected so a host /usr/local/bin install cannot pollute
 # uninstall target selection or trust-tier detection (TP-LC / print-sudoers).

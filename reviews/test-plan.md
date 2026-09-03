@@ -1,11 +1,11 @@
-# Test plan — folder-backup
+# Test plan — take-ownership
 
 Maps **TP-*** coverage to `tests/`.  
 **Suite entry:** `./tests/run.sh`  
-**Ship unit:** `src/folder-backup`  
-**Product VERSION:** 1.11.0  
-**Last plan update:** 2026-08-23  
-**Last suite run:** `./tests/run.sh` (1.11.0: PASS=296 FAIL=0 SKIP=2 — menu TP-CLI-13..16)
+**Ship unit:** `src/take-ownership`  
+**Product VERSION:** 2.6.0  
+**Last plan update:** 2026-09-03  
+**Last suite run:** `./tests/run.sh` (2.6.0: PASS=251 FAIL=0 SKIP=0 — menu look **TP-CLI-19**)
 
 Status: **have** = automated today · **todo** = needed · **optional** · **n/a** · **skip** (environment)
 
@@ -19,6 +19,7 @@ Status: **have** = automated today · **todo** = needed · **optional** · **n/a
 | version / help / about human + JSON | have | TP-CLI-02..06 |
 | Type N empty argv (never install; off-TTY help; TTY menu) | have | TP-CLI-07, **13**, **15** |
 | empty argv / `menu`/`main` TTY list / off-TTY help | have | TP-CLI-13..16 |
+| TTY main-menu look (nametag + gray italic explain) | have | TP-CLI-19 |
 | Unknown + quiet + set -u HOME | have | TP-CLI-08..11 |
 | Storage isolation | have | TP-CLI-12 |
 | No online verbs / no SCRIPT_URL UX | have | TP-CLI-04, TP-CLI-10 |
@@ -63,9 +64,10 @@ Status: **have** = automated today · **todo** = needed · **optional** · **n/a
 | TP-CLI-13 | interactive `menu` **and** empty argv print three labels + `9. Exit` | test_cli | **shell-cli-default-interaction** AC-3 | **have** |
 | TP-CLI-14 | interactive `menu --json` still prints the list | test_cli | **shell-cli-default-interaction** AC-4 | **have** |
 | TP-CLI-15 | non-interactive `menu` and empty argv are help; `--json` JSON help | test_cli | **shell-cli-default-interaction** AC-5 | **have** |
-| TP-CLI-16 | numbered list omits help/install/uninstall/where-is-me/version/about/test-purpose/menu/`list-folders` | test_cli | **shell-cli-default-interaction** AC-6 | **have** |
+| TP-CLI-16 | numbered list omits help/install/uninstall/where-is-me/version/about/test-purpose/menu/`list-folders`; no `$()` of prompt helpers | test_cli | **shell-cli-default-interaction** AC-6 / AC-9 | **have** |
 | TP-CLI-17 | help lists test-purpose grant-emit verbs under a heading apart from operational | test_cli | **shell-cli-interface** AC-9 | **todo** |
 | TP-CLI-18 | persist `${HOME}/.local/${APP_NAME}` exists; not USER_BIN; not live cache | test_cli | requirement-shell-cli-storage | **have** |
+| TP-CLI-19 | default CLI main menu style: header `APP_NAME(VERSION)` bold/italic; numbered explain italic + light gray; no CSI off-TTY (portable **TP-CLI-17** alias) | test_cli | **shell-cli-default-interaction** AC-8 · **shell-output-requirements** AC-5 | **have** |
 
 ### TP-LC (local lifecycle)
 

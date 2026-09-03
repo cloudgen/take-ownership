@@ -5,6 +5,13 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.6.0] - 2026-09-03
+
+### Changed
+
+- **Default CLI main menu style.** On a real terminal the numbered list header is **take-ownership**(*live version*) (bold name, italic version). Each command description after the colon is italic and light gray. Off-TTY / JSON stay plain (no color codes). About uses the same nametag. Helpers: `util_app_ident`, `out_menu_choice`. Law: `requirement-shell-cli-default-interaction` **2.3.0** · `requirement-shell-output-requirements` **1.1.0**. Suite **TP-CLI-19**.
+- **Do not capture `read` on the draft picker.** `remove-project-sudoers` with several drafts reads the number in the current shell (`prompt_line`), not `$()`. Same rule as the main-menu choice.
+
 ## [2.5.0] - 2026-08-30
 
 ### Added

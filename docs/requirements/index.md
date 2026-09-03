@@ -2,7 +2,7 @@
 
 **Product:** take-ownership (POSIX `/bin/sh` local self-managed CLI — take Unix ownership of a named folder with a narrow global-only sudo grant)  
 **Workspace state:** Specialized product law; **software-development** class; bootstrap **cli-template → folder-backup → take-ownership** (domain replace; online install **intentionally absent**).  
-**Updated:** 2026-08-30
+**Updated:** 2026-09-03
 
 | ID / key | Title | Area | Status | Path | Updated |
 |----------|-------|------|--------|------|---------|
@@ -17,9 +17,9 @@
 | requirement-shell-sudo-command | In-tool `util_sudo`; check before sudo; chmod example; `action` re-execs global binary | shell | Active (1.0.0) | `requirement-shell-sudo-command.md` | 2026-08-25 |
 | requirement-shell-cli-interface | Shell CLI interface (commands, flags, dispatch, modes); `action`; submit `--add`/`--update`; generate; empty argv + `menu`/`main` → numbered list; about persist | shell | Active (2.2.1) | `requirement-shell-cli-interface.md` | 2026-08-30 |
 | requirement-shell-cli-zero-arguments | Empty argv Type N (never install); routes to `app_main_menu` | shell | Active (1.1.0) | `requirement-shell-cli-zero-arguments.md` | 2026-08-30 |
-| requirement-shell-cli-default-interaction | Claimed TTY numbered list on empty argv and `menu`/`main` (case 3; three work rows; `list-folders` off the list) | shell | Active (2.2.0) | `requirement-shell-cli-default-interaction.md` | 2026-08-30 |
+| requirement-shell-cli-default-interaction | Claimed TTY numbered list on empty argv and `menu`/`main` (case 3; three work rows; default CLI main menu style; `list-folders` off the list) | shell | Active (2.3.0) | `requirement-shell-cli-default-interaction.md` | 2026-09-03 |
 | requirement-shell-local-self-management | Local install / uninstall / where-is-me; mode **0755** multi-user; global required before grant emit | shell | Active (1.2.0) | `requirement-shell-local-self-management.md` | 2026-08-25 |
-| requirement-shell-output-requirements | Central `out_*` output SSOT | shell | Active | `requirement-shell-output-requirements.md` | 2026-08-25 |
+| requirement-shell-output-requirements | Central `out_*` output SSOT; `util_app_ident` / `out_menu_choice` | shell | Active (1.1.0) | `requirement-shell-output-requirements.md` | 2026-09-03 |
 | requirement-operator-readable-error | Operator-facing error wording (what happened / next step) | shell | Active (1.0.0) | `requirement-operator-readable-error.md` | 2026-08-25 |
 | requirement-shell-modular-function-design | Single-file modular prefixes (`out_`/`inst_`/`app_`/`to_`) | shell | Active | `requirement-shell-modular-function-design.md` | 2026-08-25 |
 | requirement-shell-idempotency | Re-run safety; `action` already-matching success | shell | Active | `requirement-shell-idempotency.md` | 2026-08-25 |

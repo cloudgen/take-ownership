@@ -1,6 +1,6 @@
 # take-ownership - Take Unix ownership of a named folder with a narrow sudo grant
 
-![Version](https://img.shields.io/badge/Version-2.5.0-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-2.6.0-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 [![CIAO](https://img.shields.io/badge/Philosophy-CIAO%20(Caution%20%E2%80%A2%20Intentional%20%E2%80%A2%20Anti--fragile%20%E2%80%A2%20Over--engineered)-purple.svg)](https://github.com/cloudgen/ciao)
 [![Stars](https://img.shields.io/github/stars/cloudgen/take-ownership?style=flat-square)](https://github.com/cloudgen/take-ownership)
@@ -67,11 +67,12 @@ After install, on a terminal:
 
 ```text
 $ take-ownership
-take-ownership — numbered list of live work commands
-1. action: Recursively take ownership of a named folder
-2. remove-project-sudoers: Remove the local grant draft only
-3. submit-sudoer-request: Hand the JSON grant to the approval queue
+[INFO] **take-ownership**(*2.6.0*) — numbered list of live work commands
+1. action: *Recursively take ownership of a named folder*
+2. remove-project-sudoers: *Remove the local grant draft only*
+3. submit-sudoer-request: *Hand the JSON grant to the approval queue*
 9. Exit
+Choice: 9
 ```
 
 Choose a number, or type the command name. `9` exits. In a pipe, `take-ownership` prints help instead.
@@ -143,6 +144,7 @@ MIT License — see [`LICENSE.md`](./LICENSE.md).
 
 ## Last Update
 
+2026-09-03 — version **2.6.0** (default CLI main menu style: **take-ownership**(*version*) header; gray italic descriptions; TP-CLI-19).
 2026-08-30 — version **2.5.0** (storage = cache folder **and** persistence `~/.local/take-ownership`; `about` Persistence storage / `persist_dir`).
 2026-08-30 — version **2.4.1** (`about` Cache folder preferred `/dev/shm/cache/cache-take-ownership`; fallback under XDG `cache-take-ownership`).
 2026-08-30 — version **2.4.0** (empty argv opens the numbered work list on a terminal; off-TTY still help; Type N never install).
