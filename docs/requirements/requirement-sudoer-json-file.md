@@ -76,7 +76,7 @@ Queued **basename** allocation remains sibling-owned. This requirement owns **co
 | **No ALL** | **MUST NOT** use `ALL`, `NOPASSWD: ALL`, or an empty/unrestricted command set |
 | **Global must exist** | Generate / submit / print-sudoers **MUST** fail closed if `/usr/local/bin/take-ownership` is missing or not executable. **No** `--allow-test-local` |
 
-Elevating **`take-ownership`** once is the smaller F6: after the grant, the ship unit performs `chown` **internally**. `/bin/chown` is **not** a sudoers catalog.
+The sudoers fragment names only `/usr/local/bin/take-ownership`; after elevation the program itself runs `chown`. Do **not** list `/bin/chown` in sudoers.
 
 ### 2.3 Arguments — exact folder, exact ownership (sacred)
 

@@ -14,17 +14,21 @@ JSON grant shape (paths, global binary) remains `requirement-sudoer-json-file`. 
 
 ### 1.1 Human-facing
 
-**In one sentence:** `--ownership` names who will own the folder (`leolio:leolio`); it is not `*` and it is not a list of files from the current directory.
+**In one sentence:** `--ownership` names who will own the folder (`www-data:www-data`); it is not `*` and it is not a list of files from the current directory.
 
 | Box | Meaning | Example |
 |-----|---------|---------|
-| Correct | One existing `user:group` | `--ownership leolio:leolio` |
-| Incorrect | Wildcard | `--ownership *` |
-| Incorrect | Directory listing (glob of `*`) | `--ownership AGENTS.md docs src` |
+| You / this login | One existing `user:group` | `--ownership www-data:www-data` |
+| Unsafe grant | Wildcard or a cwd listing | `--ownership *` · `--ownership AGENTS.md docs src` |
+| Not this file | How `action` applies that owner | `requirement-take-ownership-ops` |
+
+| Includes | Excludes |
+|----------|----------|
+| Existing host `user:group` | `*` and extra filenames after `--ownership` |
 
 | You do… | What it means | What you type |
 |---------|---------------|---------------|
-| Generate a grant | JSON args end in that `user:group` | `take-ownership generate-sudoer-json --path /dev/shm/genesis-template --ownership leolio:leolio` |
+| Generate a grant | JSON args end in that `user:group` | `take-ownership generate-sudoer-json --path /var/www/html --ownership www-data:www-data` |
 | See cwd names after `--ownership` | Do not approve; regenerate | `generate-sudoer-json --path F --ownership user:group` |
 
 ---
@@ -49,7 +53,7 @@ Worked fail body (do not approve):
 Worked pass body:
 
 ```json
-"args":["action","--path","/dev/shm/genesis-template","--ownership","leolio:leolio"]
+"args":["action","--path","/var/www/html","--ownership","www-data:www-data"]
 ```
 
 ---

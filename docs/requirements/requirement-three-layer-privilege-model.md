@@ -123,7 +123,7 @@ Any sudoer artifact this product generates **MUST** be producible by a Type 0 su
 
 #### 2.3.3 Grant-emit verbs (Type 0)
 
-`print-sudoers`, `print-sudoers-install-script`, `generate-sudoer-request`, `generate-sudoer-json`, `submit-sudoer-request` keep the folder-backup workflow **shape** (no `/etc` write, no inbound `mkdir`, per-user fragment, sibling allocate, host-probe add vs update, `--add`/`--update` override, inbound fidelity, operator-readable fatal copy) with these **take-ownership** fills:
+`print-sudoers`, `print-sudoers-install-script`, `generate-sudoer-request`, `generate-sudoer-json`, `submit-sudoer-request` keep the **same submit shape as the parent product** (no `/etc` write, no creating the waiting folder, per-user fragment, sibling allocate, host-probe add vs update, `--add`/`--update` override, inbound fidelity, operator-readable fatal copy) with these **take-ownership** fills (verbs are `action`, not backup/restore):
 
 | Concern | This product |
 |---------|----------------|

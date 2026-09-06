@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - **Granted folder missing on disk.** TTY `action` numbers only existing directories. `list-folders` still prints the granted path, marked missing. `action --path` names recreate-then-action and does not tell you to generate a new grant (INC-20260830-001 · L-OPS-01 · **TP-TAKE-OWNERSHIP-44**).
 - **Command line for normal user only.** On Termux / Git Bash / Windows cmd, `util_sudo` does not wrap `sudo` (fail closed). Related shell requirements print a section with that exact title. Suite **TP-CLI-20**.
+- **Follow-up honesty.** Platform Compatibility no longer lists `tar` / archive deposit. Live requirements drop session login `leolio`, catalog-only **F6**, and leftover archive-slot / parent-product workflow wording.
 
 ## [2.7.0] - 2026-09-03
 

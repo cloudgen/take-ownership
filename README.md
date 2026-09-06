@@ -122,7 +122,7 @@ take-ownership action --path /var/www/html --ownership www-data:www-data
 | Platform | Status |
 |----------|--------|
 | Linux, `/bin/sh` (dash/bash) | Supported |
-| `tar`, `find`, `date` | Required |
+| `chown` (recursive, no symlink follow) | Required |
 | `sudo` + narrow sudoers | Required for non-root `action` on a folder this login does not already own |
 | Termux / Git Bash / Windows cmd | Your own login only — no in-tool `sudo`, no writing `/etc` |
 | macOS / BSD | Not primary; GNU `stat`/`sed -E` assumptions may differ |

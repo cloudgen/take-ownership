@@ -18,7 +18,7 @@ Coding-style **points** here. Class residual **points** here. Runtime `action` r
 
 | Box | Meaning | Example |
 |-----|---------|---------|
-| You / this login | Already root → no sudo | `sudo take-ownership action …` already euid 0 |
+| You / this login | Already root → no sudo | `sudo take-ownership action …` already root |
 | The wrapper | Single `util_sudo` | re-exec `/usr/local/bin/take-ownership …` |
 | Not this file | Which argv is allowlisted | `requirement-sudoer-json-file` |
 
