@@ -5,6 +5,19 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.7.1] - 2026-09-06
+
+### Changed
+
+- **README people-and-folders voice.** Description, Features, Platform Compatibility, and Related Projects no longer lead with workshop jargon or leftover backup/restore language. Main-menu capture transcribes **take-ownership**(*2.7.1*). Last Update points at this changelog for older rows.
+- **SECURITY.md retarget.** Trust notes name `/usr/local/bin/take-ownership` and `action --path` / `--ownership user:group`. `--allow-test-local` and folder-backup deposit/restore leftovers are gone.
+- **Coverage maps.** `reviews/what-to-review.md`, `test-plan.md`, `requirement-test-matrix.md`, and `reviews/README.md` describe take-ownership 2.7.1. Retired `TP-FOLDER-BACKUP-*` backup/restore/retention rows are not Core.
+
+### Fixed
+
+- **Granted folder missing on disk.** TTY `action` numbers only existing directories. `list-folders` still prints the granted path, marked missing. `action --path` names recreate-then-action and does not tell you to generate a new grant (INC-20260830-001 · L-OPS-01 · **TP-TAKE-OWNERSHIP-44**).
+- **Command line for normal user only.** On Termux / Git Bash / Windows cmd, `util_sudo` does not wrap `sudo` (fail closed). Related shell requirements print a section with that exact title. Suite **TP-CLI-20**.
+
 ## [2.7.0] - 2026-09-03
 
 ### Changed

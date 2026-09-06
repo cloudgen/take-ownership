@@ -12,6 +12,20 @@ This requirement is the **project Single Source of Truth** for **modular functio
 
 Ship unit remains a **single executable** at `src/take-ownership`.
 
+### 1.1 Human-facing
+
+**In one sentence:** The installable program is one file; helpers are grouped by a short prefix so agents do not invent a second copy.
+
+| Box | Meaning | Example |
+|-----|---------|---------|
+| You / this login | Run one program | `src/take-ownership` |
+| Maintainers | Prefixes `out_` / `inst_` / `app_` / `to_` | `to_action` |
+| Not this file | What `action` does | `requirement-take-ownership-ops` |
+
+| Includes | Excludes |
+|----------|----------|
+| One ship unit; prefix table | Splitting the CLI into many shipped files |
+
 ---
 
 ## 2. Core Rules / Requirements (Mandatory)
@@ -129,7 +143,14 @@ Critical sections (output SSOT, install place/remove, storage resolve, sudoers f
 
 | Date | Status | Note |
 |------|--------|------|
-| 2026-08-03 | Active | Modular prefixes for folder-backup |
+| 2026-08-03 | Active | Modular prefixes (bootstrap lineage) |
+| 2026-09-06 | Active | Human-facing + command line for normal user only |
+
+## Under command line for normal user only
+
+When this program runs on Termux, Git Bash, or Windows Command Prompt, it **MUST** stay on **your own login**. Admin privilege and a dedicated system account are **unused**. Helpers **MUST NOT** wrap `sudo` to write `/etc` on that class.
+
+Detect (typical): Termux — `PREFIX` contains `com.termux`; Git Bash — `MSYSTEM` is `MINGW*` / `MSYS*`; Windows cmd — `OS=Windows_NT` after excluding Git Bash / WSL.
 
 ---
 

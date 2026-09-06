@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-take-ownership-ops.md  
-**Status**: Active (Version 1.3.0)  
+**Status**: Active (Version 1.4.0)  
 **Area**: domain-ops  
 **Key**: `requirement-take-ownership-ops`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -36,7 +36,8 @@ It is **not** the domain four-pillar file (`requirement-domain-take-ownership`).
 | Take a web root | The tree becomes `www-data:www-data` | `take-ownership action --path /var/www/html --ownership www-data:www-data` |
 | Miss `--path` on a real terminal | Numbered list of allowed folders; pick a number | `1` |
 | Miss `--ownership` on a real terminal | Uses this login’s `user:group` (`id -un`:`id -gn`); **no prompt** | (none) |
-| Miss a switch in a pipe | Fail closed; no hang | `take-ownership action --path /var/www/html` → error |
+| Miss a switch in a pipe | Stop; no hang | `take-ownership action --path /var/www/html` → error |
+| Granted folder gone (ram-drive wiped) | Recreate the folder, then `action` — do not write a new grant | recreate the directory, then `take-ownership action --path …` |
 
 ---
 
@@ -68,7 +69,7 @@ When **interactive** (`TTY=1`, not `--json`) and a field is missing:
 
 | Field | MUST | MUST NOT |
 |-------|------|----------|
-| `path` | Print a **numbered list** of this login’s allowed folders (same set as `list-folders`) and accept a **number** (or an exact listed path). Empty set → fail closed; next step `generate-sudoer-request` | Ask for a free-typed absolute path; hang |
+| `path` | Print a **numbered list** of this login’s **existing** allowed folders and accept a **number** (or an exact listed live path). Empty live set → fail closed; if the grant still names a missing directory, next step is recreate-then-action (not generate) | Number a granted path that is not an existing directory; ask for a free-typed absolute path; hang |
 | `ownership` | Use this login’s current `user:group` (`id -un`:`id -gn`, or `SUDO_USER` after re-exec) with **no prompt** | Ask for `user:group`; use `*` |
 
 Skip-if: `--path` / `--ownership` already set (including explicit flags and sudo re-exec argv).
@@ -120,6 +121,7 @@ Before any chown:
 | **Union sources** | Readable JSON grant `~/.config/take-ownership/sudoer-request-<user>.json`; readable sudoers draft `sudoers.fragment-<user>` (and unsuffixed legacy); readable installed fragment; `sudo -n -l` lines that name this program (only when `SUDOERS_D_DIR` is `/etc/sudoers.d`, so tests can isolate) |
 | **Values** | Absolute `--path` tokens only (same normalize as `action`: strip trailing `/`, refuse `*`) |
 | **Empty set** | `list-folders` exits 0 and says there are no folders. `action` **MUST** fail closed |
+| **Granted but missing** | `list-folders` **MAY** still print the path, **marked missing**. TTY `action` pick **MUST NOT** number it. `action --path` **MUST** fail closed; next step is **recreate the folder, then `action`** — **MUST NOT** name `generate-sudoer-request` as the next command (INC-20260830-001) |
 | **Not in set** | `action` **MUST** fail closed; next step `list-folders` or `generate-sudoer-request --path <folder> --ownership <user:group>` |
 | **Exact match** | Grant folder is exact (not a parent prefix). `/var/www` does **not** authorize `/var/www/html` |
 | **JSON** | `list-folders --json` reports `user`, `count`, `folders` (array) |
@@ -179,6 +181,17 @@ Operator **MAY** type `sudo take-ownership action --path … --ownership …` th
 - **Anti-fragile:** Already-matching owner is success.  
 - **Over-protect:** No short flags; no USER_BIN re-exec; no OS-tool sudoers.
 
+## Under command line for normal user only
+
+When this program runs on Termux, Git Bash, or Windows Command Prompt, it **MUST** stay on **your own login**. Admin privilege and a dedicated system account are **unused**.
+
+| MUST | MUST NOT |
+|------|----------|
+| `action` as this login when you already own the tree | In-tool `sudo` / write `/etc` |
+| Fail closed if the folder needs an admin grant | Recommend `sudo curl \| sh` |
+
+Detect (typical): Termux — `PREFIX` contains `com.termux`, `TERMUX_VERSION` set, or `/data/data/com.termux/files/usr` exists. Git Bash — `MSYSTEM` is `MINGW*` / `MSYS*`. Windows cmd — `OS=Windows_NT` after excluding Git Bash / WSL.
+
 ---
 
 ## 4. Protection Rule (Sacred)
@@ -209,10 +222,11 @@ Operator **MAY** type `sudo take-ownership action --path … --ownership …` th
 | AC-3 | Missing user/group / missing dir / refuse-list → fail closed |
 | AC-4 | Already matching → success no-op |
 | AC-5 | Non-root re-execs **global** binary via `sudo -n`; already-root does not sudo |
-| AC-6 | TTY missing `--path` → numbered allowed-folder list; TTY missing `--ownership` → current `user:group` with no prompt; non-TTY missing fields → fail, no hang |
+| AC-6 | TTY missing `--path` → numbered **existing** allowed-folder list; TTY missing `--ownership` → current `user:group` with no prompt; non-TTY missing fields → fail, no hang |
 | AC-7 | `/dev/shm/<project>` ram-drive trees are **not** refuse-list; `/dev` and `/dev/shm` (mount root) **are** |
-| AC-8 | `list-folders` prints this login’s allowed `--path` set (empty set is success with a next step) |
+| AC-8 | `list-folders` prints this login’s allowed `--path` set (empty set is success with a next step); granted-missing paths are marked, not omitted from the grant list |
 | AC-9 | `action` fails closed when `--path` is missing from that set, including already-matching trees |
+| AC-10 | Granted `--path` that is not an existing directory is not a live TTY pick; `action --path` names recreate-then-action and **MUST NOT** name `generate-sudoer-request` |
 
 ---
 
@@ -235,14 +249,14 @@ Operator **MAY** type `sudo take-ownership action --path … --ownership …` th
 
 | TP family / ID | Suite | Status |
 |----------------|-------|--------|
-| **TP-TAKE-OWNERSHIP-10** | `tests/test_domain_take_ownership.sh` | **todo** — recursive chown, no follow |
-| **TP-TAKE-OWNERSHIP-11** | same | **todo** — refuse `/etc` and symlink `--path` |
-| **TP-TAKE-OWNERSHIP-12** | same | **todo** — missing owner:group fail closed |
-| **TP-TAKE-OWNERSHIP-13** | same | **todo** — already matching is success |
-| **TP-TAKE-OWNERSHIP-14** | same | **todo** — non-TTY missing flag does not hang |
-| **TP-TAKE-OWNERSHIP-15** | same | **todo** — swapped flag order fail closed |
+| **TP-TAKE-OWNERSHIP-11** | `tests/test_domain_take_ownership.sh` | **have** — refuse `/etc` and symlink `--path` |
+| **TP-TAKE-OWNERSHIP-12** | same | **have** — missing owner:group fail closed |
+| **TP-TAKE-OWNERSHIP-13** | same | **have** — already matching is success |
+| **TP-TAKE-OWNERSHIP-14** | same | **have** — non-TTY missing flag does not hang |
+| **TP-TAKE-OWNERSHIP-15** | same | **have** — swapped flag order fail closed |
 | **TP-TAKE-OWNERSHIP-42** | same | **have** — TTY `action` without `--path` prints numbered allowed folders |
 | **TP-TAKE-OWNERSHIP-43** | same | **have** — TTY pick uses current `user:group` with no ownership prompt |
+| **TP-TAKE-OWNERSHIP-44** | same | **have** — granted-missing dir is not a live pick; recreate-then-action |
 
 **Matrix:** `reviews/requirement-test-matrix.md`  
 **Map:** `reviews/test-plan.md`
@@ -253,9 +267,10 @@ Operator **MAY** type `sudo take-ownership action --path … --ownership …` th
 |------|--------|------|
 | 2026-08-25 | Active 1.0.0 | Ops SSOT for take-ownership; replaces folder-archive-backup on this product |
 | 2026-08-30 | Active 1.3.0 | Interactive `action`: numbered allowed-folder pick; current `user:group` with no prompt |
+| 2026-09-06 | Active 1.4.0 | Granted-missing dir is not a live TTY pick; recreate-then-action (INC-20260830-001) |
 
 ---
 
-**Last Updated**: 2026-08-30  
+**Last Updated**: 2026-09-06  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

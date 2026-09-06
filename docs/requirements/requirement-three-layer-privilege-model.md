@@ -285,6 +285,12 @@ If sudo is missing, not authorized for the `action` argv, the global binary is m
 **Matrix:** `reviews/requirement-test-matrix.md`  
 **Map:** `reviews/test-plan.md`
 
+## Under command line for normal user only
+
+When this program runs on Termux, Git Bash, or Windows Command Prompt, it **MUST** stay on **your own login**. Admin privilege and a dedicated system account are **unused**. Generate/print/submit stay this login; **MUST NOT** wrap `sudo` to write `/etc` on that class.
+
+Detect (typical): Termux — `PREFIX` contains `com.termux`; Git Bash — `MSYSTEM` is `MINGW*` / `MSYS*`; Windows cmd — `OS=Windows_NT` after excluding Git Bash / WSL.
+
 ## 7. Status history
 
 | Date | Status | Note |

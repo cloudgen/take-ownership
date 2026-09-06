@@ -1,5 +1,5 @@
 # =============================================================================
-# tests/helpers.sh — shared assertions for folder-backup CI tests
+# tests/helpers.sh — shared assertions for take-ownership CI tests
 # =============================================================================
 # Source from test scripts (POSIX /bin/sh). Does not modify product code.
 # =============================================================================

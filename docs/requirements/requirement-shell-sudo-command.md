@@ -172,6 +172,12 @@ util_sudo -n /usr/local/bin/take-ownership action --path "${TO_PATH}" --ownershi
 **Matrix:** `reviews/requirement-test-matrix.md`  
 **Map:** `reviews/test-plan.md`
 
+## Under command line for normal user only
+
+When this program runs on Termux, Git Bash, or Windows Command Prompt, it **MUST** stay on **your own login**. Admin privilege and a dedicated system account are **unused**. `util_sudo` **MUST NOT** wrap `sudo` on that class (fail closed).
+
+Detect (typical): Termux — `PREFIX` contains `com.termux`; Git Bash — `MSYSTEM` is `MINGW*` / `MSYS*`; Windows cmd — `OS=Windows_NT` after excluding Git Bash / WSL.
+
 ## 7. Status history
 
 | Date | Status | Note |

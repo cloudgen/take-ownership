@@ -1,24 +1,25 @@
 # take-ownership - Take Unix ownership of a named folder with a narrow sudo grant
 
-![Version](https://img.shields.io/badge/Version-2.7.0-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-2.7.1-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 [![CIAO](https://img.shields.io/badge/Philosophy-CIAO%20(Caution%20%E2%80%A2%20Intentional%20%E2%80%A2%20Anti--fragile%20%E2%80%A2%20Over--engineered)-purple.svg)](https://github.com/cloudgen/ciao)
 [![Stars](https://img.shields.io/github/stars/cloudgen/take-ownership?style=flat-square)](https://github.com/cloudgen/take-ownership)
 
-**take-ownership** lets you submit a sudoers grant for one folder, then run `take-ownership action --path <folder> --ownership user:group` to recursively take that folder’s ownership (no symlink follow). Only the globally installed binary (`/usr/local/bin/take-ownership`) may appear in the sudoer file. A local `~/.local/bin` copy is fine for help, but grant emit fails closed until the global program exists. There is no online `curl|sh` install.
+**take-ownership** lets you ask an admin for one folder, then run `take-ownership action --path <folder> --ownership user:group` to recursively take that folder’s ownership (it does not follow symbolic links).
+
+You install the program for yourself, write a grant for one folder, and hand that grant to an admin. After the admin installs the grant, `action` may re-run the **global** program at `/usr/local/bin/take-ownership`. A copy in `~/.local/bin` is fine for help and local install; it is never written into the sudoers file (you could rewrite that file). There is no download-and-run install.
 
 | You (your own login) | Admin / already root | Not this |
 |----------------------|----------------------|----------|
-| Install locally, generate and submit a grant for one folder, run `action` after the grant exists | Install into `/usr/local/bin` and install the sudoers fragment | No download-and-run install channel; a normal login does not write `/etc`; USER_BIN is never in sudoers |
+| Install locally, generate and submit a grant for one folder, run `action` after the grant exists | Install into `/usr/local/bin` and install the sudoers fragment | No download-and-run install; a normal login does not write `/etc`; `~/.local/bin` is never in sudoers |
 
 ## Features
 
 - **Local self-management**: `install`, `uninstall`, `where-is-me`, `version`, `about`, `help`, `menu` / `main` (TTY numbered work list: action, then family **sudoers** with a grant/draft submenu; empty argv is the same list)
-- **Take ownership**: `action --path <folder> --ownership <user:group>` — recursive chown, no symlink follow, refuse system roots. On a real terminal, `action` (or menu `1`) lists granted folders by number and uses this login’s `user:group` with no extra prompt
-- **Narrow sudoers**: exact `--path`, exact `--ownership user:group`, **global binary only** (no `--allow-test-local`)
-- **Sudoer approval submit**: `generate-sudoer-request --path <folder> --ownership <user:group>` (alias `generate-sudoer-json`) writes a local JSON grant you can review. `--ownership` is an existing `user:group` (never `*`, never a directory listing). `submit-sudoer-request` hands it to sudoer-cli (does not write `/etc`, does not `mkdir` inbound)
-- **Fail-closed**: missing global binary, missing user:group, refuse-list paths, swapped flags
-- **CIAO / CIAO-Lite** defensive design (Protection Zones, `out_*` output SSOT)
+- **Take ownership**: `action --path <folder> --ownership <user:group>` — recursive chown, no symlink follow, refuse system roots. On a real terminal, `action` (or menu `1`) lists **existing** granted folders by number and uses this login’s `user:group` with no extra prompt. A granted path that is not a directory is listed by `list-folders` as missing; it is not a live pick. Recreate the folder, then run `action` — do not generate a new grant.
+- **Narrow sudoers**: exact `--path`, exact `--ownership user:group`, **global binary only**
+- **Sudoer approval submit**: `generate-sudoer-request --path <folder> --ownership <user:group>` (alias `generate-sudoer-json`) writes a local JSON grant you can review. `--ownership` is an existing `user:group` (never `*`, never a directory listing). `submit-sudoer-request` hands it to sudoer-cli (does not write `/etc`, does not create the public drop box)
+- **Stops when the grant would be unsafe**: missing global program, missing user:group, refuse-list paths, swapped flags, or a grant that is not a real `user:group`
 
 ## Quick Installation
 
@@ -39,14 +40,14 @@ take-ownership version
 ```sh
 sudo sh src/take-ownership install
 # or: take-ownership install --global   # needs write access to /usr/local/bin
-# Managed binary mode is always 0755 so every user can run the shell ship unit.
+# Managed binary mode is always 0755 so every user can run the shell program.
 # Grant emit requires this global path. Local ~/.local/bin is not written into sudoers.
 ```
 
 **Sudoers (required before non-root `action`):**
 
 ```sh
-# Global install must exist first (grant emit fails closed otherwise):
+# Global install must exist first (grant emit stops otherwise):
 sudo sh src/take-ownership install
 take-ownership generate-sudoer-request --path /var/www/html --ownership www-data:www-data
 take-ownership submit-sudoer-request --path /var/www/html --ownership www-data:www-data
@@ -66,7 +67,7 @@ This product is **local-only** for its install *channel* (no default `SCRIPT_URL
 After install, on a terminal (`take-ownership` with no arguments) the main menu looks like:
 
 ```text
-[INFO] take-ownership(2.7.0) — Take Unix ownership of a named folder with a narrow global-only sudo grant
+[INFO] **take-ownership**(*2.7.1*) — Take Unix ownership of a named folder with a narrow global-only sudo grant
 1. action: Recursively take ownership of a named folder
 2. sudoers: Grant and drafts
 9. Exit
@@ -75,7 +76,7 @@ Choice:
 
 Choose a number, or type the command name. Pick **2** / `sudoers` for grant/drafts (`8` goes back; `9` leaves). `take-ownership sudoers` is not a command — type the member verb instead. In a pipe, `take-ownership` prints help instead.
 
-Config identity: `REPO_USER=cloudgen`, `REPO_NAME=take-ownership` (override with env if needed; does not enable online install while `SCRIPT_URL` is empty).
+Git host identity (override with env if needed; does not enable online install while `SCRIPT_URL` is empty): owner `cloudgen`, repository `take-ownership`.
 
 ## Usage
 
@@ -102,7 +103,7 @@ take-ownership uninstall --force
 | `REPO_USER` | Git host owner (default `cloudgen`) |
 | `REPO_NAME` | Git repository name (default `take-ownership`) |
 | `SCRIPT_URL` | Online install channel (default **empty** — local only) |
-| `GLOBAL_BIN` | System bin (default `/usr/local/bin`) — **only this path** is a legal sudoers Cmnd |
+| `GLOBAL_BIN` | System bin (default `/usr/local/bin`) — **only this path** is a legal sudoers command |
 | `USER_BIN` | Per-user bin (default `~/.local/bin`) |
 | `PERSIST_DIR` | Persistence storage (default `~/.local/take-ownership`) |
 | `SUDOER_CLI` | Override path to `sudoer-cli` |
@@ -122,15 +123,16 @@ take-ownership action --path /var/www/html --ownership www-data:www-data
 |----------|--------|
 | Linux, `/bin/sh` (dash/bash) | Supported |
 | `tar`, `find`, `date` | Required |
-| `sudo` + narrow sudoers | Required for non-root deposit/restore of root-owned archives |
+| `sudo` + narrow sudoers | Required for non-root `action` on a folder this login does not already own |
+| Termux / Git Bash / Windows cmd | Your own login only — no in-tool `sudo`, no writing `/etc` |
 | macOS / BSD | Not primary; GNU `stat`/`sed -E` assumptions may differ |
 
 ## Related Projects
 
-- [take-ownership](https://github.com/cloudgen/take-ownership) — this product (upstream may still name folder-backup until retargeted)
+- [take-ownership](https://github.com/cloudgen/take-ownership) — this product
 - [CIAO Defensive Programming](https://github.com/cloudgen/ciao)
 - [CIAO-Lite](https://github.com/cloudgen/ciao-lite)
-- [cli-template](https://github.com/cloudgen/cli-template) — bootstrap parent architecture (Type 0 local-only template)
+- [cli-template](https://github.com/cloudgen/cli-template) — bootstrap parent architecture (local-only template)
 
 ## Contributing
 
@@ -142,20 +144,4 @@ MIT License — see [`LICENSE.md`](./LICENSE.md).
 
 ## Last Update
 
-2026-09-03 — README main-menu example look (plain `take-ownership(2.7.0)`, Choice) immediately before Usage.
-2026-09-03 — version **2.7.0** (main-menu family **sudoers** + five-verb submenu; `sudoers` is not a typed command; TP-CLI-13/17/19).
-2026-09-03 — version **2.6.0** (default CLI main menu style: **take-ownership**(*version*) header; gray italic descriptions; TP-CLI-19).
-2026-08-30 — version **2.5.0** (storage = cache folder **and** persistence `~/.local/take-ownership`; `about` Persistence storage / `persist_dir`).
-2026-08-30 — version **2.4.1** (`about` Cache folder preferred `/dev/shm/cache/cache-take-ownership`; fallback under XDG `cache-take-ownership`).
-2026-08-30 — version **2.4.0** (empty argv opens the numbered work list on a terminal; off-TTY still help; Type N never install).
-2026-08-30 — version **2.4.0** (menu drops `list-folders`; interactive `action` numbered folder pick + current `user:group`; TP-42/43).
-2026-08-26 — version **2.3.0** (grant `--ownership user:group`; withdraw leftover `*` gold from SSOT; text dual `user\:group`; TP-27/29/31).
-2026-08-26 — version **2.2.0** (`generate-sudoer-json`; inbound exact-args; TP-27/28).
-2026-08-26 — version **2.1.0** (`list-folders`; `action` confirms the same folder list first).
-2026-08-23 — version **1.11.0** (`menu` / `main` numbered work list; TP-CLI-13..16).
-2026-08-23 — version **1.10.0** (`print-sudoers` / JSON emit `backup *` / `restore *`; TP-26; INC-20260823-001).
-2026-08-18 — housekeeping: Description rewritten in people-and-folders voice (no Type-1 lead); install heading says “your own login.” Version still **1.9.0** (no product-source change).
-2026-08-17 — version **1.9.0** (`generate-sudoer-request`; independent generate dest; operator-readable errors; TP-24/25).
-2026-08-17 — version **1.8.2** (submit **update** when `/etc/sudoers.d/folder-backup-<user>` exists; TP-23).
-2026-08-17 — version **1.8.1** (submit inbound fidelity; pretty JSON re-encode; TP-22e/22f; review JR-1..8).
-2026-08-15 — version **1.8.0** (JSON sudoer file = `folder-backup` backup/restore only; TP-22/22b/22c).
+2026-09-06 — version **2.7.1** (README people-and-folders voice; granted-but-missing folders are not a live `action` pick; recreate then `action`; coverage maps retargeted off folder-backup). See [`CHANGELOG.md`](./CHANGELOG.md) for earlier releases.

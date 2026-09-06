@@ -255,6 +255,32 @@ run_test_domain_take_ownership() {
         t_skip "TP-TAKE-OWNERSHIP-43 TTY action current user:group (no python3 for PTY)"
     fi
 
+    # TP-TAKE-OWNERSHIP-44 granted --path whose directory is missing is not a
+    # live TTY pick; action --path fail-closed names recreate-then-action.
+    _gone="${CI_HOME}/gone-folder-$$"
+    mkdir -p "${_gone}"
+    HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" USER_BIN="${CI_USER_BIN}" \
+        sh "${SCRIPT}" generate-sudoer-request --update --path "${_gone}" --ownership "${_og}" >/dev/null 2>&1 || true
+    rmdir "${_gone}" 2>/dev/null || true
+    _out=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" sh "${SCRIPT}" list-folders 2>&1)
+    assert_contains "TP-TAKE-OWNERSHIP-44 list-folders still names granted-missing" "$_out" "${_gone}"
+    assert_contains "TP-TAKE-OWNERSHIP-44 list-folders marks missing" "$_out" "missing — recreate then action"
+    _err=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" sh "${SCRIPT}" action --path "${_gone}" --ownership "${_og}" 2>&1 >/dev/null)
+    _ec=$?
+    assert_eq "TP-TAKE-OWNERSHIP-44 action missing dir exit 1" 1 "$_ec"
+    assert_contains "TP-TAKE-OWNERSHIP-44 names recreate" "${_err}" "Recreate"
+    assert_contains "TP-TAKE-OWNERSHIP-44 names action --path" "${_err}" "action --path"
+    assert_contains "TP-TAKE-OWNERSHIP-44 do not generate a new grant" "${_err}" "Do not generate a new grant"
+    assert_not_contains "TP-TAKE-OWNERSHIP-44 next is not generate-sudoer-request" "${_err}" "generate-sudoer-request"
+    if command -v python3 >/dev/null 2>&1; then
+        _out=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" USER_BIN="${CI_USER_BIN}" \
+            PTY_IN="q" ci_pty_run action 2>&1) || true
+        assert_contains "TP-TAKE-OWNERSHIP-44 TTY still lists live folder" "$_out" "${CI_HOME}/owned2"
+        assert_not_contains "TP-TAKE-OWNERSHIP-44 TTY does not number missing dir" "$_out" "${_gone}"
+    else
+        t_skip "TP-TAKE-OWNERSHIP-44 TTY missing dir omitted from pick (no python3 for PTY)"
+    fi
+
     # TP-TAKE-OWNERSHIP-16 ram-drive project tree under /dev/shm is not refuse-list
     _ram="/dev/shm/take-ownership-ci-owned-$$"
     if [ -d /dev/shm ] && mkdir -p "${_ram}" 2>/dev/null; then

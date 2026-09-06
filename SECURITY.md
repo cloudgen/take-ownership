@@ -4,7 +4,8 @@
 
 | Version | Supported |
 |---------|-----------|
-| 2.7.0 (current) | Yes |
+| 2.7.1 (current) | Yes |
+| 2.7.0 | Yes |
 | 2.6.0 | Yes |
 | 2.5.0 | Yes |
 | 2.4.1 | Yes |
@@ -41,10 +42,10 @@ This project follows **[CIAO](https://github.com/cloudgen/ciao)** / **[CIAO-Lite
 
 | Letter | Principle | Security application |
 |--------|-----------|----------------------|
-| **C** | **Caution** | Fail closed without the global binary and a matching grant; refuse system roots and symlink `--path`. |
+| **C** | **Caution** | Stop without the global binary and a matching grant; refuse system roots and symlink `--path`. |
 | **I** | **Intentional** | You generate/submit; `action` elevates only `/usr/local/bin/take-ownership`; `print-sudoers` never writes `/etc`. |
-| **A** | **Anti-fragile** | Already-matching owner is success; clear next-step errors when the grant is missing. |
-| **O** | **Over-protect** | USER_BIN is never in sudoers; no `/bin/chown`; no `NOPASSWD: ALL`. |
+| **A** | **Anti-fragile** | Already-matching owner is success; clear next-step errors when the grant is missing or the folder is gone. |
+| **O** | **Over-protect** | `~/.local/bin` is never in sudoers; no `/bin/chown`; no `NOPASSWD: ALL`; no `--allow-test-local`. |
 
 Full principles: [CIAO](https://github.com/cloudgen/ciao) · [CIAO-Lite](https://github.com/cloudgen/ciao-lite).
 
@@ -52,15 +53,14 @@ This section is **design posture**, not a third-party certification claim.
 
 ## Scope notes
 
-- Elevation is limited to allowlisted deposit and restore-stage operations under product law.  
+- Elevation is limited to the **global** program `action --path <one-folder> --ownership <user:group>` (plus the `--json` twin) under product law.  
 - Operators must admin-install sudoers fragments after review (`visudo -c`, mode `0440`).  
-- **Install trust tiers for elevation:**
-  - **Production:** global managed binary (`/usr/local/bin/folder-backup`, typically root-owned). Prefer `sudo folder-backup install` before durable sudoers.  
-  - **Test mode only:** local `~/.local/bin/folder-backup` is **user-rewritable**. A local user can change the CLI and stage content after a review; do **not** treat local-only sudoers as production-secure.  
-  - `print-sudoers` refuses non-production tiers unless `--allow-test-local` / `ALLOW_TEST_LOCAL_SUDOERS=1`, and embeds **TEST MODE / uninstall soon** warnings.  
-  - **`print-sudoers-install-script`** writes a **Type 0 admin handoff script** under `/dev/shm` (or temp) that a sudo-capable account runs for `install` / `uninstall` / `replace` of the **project-sudoers-file** — the CLI never writes `/etc` itself.  
-  - **Per-user host paths:** draft `~/.config/folder-backup/sudoers.fragment-<user>` installs to `/etc/sudoers.d/folder-backup-<user>` so multi-user admin installs do not overwrite each other.  
-  - Uninstall of the binary does **not** remove `/etc/sudoers.d/folder-backup-<user>` — use `sudo sh <admin-script> uninstall` (or admin `rm`) when leaving test elevation.  
+- **Install trust for elevation:**
+  - **Production:** global managed binary (`/usr/local/bin/take-ownership`, typically root-owned). Prefer `sudo take-ownership install` before durable sudoers.  
+  - **Local `~/.local/bin/take-ownership` is user-rewritable.** Grant emit **stops** unless the global program exists. Do **not** write the user-bin path into sudoers.  
+  - **`--allow-test-local` is absent** (forbidden). There is no test-mode sudoers path.  
+  - **`print-sudoers-install-script`** writes an admin handoff script under `/dev/shm` (or temp) that a sudo-capable account runs for `install` / `uninstall` / `replace` of this login’s fragment — the CLI never writes `/etc` itself.  
+  - **Per-user host paths:** draft `~/.config/take-ownership/sudoers.fragment-<user>` installs to `/etc/sudoers.d/take-ownership-<user>` so multi-user admin installs do not overwrite each other.  
+  - Uninstall of the binary does **not** remove `/etc/sudoers.d/take-ownership-<user>` — use `sudo sh <admin-script> uninstall` (or admin `rm`) when leaving elevation.  
   - **`remove-project-sudoers`** deletes drafts only; when multiple drafts exist it lists them for interactive choice (non-interactive needs an explicit path).  
-- Residual: even with OS-tool-only Cmnds, **stage trees are user-writable**; deposit grants write of staged archives into `/var/backup/folder-backup/` only (not a root shell).  
-- Related docs: [`README.md`](./README.md), [`LICENSE.md`](./LICENSE.md), `docs/requirements/requirement-three-layer-privilege-model.md`, `reviews/reports/2026-08-09-sudoers-security-folder-backup.md`.
+- Related docs: [`README.md`](./README.md), [`LICENSE.md`](./LICENSE.md), `docs/requirements/requirement-three-layer-privilege-model.md`.

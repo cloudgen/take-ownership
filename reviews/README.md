@@ -1,4 +1,4 @@
-# Reviews — folder-backup
+# Reviews — take-ownership
 
 Public product review surface (peer of `tests/`).
 
@@ -10,9 +10,10 @@ Public product review surface (peer of `tests/`).
 | `lessons.md` | Durable failure modes to re-check |
 | `index.md` | Report index |
 | `reports/` | Dated review run reports |
+| `cli-routed-verb-table.md` | Live dispatcher inventory |
 
-**Ship unit:** `src/folder-backup` (**VERSION 1.11.0**)  
+**Ship unit:** `src/take-ownership` (**VERSION 2.7.1**)  
 **Suite:** `./tests/run.sh`  
-**Last suite baseline:** see `test-plan.md` (1.11.0: PASS=296 FAIL=0 SKIP=2)  
+**Last suite baseline:** see `test-plan.md`
 
-**Privilege review focus (1.9.0):** trust tier **S13**, project-sudoers-file, **independent generate** (`generate-sudoer-request` AC-23/24 · S16), `submit-sudoer-request` public inbound, **host-probe add/update (AC-22)**, inbound fidelity (AC-21), **operator-readable errors** (TP-25), `print-sudoers-install-script`, `remove-project-sudoers` (draft only).
+**Privilege review focus:** global-only grant (`/usr/local/bin/take-ownership`); `--ownership user:group` (never `*`); independent generate; `submit-sudoer-request` public inbound; operator-readable errors; `print-sudoers-install-script`; `remove-project-sudoers` (draft only). **No** `--allow-test-local`. **No** backup/restore.

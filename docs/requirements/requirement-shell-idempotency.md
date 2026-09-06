@@ -10,6 +10,20 @@ This requirement is the **project Single Source of Truth** for **idempotency (re
 
 **Informal formula:** for ensure-style operation *f* and system state *x*, **f(f(x)) ≈ f(x)** for the **desired outcome** (logs and timestamps may differ).
 
+### 1.1 Human-facing
+
+**In one sentence:** Running install or `action` a second time when the job is already done is success, not an error.
+
+| Box | Meaning | Example |
+|-----|---------|---------|
+| You / this login | Re-run is safe | `take-ownership install` twice |
+| The program | Detects already-done | `Already user:group: /path` |
+| Not this file | Which trees `action` may touch | `requirement-take-ownership-ops` |
+
+| Includes | Excludes |
+|----------|----------|
+| Second install / uninstall / already-matching `action` | Treating “already exists” as failure |
+
 ---
 
 ## 2. Core Rules / Requirements (Mandatory)
@@ -109,7 +123,13 @@ Force policy (`--force` / `FORCE=1`) **MAY** re-apply ensure steps that would ot
 | TP family / ID | Suite | Status |
 |----------------|-------|--------|
 | **TP-LC-03,07** | `tests/test_local_lifecycle.sh` | have |
-| **TP-TAKE-OWNERSHIP-13** | `tests/test_domain_take_ownership.sh` | **todo** — already matching is success |
+| **TP-TAKE-OWNERSHIP-13** | `tests/test_domain_take_ownership.sh` | **have** — already matching is success |
+
+## Under command line for normal user only
+
+When this program runs on Termux, Git Bash, or Windows Command Prompt, it **MUST** stay on **your own login**. Admin privilege and a dedicated system account are **unused**. Re-run safety **MUST NOT** wrap `sudo` on that class.
+
+Detect (typical): Termux — `PREFIX` contains `com.termux`; Git Bash — `MSYSTEM` is `MINGW*` / `MSYS*`; Windows cmd — `OS=Windows_NT` after excluding Git Bash / WSL.
 
 **Matrix:** `reviews/requirement-test-matrix.md`  
 **Map:** `reviews/test-plan.md`

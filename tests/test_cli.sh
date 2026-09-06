@@ -148,6 +148,12 @@ run_test_cli() {
     _err=$(sh "${SCRIPT}" --allow-test-local help 2>&1 >/dev/null)
     assert_eq "TP-CLI-10 no allow-test-local exit 1" 1 "$?"
 
+    # TP-CLI-20 command line for normal user only: Git Bash still runs Type 0
+    _out=$(MSYSTEM=MINGW64 sh "${SCRIPT}" version 2>/dev/null)
+    _ec=$?
+    assert_eq "TP-CLI-20 MSYSTEM version exit 0" 0 "$_ec"
+    assert_contains "TP-CLI-20 MSYSTEM version text" "$_out" "${PRODUCT_VERSION}"
+
     # TP-CLI-11 set -u HOME unset still works for version
     _out=$(env -u HOME sh "${SCRIPT}" version 2>/dev/null)
     _ec=$?

@@ -2,8 +2,9 @@
 
 | Date | Report | Scope | Verdict | Suite |
 |------|--------|-------|---------|-------|
+| 2026-09-06 | `reports/2026-09-06-readme-reqs-coverage.md` | README voice, REQ §1.1 + Termux-class heading, maps rebind, TP-44 granted-missing | **closed** this run | see `test-plan.md` 2.7.1 |
 | 2026-09-03 | `cli-routed-verb-table.md` 2.7.0 | Family **sudoers** submenu; five grant/draft verbs operational; `sudoers` not dispatched | living | PASS=266 FAIL=0 SKIP=0 |
-| 2026-08-30 | INC-20260830-001 | Interactive `action` listed a granted `--path` that is not an existing directory (ram-drive dest gone; grant remains). L-OPS-01. | **Open** | product pick-list / copy / TP-44 |
+| 2026-08-30 | INC-20260830-001 | Interactive `action` listed a granted `--path` that is not an existing directory (ram-drive dest gone; grant remains). L-OPS-01. | **Closed** 2026-09-06 (TP-44 have) | product pick-list / copy / TP-44 |
 | 2026-08-30 | `reports/2026-08-30-knowledge-and-product-review.md` | Harness knowledge + current 2.3.0 tree (ownership fence). Audit-only. | **Block** (maps genesis) / **Revise** (product plans) | PASS=207 FAIL=0 SKIP=0 |
 | 2026-08-26 | 2.3.0 ownership user:group | Withdraw `--ownership *` gold; dirty-cwd emits `user:group`; text dual `\:`; TP-27/29/31 | living | 2.3.0 |
 | 2026-08-26 | 2.2.0 generate-sudoer-json | Canonical JSON grant; dirty-cwd then taught `"*"` (**withdrawn** 2.3.0); inbound exact-args; TP-27/28 | living (historical `*` gold) | 2.2.0 |

@@ -19,6 +19,20 @@ The preferred cache is **not** a ram-drive **project** tree (`/dev/shm/<project>
 
 Persistence is **not** the user bin (`${HOME}/.local/bin`) and **not** config drafts (`${HOME}/.config/${APP_NAME}/` — those stay on privilege / JSON peers).
 
+### 1.1 Human-facing
+
+**In one sentence:** Scratch files go in a cache folder; durable app data goes in `~/.local/take-ownership/` — not your bin, and not `/var/backup`.
+
+| Box | Meaning | Example |
+|-----|---------|---------|
+| You / this login | `about` shows both | Cache folder + Persistence storage |
+| The program | Creates those folders | `/dev/shm/cache/cache-take-ownership` |
+| Not this file | Grant drafts | `~/.config/take-ownership/` on privilege peers |
+
+| Includes | Excludes |
+|----------|----------|
+| Cache + persist | Archive deposit under `/var/backup` |
+
 ---
 
 ## 2. Core Rules / Requirements (Mandatory)
@@ -229,6 +243,12 @@ util_mktemp() {
 
 **Matrix:** `reviews/requirement-test-matrix.md`  
 **Map:** `reviews/test-plan.md`
+
+## Under command line for normal user only
+
+When this program runs on Termux, Git Bash, or Windows Command Prompt, it **MUST** stay on **your own login**. Admin privilege and a dedicated system account are **unused**. Cache and persist **MUST NOT** resolve into `/etc` on that class.
+
+Detect (typical): Termux — `PREFIX` contains `com.termux`; Git Bash — `MSYSTEM` is `MINGW*` / `MSYS*`; Windows cmd — `OS=Windows_NT` after excluding Git Bash / WSL.
 
 ## 7. Status history
 

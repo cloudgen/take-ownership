@@ -11,6 +11,26 @@ This requirement is the **product Single Source of Truth** for **operator-facing
 
 Every blocking `[ERROR]` **MUST** be understandable to a person at the prompt: **what happened**, **what it means**, and **what to do next** — the same concreteness as a human-intro page. Channel ownership stays on `requirement-shell-output-requirements`. Fail-fast vs degrade stays on that peer’s `out_die` contract plus product fail-closed rules. This file owns **copy**.
 
+### 1.1 Human-facing
+
+**In one sentence:** A blocking error names what went wrong and the next command you can type — not workshop jargon.
+
+| Box | Meaning | Example |
+|-----|---------|---------|
+| You / this login | Read `[ERROR]` and act | recreate a missing folder, then `action` |
+| The program | Print via `out_die` / `out_error` | same sentence in `--json` `message` |
+| Not this file | Which check fired | `requirement-take-ownership-ops` |
+
+| Includes | Excludes |
+|----------|----------|
+| What happened + next step | `sibling re-encode` as the whole line |
+| Granted-missing folder → recreate then `action` | Telling the operator to generate a new grant when the grant already exists |
+
+| You do… | What it means | What you type |
+|---------|---------------|---------------|
+| See a globbed ownership error | The grant is unsafe; write a clean one | `take-ownership generate-sudoer-request --path <folder> --ownership user:group` |
+| See a granted folder missing | Recreate the directory; do not write a new grant | recreate, then `take-ownership action --path <folder>` |
+
 ---
 
 ## 2. Core Rules / Requirements (Mandatory)
@@ -57,7 +77,8 @@ JSON `message` **MUST** be that same sentence.
 | **Ship unit** | `src/take-ownership` |
 | **Printer** | `out_die` / `out_error` |
 | **Worked inbound miss** | `Queued sudo request is incomplete: args must be action --path <folder> --ownership <user:group> (not * and not extra filenames). Do not approve <id>. Next: generate-sudoer-json --path <folder> --ownership user:group` |
-| **Worked generate `/etc`** | `generate-sudoer-request refuses to write under /etc (Type 0). Use a path under $HOME or /dev/shm.` |
+| **Worked generate `/etc`** | `generate-sudoer-request refuses to write under /etc (you, this login). Use a path under $HOME or /dev/shm.` |
+| **Worked granted-missing dir** | `Folder <path> is granted but is not an existing directory. Recreate that folder, then run take-ownership action --path <path>. Do not generate a new grant.` |
 | **Banned as whole message** | `sibling re-encode?` · `inbound grant lost … verb` |
 | **Class** | software-development — this wording law is required |
 
@@ -100,6 +121,7 @@ JSON `message` **MUST** be that same sentence.
 | AC-1 | Representative fatal inbound-fidelity error names incompleteness in operator words |
 | AC-2 | That error names a next command (`generate-sudoer-json` or `generate-sudoer-request`) |
 | AC-3 | That error does not contain `sibling re-encode` as the explanation |
+| AC-4 | Granted-missing directory error names recreate-then-action and does not name `generate-sudoer-request` |
 
 ---
 
@@ -120,10 +142,8 @@ JSON `message` **MUST** be that same sentence.
 
 | TP family / ID | Suite | Status |
 |----------------|-------|--------|
-| **TP-FOLDER-BACKUP-25** | `tests/test_domain_folder_backup.sh` | **have** — inbound-fidelity error is operator-readable (what happened) |
-| **TP-FOLDER-BACKUP-25b** | same | **have** — same error names `generate-sudoer-request` |
-| **TP-TAKE-OWNERSHIP-28** | `tests/test_domain_take_ownership.sh` | **have** — globbed submit names `generate-sudoer-json` / `generate-sudoer-request` |
-| **TP-FOLDER-BACKUP-25c** | same | **have** — same error does not contain `sibling re-encode` |
+| **TP-TAKE-OWNERSHIP-28** | `tests/test_domain_take_ownership.sh` | **have** — globbed submit names `generate-sudoer-json` / `generate-sudoer-request`; no `sibling re-encode` |
+| **TP-TAKE-OWNERSHIP-44** | same | **have** — granted-missing dir names recreate-then-action |
 
 **Matrix:** `reviews/requirement-test-matrix.md`  
 **Map:** `reviews/test-plan.md`

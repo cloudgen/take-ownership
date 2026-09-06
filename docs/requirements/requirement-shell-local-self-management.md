@@ -10,6 +10,26 @@ This requirement is the **project Single Source of Truth** for **local self-mana
 
 **Install mode:** **local-only**. Online channel install, remote version-check, self-update, and self-uninstall are **out of scope** (intentionally absent).
 
+### 1.1 Human-facing
+
+**In one sentence:** You copy this program into your own bin, or an admin copies it into `/usr/local/bin`; uninstall removes only that copy.
+
+| Box | Meaning | Example |
+|-----|---------|---------|
+| You / this login | `install` without root | `take-ownership install` |
+| Admin / already root | Global copy before a durable grant | `sudo take-ownership install` |
+| Not this file | The grant body | `requirement-sudoer-json-file` |
+
+| Includes | Excludes |
+|----------|----------|
+| Local `install` / `uninstall` / `where-is-me` | Download-and-run install |
+| Mode **0755** so other logins can run the shell program | Writing `~/.local/bin` into sudoers |
+
+| You do… | What it means | What you type |
+|---------|---------------|---------------|
+| Install for yourself | Copy into `~/.local/bin` | `take-ownership install` |
+| Prepare a host grant | Global copy first | `sudo take-ownership install` |
+
 ---
 
 ## 2. Core Rules (Mandatory)
@@ -83,7 +103,7 @@ This product ships as a **POSIX shell script** (interpreted). Execution by any n
 | Variable | Role | Default / note |
 |----------|------|----------------|
 | `APP_NAME` | Binary basename SSOT | hard-assign `take-ownership` |
-| `VERSION` | Local version SSOT | hard-assign `1.6.1` |
+| `VERSION` | Local version SSOT | hard-assign in `src/take-ownership` |
 | `GLOBAL_BIN` | System-wide bin | `/usr/local/bin` |
 | `USER_BIN` | Per-user bin | `${HOME}/.local/bin` |
 | `FORCE` | Replace / skip confirm | `0` |
@@ -117,6 +137,17 @@ This product ships as a **POSIX shell script** (interpreted). Execution by any n
 - **Intentional**: Local verbs only (`install`/`uninstall`).  
 - **Anti-fragile**: Idempotent place/remove.  
 - **Over-protect**: Do not reintroduce online lifecycle under new names.
+
+## Under command line for normal user only
+
+When this program runs on Termux, Git Bash, or Windows Command Prompt, it **MUST** stay on **your own login**. Admin privilege and a dedicated system account are **unused**.
+
+| MUST | MUST NOT |
+|------|----------|
+| Local `install` / `uninstall` into this login’s bin | Wrap `sudo` to write `/usr/local/bin` |
+| `version` / `about` / `help` as this login | Recommend `sudo curl \| sh` |
+
+Detect (typical): Termux — `PREFIX` contains `com.termux`; Git Bash — `MSYSTEM` is `MINGW*` / `MSYS*`; Windows cmd — `OS=Windows_NT` after excluding Git Bash / WSL.
 
 ---
 

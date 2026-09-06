@@ -2,7 +2,7 @@
 
 **Product:** take-ownership (POSIX `/bin/sh` local self-managed CLI — take Unix ownership of a named folder with a narrow global-only sudo grant)  
 **Workspace state:** Specialized product law; **software-development** class; bootstrap **cli-template → folder-backup → take-ownership** (domain replace; online install **intentionally absent**).  
-**Updated:** 2026-09-03
+**Updated:** 2026-09-06
 
 | ID / key | Title | Area | Status | Path | Updated |
 |----------|-------|------|--------|------|---------|
@@ -12,7 +12,7 @@
 | requirement-three-layer-privilege-model | You + narrow `action` elev; sudoers emit + install-script; **global-only** grant; **no** `--allow-test-local`; per-user fragments; submit workflow; `--ownership user:group` | architecture | Active (2.2.0) | `requirement-three-layer-privilege-model.md` | 2026-08-26 |
 | requirement-sudoer-json-file | JSON sudoer file SSOT: one recursive **folder per line**; `--ownership user:group` (never `*`); later submit = replacement union of unique folders; text dual escapes `:` | architecture | Active (2.4.0) | `requirement-sudoer-json-file.md` | 2026-08-26 |
 | requirement-incorrect-ownership-parameter | Product grant/inbound fence: `--ownership` is existing `user:group`; `*` and cwd listings fail closed | architecture | Active (1.0.0) | `requirement-incorrect-ownership-parameter.md` | 2026-08-26 |
-| requirement-take-ownership-ops | **Ops SSOT**: recursive chown, no symlink follow; `--path` then `--ownership`; refuse-list; TTY numbered folder pick + current `user:group` | domain-ops | Active (1.3.0) | `requirement-take-ownership-ops.md` | 2026-08-30 |
+| requirement-take-ownership-ops | **Ops SSOT**: recursive chown, no symlink follow; `--path` then `--ownership`; refuse-list; TTY numbered **existing** folder pick; granted-missing → recreate then `action` | domain-ops | Active (1.4.0) | `requirement-take-ownership-ops.md` | 2026-09-06 |
 | requirement-shell-script-coding | POSIX `/bin/sh` coding-style specialize-in (without it, portable lessons arrive raw) | shell | Active (1.0.0) | `requirement-shell-script-coding.md` | 2026-08-25 |
 | requirement-shell-sudo-command | In-tool `util_sudo`; check before sudo; chmod example; `action` re-execs global binary | shell | Active (1.0.0) | `requirement-shell-sudo-command.md` | 2026-08-25 |
 | requirement-shell-cli-interface | Shell CLI interface (commands, flags, dispatch, modes); `action`; submit `--add`/`--update`; generate; empty argv + `menu`/`main` → numbered list; five sudoers verbs live; `sudoers` not dispatched | shell | Active (2.3.0) | `requirement-shell-cli-interface.md` | 2026-09-03 |

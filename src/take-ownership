@@ -35,7 +35,7 @@
 # Single-file ship unit under src/; local install to ~/.local/bin.
 #
 # APP NAME: hard-assign APP_NAME="take-ownership"
-# VERSION: hard-assign VERSION="2.7.0"
+# VERSION: hard-assign VERSION="2.7.1"
 #
 # =============================================================================
 
@@ -52,8 +52,8 @@ APP_NAME="take-ownership"
 : "${SHORT_DESCRIPTION:=${APP_DESC}}"
 : "${DESCRIPTION:=POSIX /bin/sh local CLI: install, uninstall, where-is-me, version, about, help, menu, main, list-folders, action, print-sudoers, print-sudoers-install-script, remove-project-sudoers, generate-sudoer-request, generate-sudoer-json, submit-sudoer-request.}"
 # Product version SSOT (semver). Extractors use: grep '^VERSION="'
-VERSION="2.7.0"
-: "${VERSION:=2.7.0}"
+VERSION="2.7.1"
+: "${VERSION:=2.7.1}"
 # Repository identity SSOT (git host owner/repo for project-repository alignment).
 # Install remains local-only: SCRIPT_URL stays empty (no online curl|sh channel).
 : "${REPO_USER:=cloudgen}"
@@ -1605,10 +1605,40 @@ app_where_is_me() {
 # ALIGNMENT: requirement-shell-sudo-command.md
 # Last updated: 2026-08-26
 # =============================================================================
+# Command line for normal user only: Termux / Git Bash / Windows cmd.
+# Admin privilege and dedicated-account switch are unused on that class.
+util_is_command_line_for_normal_user_only() {
+    case "${PREFIX-}" in
+        *com.termux*) return 0 ;;
+    esac
+    [ -n "${TERMUX_VERSION-}" ] && return 0
+    [ -d /data/data/com.termux/files/usr ] && return 0
+    case "${MSYSTEM-}" in
+        MINGW*|MSYS*|UCRT*|CLANG*) return 0 ;;
+    esac
+    _un=$(uname -s 2>/dev/null || true)
+    case "${_un}" in
+        MINGW*|MSYS*) return 0 ;;
+    esac
+    case "${OS-}" in
+        Windows_NT)
+            case "${MSYSTEM-}" in
+                MINGW*|MSYS*|UCRT*|CLANG*) ;;
+                *) return 0 ;;
+            esac
+            ;;
+    esac
+    return 1
+}
+
 util_sudo() {
     if [ "$(id -u 2>/dev/null || echo 1)" -eq 0 ]; then
         "$@"
         return $?
+    fi
+    if util_is_command_line_for_normal_user_only; then
+        : "${APP_NAME:=take-ownership}"
+        out_die "This command line is for your own login only (Termux, Git Bash, or Windows cmd). Admin sudo is unused here. Next: run as yourself on a folder you already own, or use a Linux host with a global install."
     fi
     command -v sudo >/dev/null 2>&1 || return 1
     sudo "$@"
@@ -1856,20 +1886,31 @@ to_current_login_ownership() {
 # to_prompt_allowed_folder_choice() - TTY numbered pick from list-folders set
 # =============================================================================
 #
-# ALIGNMENT: requirement-take-ownership-ops.md §2.2
-# Last updated: 2026-08-30
+# ALIGNMENT: requirement-take-ownership-ops.md §2.2 / §2.5a
+# Last updated: 2026-09-06
 # =============================================================================
 to_prompt_allowed_folder_choice() {
     : "${APP_NAME:=take-ownership}"
     _list=$(util_mktemp allowed-pick)
     to_emit_allowed_folders >"${_list}"
+    _live=$(util_mktemp allowed-live)
+    _missing=0
     _count=0
     while IFS= read -r _p; do
         [ -n "${_p}" ] || continue
-        _count=$((_count + 1))
+        if [ -d "${_p}" ] && [ ! -L "${_p}" ]; then
+            printf '%s\n' "${_p}" >>"${_live}"
+            _count=$((_count + 1))
+        else
+            _missing=$((_missing + 1))
+        fi
     done <"${_list}"
+    rm -f "${_list}"
     if [ "${_count}" -eq 0 ]; then
-        rm -f "${_list}"
+        rm -f "${_live}"
+        if [ "${_missing}" -gt 0 ]; then
+            out_die "Granted folders are missing on disk. Recreate the folder, then run ${APP_NAME} action --path <folder>. Do not generate a new grant. Next: ${APP_NAME} list-folders"
+        fi
         out_die "This login has no take-ownership folders yet. Next: ${APP_NAME} generate-sudoer-request --path <folder> --ownership user:group"
     fi
     out_info "Folders this login may take ownership of (${_count}):"
@@ -1878,7 +1919,8 @@ to_prompt_allowed_folder_choice() {
         [ -n "${_p}" ] || continue
         _i=$((_i + 1))
         out_plain "${_i}. ${_p}"
-    done <"${_list}"
+    done <"${_live}"
+    _list="${_live}"
 
     while true; do
         if ! prompt_line "Choice"; then
@@ -2146,7 +2188,11 @@ to_list_folders() {
     out_success "Folders this login may take ownership of (${_count}):"
     while IFS= read -r _p; do
         [ -n "${_p}" ] || continue
-        out_plain "  ${_p}"
+        if [ -d "${_p}" ] && [ ! -L "${_p}" ]; then
+            out_plain "  ${_p}"
+        else
+            out_plain "  ${_p}  (missing — recreate then action)"
+        fi
     done <"${_list}"
     rm -f "${_list}"
     return 0
@@ -2167,7 +2213,7 @@ to_list_folders() {
 # - requirement-shell-sudo-command.md
 # - requirement-three-layer-privilege-model.md
 #
-# Last updated: 2026-08-30
+# Last updated: 2026-09-06
 # =============================================================================
 to_action() {
     : "${APP_NAME:=take-ownership}"
@@ -2200,6 +2246,9 @@ to_action() {
         out_die "--path is a symbolic link. Refusing to take ownership through a link: ${TO_PATH}"
     fi
     if [ ! -d "${TO_PATH}" ]; then
+        if to_folder_is_allowed "${TO_PATH}"; then
+            out_die "Folder ${TO_PATH} is granted but is not an existing directory. Recreate that folder, then run ${APP_NAME} action --path ${TO_PATH}. Do not generate a new grant."
+        fi
         out_die "--path is not an existing directory: ${TO_PATH}"
     fi
     to_fence_ownership_operand "${TO_OWNERSHIP}" "action"

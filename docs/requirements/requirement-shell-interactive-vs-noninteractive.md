@@ -8,6 +8,20 @@
 
 This requirement is the **project Single Source of Truth** for how take-ownership behaves in **interactive** (human + TTY) versus **non-interactive** (automation, CI/CD, pipes, `--json` / often `--quiet`) environments.
 
+### 1.1 Human-facing
+
+**In one sentence:** On a real terminal the program may ask a numbered choice; in a pipe or `--json` it must not hang waiting for you.
+
+| Box | Meaning | Example |
+|-----|---------|---------|
+| You at a terminal | Numbered pick | `take-ownership action` then `1` |
+| Scripts / CI | No hang | `take-ownership action --path … --ownership … </dev/null` |
+| Not this file | Which folders appear | `requirement-take-ownership-ops` |
+
+| Includes | Excludes |
+|----------|----------|
+| `TTY` measured outside functions; helpers consume `TTY` | Live `[ -t` inside `prompt_*` as policy |
+
 ---
 
 ## 2. Core Rules / Requirements (Mandatory)
@@ -143,7 +157,7 @@ prompt_ask() {
 |----|-----------|
 | AC-1 | Non-interactive uninstall without force fails closed |
 | AC-2 | JSON mode never prompts |
-| AC-3 | Backup never hangs waiting for optional confirm by default |
+| AC-3 | Non-interactive `action` never hangs waiting for `--path` / `--ownership` |
 
 ---
 
@@ -157,6 +171,12 @@ prompt_ask() {
 | `docs/requirements/index.md` | Registry |
 
 ---
+
+## Under command line for normal user only
+
+When this program runs on Termux, Git Bash, or Windows Command Prompt, it **MUST** stay on **your own login**. Admin privilege and a dedicated system account are **unused**. Interactive prompts **MUST NOT** wrap `sudo` on that class.
+
+Detect (typical): Termux — `PREFIX` contains `com.termux`; Git Bash — `MSYSTEM` is `MINGW*` / `MSYS*`; Windows cmd — `OS=Windows_NT` after excluding Git Bash / WSL.
 
 ## 7. Status history
 
