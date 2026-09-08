@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-shell-cli-default-interaction.md  
-**Status**: Active (Version 2.4.0)  
+**Status**: Active (Version 2.5.0)  
 **Area**: shell  
 **Key**: `requirement-shell-cli-default-interaction`  
 **Optional RQ-ID**: `RQ-SHELL-CLI-DEFAULT-INTERACTION`  
@@ -7,9 +7,9 @@
 
 ## 1. Purpose
 
-This requirement is the **product Single Source of Truth** for take-ownership’s **default interaction**: a **short numbered main menu** of daily **folder work**, with sudoers grant/draft commands behind one **family** row. take-ownership has `requirement-shell-cli-zero-arguments` (**case 3**): that REQ **defers TTY empty argv** to this menu and **owns off-TTY empty argv as Type N help**. The menu **MUST** also be the command **`menu`**. **`main` MAY** be accepted as the same handler.
+This requirement is the **product Single Source of Truth** for take-ownership’s **default interaction**: a **short numbered main menu** of daily **folder work**, with sudoers grant/draft commands behind one **family** row. take-ownership has `requirement-shell-cli-zero-arguments` (**case 3**): that REQ **defers TTY empty argv** to this menu and **owns off-TTY empty argv as Type O install-ensure**. The menu **MUST** also be the command **`menu`**. **`main` MAY** be accepted as the same handler.
 
-On a **real terminal**, empty argv and `take-ownership menu` (or `main`) **MUST** show the main menu. `menu`/`main` **MUST ignore `--json`**. Off-TTY, **`menu`/`main` MUST** print **help**, following `--json`. Off-TTY **empty argv** is **not** this file — it is Type N help on the zero-argument REQ. Command rows **MUST** be `command: what it does`. The family row **MUST NOT** be a live dispatcher command.
+On a **real terminal**, empty argv and `take-ownership menu` (or `main`) **MUST** show the main menu. `menu`/`main` **MUST ignore `--json`**. Off-TTY, **`menu`/`main` MUST** print **help**, following `--json`. Off-TTY **empty argv** is **not** this file — it is Type O install-ensure on the zero-argument REQ. Command rows **MUST** be `command: what it does`. The family row **MUST NOT** be a live dispatcher command.
 
 Empty-argv type and the TTY vs off-TTY split for **no command token** stay on `requirement-shell-cli-zero-arguments`. Confirm / no-hang stays on `requirement-shell-interactive-vs-noninteractive`. Live command inventory stays dispatcher truth (`requirement-shell-cli-interface`).
 
@@ -20,8 +20,8 @@ Empty-argv type and the TTY vs off-TTY split for **no command token** stay on `r
 | Box | Meaning | Example |
 |-----|---------|---------|
 | You / this login | Open the list or pick a number | `take-ownership` then `1` (action) |
-| The other role | Scripts and CI must not hang on that list | `take-ownership` or `take-ownership menu` in a pipe → help |
-| Not this file | Empty argv is Type N (never install) | `requirement-shell-cli-zero-arguments` |
+| The other role | Scripts and CI must not hang on that list | `take-ownership menu` in a pipe → help; bare empty argv off-TTY is install-ensure |
+| Not this file | Off-TTY empty argv is Type O | `requirement-shell-cli-zero-arguments` |
 
 | Includes | Excludes |
 |----------|----------|
@@ -53,7 +53,7 @@ Empty-argv type and the TTY vs off-TTY split for **no command token** stay on `r
 ### 2.1 Claim and case
 
 1. This product **claims** a default interactive main menu.  
-2. **Case 3** applies: a specialized zero-argument requirement exists **and** the product is **not** online-installable. Empty argv **MUST** follow `requirement-shell-cli-zero-arguments`.  
+2. **Case 3** applies: a specialized zero-argument requirement exists. Empty argv **MUST** follow `requirement-shell-cli-zero-arguments` (TTY → this menu; off-TTY → Type O).  
 3. That zero-argument requirement **MUST** route empty argv to **this** menu handler (`app_main_menu`). **MUST NOT** keep empty argv as TTY help while this menu is claimed.  
 4. The menu **MUST** also be routed-verb **`menu`**. **`main` MAY** call the same handler.  
 5. `app_main` **MUST** route empty argv, `menu`, and `main` to `app_main_menu`.
@@ -65,7 +65,7 @@ Measure interactive capability **outside functions** (`TTY=1` only when stdin an
 | Invocation | Mode | `--json` | MUST | MUST NOT |
 |------------|------|----------|------|----------|
 | `take-ownership` (no args) | Interactive (`TTY=1`) | N/A (no flags) | Draw the numbered list | Treat as help; hang; install |
-| `take-ownership` (no args) | Non-interactive (`TTY=0`) | N/A | **Help** (human) | Draw the menu; hang; silent return; install |
+| `take-ownership` (no args) | Non-interactive (`TTY=0`) | N/A | **Type O** on the zero-argument REQ (not this file) | Draw the menu; hang; silent return; print help |
 | `take-ownership menu` or `main` | Interactive (`TTY=1`) | **Ignore** | Draw the numbered list | Treat as JSON help; hang |
 | same | Non-interactive (`TTY=0`) | **Follow** | **Help**: human when JSON=0; JSON help when JSON=1 | Draw the menu; hang; silent return |
 

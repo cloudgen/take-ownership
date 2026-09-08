@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-class-software-dev.md  
-**Status**: Active (Version 2.0.1 – take-ownership residual)  
+**Status**: Active (Version 3.0.0 – take-ownership residual)  
 **Area**: class  
 **Key**: `requirement-class-software-dev`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -71,9 +71,9 @@ Primary language, toolchain, package tools, and runtime **MUST** be declared in 
 | **Primary runtime / OS family** | POSIX Linux (and compatible UNIX where `/bin/sh` + `chown` + `mktemp` exist) |
 | **Architectures supported** | any arch with POSIX sh and the external tools the script invokes |
 | **Git surface** | used when product is published |
-| **Ship unit / install** | yes — `src/take-ownership` → user bin and/or `/usr/local/bin/take-ownership`; **local-only** / non-online-installable (no online channel) |
-| **Product version SSOT** | `VERSION=` hard-assign in `src/take-ownership` |
-| **Bootstrap origin** | hop A0 `cli-template` → hop A1 `folder-backup` → B `take-ownership` (`requirement-bootstrap-chain`) |
+| **Ship unit / install** | yes — `./take-ownership` → user bin and/or `/usr/local/bin/take-ownership`; **online-installable** (`SCRIPT_URL`) |
+| **Product version SSOT** | `VERSION=` hard-assign in `./take-ownership` |
+| **Bootstrap origin** | hop A `selfmanaged` → B `take-ownership` (`requirement-bootstrap-chain`); domain history via folder-backup |
 | **Database** | **none** |
 | **Product archive backup** | **none** (not a backup tool) |
 
@@ -89,7 +89,7 @@ Primary language, toolchain, package tools, and runtime **MUST** be declared in 
 | Bootstrap lineage / keep-extend | `requirement-bootstrap-chain` | A0=cli-template → A1=folder-backup → B |
 | Project layout / ship path | `requirement-project-folder` | `src/` + bin targets |
 | Type 0 CLI surface / flags / dispatch | `requirement-shell-cli-interface` | Do not duplicate |
-| Empty argv Type N (menu path) | `requirement-shell-cli-zero-arguments` | Local-only; never install; empty argv → `app_main_menu` |
+| Empty argv TTY menu / off-TTY Type O | `requirement-shell-cli-zero-arguments` | `curl \| sh` install-ensure; TTY numbered list |
 | Local self-managed lifecycle | `requirement-shell-local-self-management` | install / uninstall / where-is-me |
 | Output SSOT (`out_*`) | `requirement-shell-output-requirements` | Do not duplicate |
 | Operator-readable error wording | `requirement-operator-readable-error` | Do not duplicate |
@@ -143,7 +143,7 @@ Primary language, toolchain, package tools, and runtime **MUST** be declared in 
 3. Hard-code secrets, personal owner identity, or production host FQDNs into core rules as universal law.  
 4. Duplicate full peer requirement bodies into this residual section.  
 5. Leave Implementation Notes as hollow stubs when Status claims Active.  
-6. Reintroduce Active **online-install** / remote **self-update** / **self-uninstall** / channel **checksum** law without explicit user order (product is **non-online-installable** by design).  
+6. Drop Active **online-install** / remote **self-update** / **self-uninstall** / channel **checksum** law while the product claims `curl \| sh`.  
 7. Treat this file as server-maintenance allowlist law, or register an Active server-maintenance class file in parallel.  
 8. Invent a dest approver or dest fence so the set “looks complete.”  
 9. Skip `requirement-shell-script-coding` so portable lessons arrive raw.

@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-project-folder.md  
-**Status**: Active (Version 2.1.0)  
+**Status**: Active (Version 3.0.0)  
 **Area**: architecture  
 **Key**: `requirement-project-folder`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -12,7 +12,7 @@ Define **project folder structure** and path ownership for the take-ownership CL
 
 ### 1.1 Human-facing
 
-**In one sentence:** The program lives under `src/`, installs into your bin or `/usr/local/bin`, and writes grant drafts under your config dir — it does not write `/etc`.
+**In one sentence:** The program lives at repo root for `curl | sh`, installs into your bin or `/usr/local/bin`, and writes grant drafts under your config dir — it does not write `/etc`.
 
 | Box | Meaning | Example |
 |-----|---------|---------|
@@ -27,12 +27,12 @@ Define **project folder structure** and path ownership for the take-ownership CL
 
 | Surface | What you open | What for |
 |---------|---------------|----------|
-| `src/take-ownership` | ship unit | live program |
+| `./take-ownership` | ship unit | live program |
 | `${HOME}/.config/take-ownership/` | drafts | generate/print |
 
 | You do… | What it means | What you type |
 |---------|---------------|---------------|
-| Place the program globally | Production grant path | `sudo sh src/take-ownership install` |
+| Place the program globally | Production grant path | `sudo curl … \| sudo sh` or `sudo take-ownership install` |
 
 ---
 
@@ -42,14 +42,14 @@ Define **project folder structure** and path ownership for the take-ownership CL
 
 | Path | Role |
 |------|------|
-| `src/take-ownership` | **Ship unit** — single POSIX shell executable source |
+| `./take-ownership` | **Ship unit** — single POSIX shell executable (curl\|sh); `src/take-ownership` is a symlink |
 | `tests/` | CLI tests when present |
 | `docs/requirements/` | Product law (this surface) |
 | Product root README / CHANGELOG / LICENSE / SECURITY | Product user docs when specialized |
 
-1. **MUST** keep the installable CLI under **`src/`** (not only repo root).  
+1. **MUST** keep the installable CLI at **repo root** as `./take-ownership` (curl\|sh channel path). `src/take-ownership` **MAY** symlink to it.  
 2. **MUST** install the binary under a privilege-correct bin path (see §2.2).  
-3. **MUST NOT** require online channel files (companion digest) for local install.
+3. **MUST** ship companion `take-ownership.sha256` next to the root ship unit.
 
 ### 2.2 CLI tool install locations
 
@@ -64,7 +64,7 @@ Rules:
 2. Root **install** **MUST** (for production elevation) target global bin.  
 3. **Primary product story:** user bin for Type 0 day-to-day **without** sudoers; **global bin is required** before generate/submit (`requirement-three-layer-privilege-model`).  
 4. Uninstall **MUST** remove only the managed binary path for the install mode used.  
-5. Managed binary mode **MUST** be **`0755`** after install (see `requirement-shell-local-self-management` §2.3.1).
+5. Managed binary mode **MUST** be **`0755`** after install (see `requirement-shell-self-management`).
 
 ### 2.3 Scratch / cache / persist (CLI own paths)
 
@@ -128,7 +128,7 @@ Rules:
 **Future AI assistants, Grok, or maintainers MUST NOT**:
 
 1. Move the ship unit out of `src/` without updating this requirement and install paths.  
-2. Make online channel paths required for install.  
+2. Remove the root ship unit while claiming `curl \| sh`.  
 3. Grant the product unrestricted write under `/var` or `/etc`.  
 4. Treat `${USER_BIN}/take-ownership` as the production sudoers path.  
 5. Restore `/var/backup` as a product deposit root without a new requirement.
@@ -141,7 +141,7 @@ Rules:
 
 | ID | Criterion |
 |----|-----------|
-| AC-1 | Ship unit lives at `src/take-ownership` |
+| AC-1 | Ship unit lives at `./take-ownership` |
 | AC-2 | Default user install path is `${HOME}/.local/bin/take-ownership` |
 | AC-3 | Production elevation path is `/usr/local/bin/take-ownership` |
 | AC-4 | No `/var/backup` product deposit |

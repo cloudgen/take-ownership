@@ -1,8 +1,8 @@
 # =============================================================================
 # .gitignore — skill-create-gitignore (+ skill-commit-check)
-# Product: take-ownership (specialized software-dev; local shell CLI)
+# Product: take-ownership (specialized software-dev; online-installable shell CLI)
 # Docs: track docs/requirements/** ; ignore skills/incidents/terminologies/policies/templates
-# Track: README, CHANGELOG, LICENSE, SECURITY, src/, tests/, reviews/
+# Track: README, CHANGELOG, LICENSE, SECURITY, take-ownership, take-ownership.sha256, src/, tests/, reviews/
 # Artifacts: universal compiled/temp/secrets/caches; shell run debris
 # =============================================================================
 

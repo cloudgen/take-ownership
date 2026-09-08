@@ -7,7 +7,7 @@
 # shellcheck disable=SC2034
 : "${TESTS_ROOT:=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)}"
 : "${REPO_ROOT:=$(CDPATH= cd -- "${TESTS_ROOT}/.." && pwd)}"
-: "${SCRIPT:=${REPO_ROOT}/src/take-ownership}"
+: "${SCRIPT:=${REPO_ROOT}/take-ownership}"
 : "${APP_NAME:=take-ownership}"
 : "${PASS:=0}"
 : "${FAIL:=0}"
@@ -82,6 +82,15 @@ _trunc() {
     printf '%s' "$1" | tr '\n' ' ' | cut -c1-160
 }
 
+assert_not_silent() {
+    _lab="$1"; _out="$2"; _err="$3"
+    if [ -n "$_out" ] || [ -n "$_err" ]; then
+        t_pass "$_lab"
+    else
+        t_fail "$_lab (0-byte stdout and stderr — silent class fail)"
+    fi
+}
+
 ci_strip_ansi() {
     _esc=$(printf '\033')
     printf '%s' "$1" | sed "s/${_esc}\\[[0-9;]*m//g"
@@ -104,10 +113,45 @@ ci_isolated_env() {
     CI_SUDOERS_D="${CI_HOME}/sudoers.d"
     mkdir -p "${CI_SUDOERS_D}"
     export SUDOERS_D_DIR="${CI_SUDOERS_D}"
-    # Local-only product: ensure no channel env is required
-    unset SCRIPT_URL 2>/dev/null || true
     unset CHECKSUM 2>/dev/null || true
     unset PERSIST_DIR 2>/dev/null || true
+}
+
+ci_start_channel() {
+    CI_CHANNEL_DIR=$(mktemp -d "${TMPDIR:-/tmp}/to-channel.XXXXXX")
+    cp "${SCRIPT}" "${CI_CHANNEL_DIR}/${APP_NAME}"
+    sha256sum "${CI_CHANNEL_DIR}/${APP_NAME}" | awk '{print $1}' > "${CI_CHANNEL_DIR}/${APP_NAME}.sha256"
+
+    CI_PORT=$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1",0)); print(s.getsockname()[1]); s.close()')
+    (
+        cd "${CI_CHANNEL_DIR}" || exit 1
+        exec python3 -m http.server "${CI_PORT}" --bind 127.0.0.1
+    ) >/dev/null 2>&1 &
+    CI_HTTP_PID=$!
+    CI_SCRIPT_URL="http://127.0.0.1:${CI_PORT}/${APP_NAME}"
+
+    _i=0
+    while [ "$_i" -lt 50 ]; do
+        if curl -fsS "${CI_SCRIPT_URL}" >/dev/null 2>&1; then
+            return 0
+        fi
+        sleep 0.1
+        _i=$((_i + 1))
+    done
+    t_fail "local channel failed to start on port ${CI_PORT}"
+    return 1
+}
+
+ci_stop_channel() {
+    if [ -n "${CI_HTTP_PID:-}" ]; then
+        kill "${CI_HTTP_PID}" 2>/dev/null || true
+        wait "${CI_HTTP_PID}" 2>/dev/null || true
+        CI_HTTP_PID=
+    fi
+    if [ -n "${CI_CHANNEL_DIR:-}" ] && [ -d "${CI_CHANNEL_DIR}" ]; then
+        rm -rf "${CI_CHANNEL_DIR}"
+        CI_CHANNEL_DIR=
+    fi
 }
 
 ci_cleanup_env() {

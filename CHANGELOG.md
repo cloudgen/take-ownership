@@ -5,6 +5,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [3.0.0] - 2026-09-08
+
+### Added
+
+- **Online install (`curl | sh`).** Bootstrap from sibling **selfmanaged** (A→B). Default channel `https://raw.githubusercontent.com/cloudgen/take-ownership/main/take-ownership`. Companion digest `take-ownership.sha256`. Ship unit at repo root (`src/take-ownership` is a symlink).
+- **Self-management verbs.** `version-check`, `self-update`, `self-uninstall` (`uninstall` remains an alias). Empty argv off-TTY is Type O install-ensure; a real terminal still shows the numbered work list.
+
+### Changed
+
+- Product version **3.0.0**. Install mode is **online-installable** (not local-only). Managed binary mode stays **0755**. Global `/usr/local/bin/take-ownership` is still the only legal sudoers path.
+
 ## [2.7.1] - 2026-09-06
 
 ### Changed

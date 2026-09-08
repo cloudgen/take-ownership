@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-shell-cli-zero-arguments.md  
-**Status**: Active (Version 1.1.0)  
+**Status**: Active (Version 2.0.0)  
 **Area**: shell  
 **Key**: `requirement-shell-cli-zero-arguments`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -12,40 +12,41 @@ This requirement is the **project Single Source of Truth** for **zero-argument (
 
 | Field | Value for take-ownership |
 |-------|-------------------------|
-| **Empty-argv type** | **Type N — Non-online-install** |
-| **Rationale** | Product is **local-only**; no `curl \| sh` channel; empty argv **MUST NOT** install-ensure |
+| **Empty-argv type** | **Type O-S — Online script-alone** (off-TTY) **plus** TTY numbered menu |
+| **Rationale** | Product advertises `curl … \| sh`; pipe empty argv is install-ensure. A real terminal keeps the daily-work menu. |
 
-Type O (online-install empty-argv = install-ensure) does **not** apply.
+Type N (non-online-install → empty argv = help) does **not** apply.
 
-Empty argv **MUST** use the same handler as **`menu` / `main`** (`app_main_menu`). List membership, TTY vs off-TTY, and Exit 9 live in `requirement-shell-cli-default-interaction`. This file owns **whether** empty argv is that path (yes) and **that it is never install**.
+**Empty argv** means **no command token** after global-flag parse. Overlay switches (`--debug`, `--quiet`/`-q`, `--force`) **do not** disqualify empty argv.
+
+This file owns the TTY vs off-TTY split for **no command token**. List membership lives in `requirement-shell-cli-default-interaction`.
 
 ### 1.1 Human-facing
 
-**In one sentence:** Typing only `take-ownership` at a real terminal opens the numbered list of live work commands; in a pipe it prints help; it never copies the program onto PATH.
+**In one sentence:** Typing only `take-ownership` at a prompt shows the numbered work list; piping the script (`curl | sh`) installs or reports already installed. `take-ownership --json` is JSON help.
 
 | Box | Meaning | Example |
 |-----|---------|---------|
-| You / this login | Bare name at a prompt is the work list | `take-ownership` then `1` |
-| Scripts / CI | Bare name must not hang or install | `take-ownership </dev/null` → help |
-| Not this file | Which rows appear on that list | `requirement-shell-cli-default-interaction` |
+| You / this login | Type `take-ownership` at a prompt | numbered list |
+| The other role | `curl \| sh` / a script with no command | install-ensure, not help |
+| Not this file | Menu row labels | `requirement-shell-cli-default-interaction` |
 
 | Includes | Excludes |
 |----------|----------|
-| Empty argv (`$# -eq 0` at `app_main`) | Install-ensure / Type O |
-| Same handler as `menu` / `main` | Running `action` with no verb |
-| Explicit `help` still full usage | Flags-only (`--json` with no command) as this empty-argv path |
+| TTY empty argv = numbered list; off-TTY = install-ensure | Help on a pipe; a hanging menu in a script |
+| `--json` with no command = JSON help | Domain `action` with no verb |
 
 | Surface | What you open | What for |
 |---------|---------------|----------|
-| `./src/take-ownership` | ship unit | empty-argv branch |
-| `take-ownership` | no command | numbered list on TTY; help off-TTY |
+| `./take-ownership` | ship unit | empty-argv branch |
+| `curl … \| sh` | one-liner | first install |
 | `take-ownership help` | command | full usage |
 
 | You do… | What it means | What you type |
 |---------|---------------|---------------|
-| Open the work list with no command | Same numbered list as `menu`. | `take-ownership` |
-| Ask for the catalog | Full usage, including lifecycle and grant testers. | `take-ownership help` |
-| Run with no args in CI | Human help, or JSON help with `--json` only when a command/flags path says so. Bare empty argv has no `--json`. | `take-ownership </dev/null` |
+| Pipe the script | Install-ensure | `curl -fsSL …/take-ownership \| sh` |
+| Start at a prompt | Numbered list | `take-ownership` then `1` |
+| Ask for JSON usage | JSON help (empty argv special case) | `take-ownership --json` |
 
 ---
 
@@ -53,31 +54,33 @@ Empty argv **MUST** use the same handler as **`menu` / `main`** (`app_main_menu`
 
 ### 2.1 Single meaning of empty argv
 
-1. When **argv is empty** (`$# -eq 0` at entry to `app_main`), the dispatcher **MUST** route to **`app_main_menu`** (the same handler as `take-ownership menu` / `main`).  
-2. Empty argv **MUST NOT** perform install, `action`, or any state-changing ensure.  
-3. Explicit `take-ownership help` remains the **full-usage** path (not the numbered list). Empty argv **MUST NOT** be treated as identical to explicit `help` on a real terminal.  
-4. Explicit `take-ownership install` remains the only first-time local install path (plus documented force refresh).  
-5. Script entry **MUST** always call `app_main "$@"` (no basename product-name gate that blocks dispatch).  
-6. Interactive vs non-interactive for this path **MUST** follow `requirement-shell-cli-default-interaction`: TTY numbered list; off-TTY help (no hang).  
-7. Flags only (e.g. `--json` with no command token) is **not** empty argv. After flag parse with no command token, default remains **help** (JSON help when `--json`).
+1. **Empty argv** is: after global-flag parse, **no command token** was present. Overlay `--debug` / `--quiet` / `--force` still empty argv.  
+2. **Interactive** (`TTY=1`): route to `app_main_menu` (numbered work list). **MUST NOT** install-ensure. **MUST NOT** print the help dump.  
+3. **Not interactive** (`TTY=0`): **Type O install-ensure**. **MUST NOT** print help. **MUST NOT** draw the numbered list. **MUST NOT** prompt. Not installed → download from `SCRIPT_URL` and place. Already installed → success no-op (no `--force` required). `--force` re-downloads.  
+4. **`--json` special case:** `--json` with no command token **is** empty argv. Outcome **MUST** be JSON help on **TTY and off-TTY**. **MUST NOT** the numbered list. **MUST NOT** Type O ensure.  
+5. Explicit `take-ownership help` remains full usage.  
+6. Explicit `take-ownership install` remains ensure.  
+7. Explicit `take-ownership menu` / `main` remain the numbered list (TTY) / help (off-TTY).  
+8. Script entry **MUST** always call `app_main "$@"` (no basename gate). Pipe-safe.  
+9. The dispatcher **MUST** decide empty argv **after** flag parse.
 
 ### 2.2 Normative matrix
 
 | Invocation | Behavior |
 |------------|----------|
 | `take-ownership` (no args), interactive (`TTY=1`) | Numbered work list (`app_main_menu`); same as `take-ownership menu` |
-| `take-ownership` (no args), non-interactive (`TTY=0`) | Help; exit 0; **MUST NOT** prompt |
+| `take-ownership` (no args), non-interactive (`TTY=0`) | Type O install-ensure; **MUST NOT** prompt |
+| `take-ownership --json` (no command) | JSON help (TTY and off-TTY) |
 | `take-ownership help` | Show help; exit 0 |
-| `take-ownership install` | Local install ensure |
-| `take-ownership menu` / `main` | Same handler as empty argv |
-| Flags only (e.g. `--json` with no command) | **Help** after flag parse (JSON help when `--json`) |
+| `take-ownership install` | Channel install-ensure |
+| `take-ownership menu` / `main` | Numbered list on TTY; help off-TTY |
 
 ### 2.3 Implementation Notes (this project)
 
 | Item | Value |
 |------|--------|
 | **Product** | `take-ownership` |
-| **Type** | **Type N** |
+| **Type** | **Type O off-TTY + TTY menu** |
 | **Default empty-argv handler** | `app_main_menu` |
 | **Default COMMAND after flags with no token** | `help` |
 | **Contrast parent** | cli-template is Type N help-default. This product **keeps Type N (no install)** and **routes empty argv to the claimed numbered list**. (Historical: selfmanaged Type O was trimmed in 2026-08-03; not live origin.) |

@@ -16,8 +16,9 @@ Exit **0** when all assertions pass; **1** on failure; **2** if ship unit missin
 |------|--------|-------------|
 | `run.sh` | Entrypoint | — |
 | `helpers.sh` | Asserts + isolated HOME | — |
-| `test_cli.sh` | CLI surface, Type N empty argv (TTY menu / off-TTY help), family **sudoers** submenu, numbered-list look, offline online-reject | **TP-CLI-*** (incl. **TP-CLI-13** submenu · **TP-CLI-19** look) |
-| `test_local_lifecycle.sh` | install / uninstall / where-is-me | **TP-LC-*** |
+| `test_cli.sh` | CLI surface, TTY menu / off-TTY Type O, family **sudoers** submenu, numbered-list look | **TP-CLI-*** (incl. **TP-CLI-13** submenu · **TP-CLI-19** look) |
+| `test_local_lifecycle.sh` | install / uninstall / where-is-me (local HTTP channel) | **TP-LC-*** |
+| `test_online_curl_install.sh` | `curl \| sh` against a local HTTP channel | **TP-CURL-*** |
 | `test_domain_take_ownership.sh` | `action` + grant emit (global-only sudoers JSON) | **TP-TAKE-OWNERSHIP-*** |
 
 ## Isolation
@@ -29,7 +30,7 @@ Exit **0** when all assertions pass; **1** on failure; **2** if ship unit missin
 
 ## Ship unit under test
 
-`src/take-ownership`
+`./take-ownership` (`src/take-ownership` is a symlink)
 
 ## Maps
 

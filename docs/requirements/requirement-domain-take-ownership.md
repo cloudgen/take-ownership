@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-domain-take-ownership.md  
-**Status**: Active (Version 1.4.0)  
+**Status**: Active (Version 1.5.0)  
 **Area**: domain  
 **Key**: `requirement-domain-take-ownership`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -29,7 +29,7 @@ Must-not-confuse: JSON field **`action`** means add vs update of a grant. CLI ve
 | Includes | Excludes |
 |----------|----------|
 | Verb catalog, help, about | Backup / restore / `/var/backup` |
-| Grant-emit listed apart from live work | Online install; dest approval inside this CLI |
+| Grant-emit listed apart from live work | Dest approval inside this CLI |
 
 | Surface | What you open | What for |
 |---------|---------------|----------|
@@ -142,7 +142,7 @@ take-ownership action --path /var/www/html --ownership www-data:www-data
 | Host sudoers fragment | `host_sudoers_present` / `host_sudoers_path` — this user’s `/etc/sudoers.d/take-ownership-<user>` |
 | Domain version note | Product `VERSION` remains local version SSOT |
 
-**About is not** a remote version-check and **must not** advertise online install channels.
+**About domain fields** stay Type 0 diagnostics plus sudoers trust. Channel one-liner is Type 0 (`requirement-shell-self-management`), not a domain verb.
 
 ### 2.5 Implementation Notes (this project)
 
@@ -187,7 +187,7 @@ take-ownership action --path /var/www/html --ownership www-data:www-data
 **Future AI assistants, Grok, or maintainers MUST NOT**:
 
 1. Duplicate full chown/validate law here once `requirement-take-ownership-ops` is Active.  
-2. Add online install or backup/restore as silent domain behavior.  
+2. Add backup/restore as silent domain behavior.  
 3. Put domain law into bootstrap parent `folder-backup` or `cli-template`.  
 4. Create a second Active `requirement-domain-*` without superseding this one.  
 5. Let Type 0 `mkdir` `/var/sudoer-cli/sudoer-request`.  

@@ -4,7 +4,8 @@
 
 | Version | Supported |
 |---------|-----------|
-| 2.7.1 (current) | Yes |
+| 3.0.0 (current) | Yes |
+| 2.7.1 | Yes |
 | 2.7.0 | Yes |
 | 2.6.0 | Yes |
 | 2.5.0 | Yes |
@@ -56,7 +57,7 @@ This section is **design posture**, not a third-party certification claim.
 - Elevation is limited to the **global** program `action --path <one-folder> --ownership <user:group>` (plus the `--json` twin) under product law.  
 - Operators must admin-install sudoers fragments after review (`visudo -c`, mode `0440`).  
 - **Install trust for elevation:**
-  - **Production:** global managed binary (`/usr/local/bin/take-ownership`, typically root-owned). Prefer `sudo take-ownership install` before durable sudoers.  
+  - **Production:** global managed binary (`/usr/local/bin/take-ownership`, typically root-owned). Prefer `sudo curl … | sudo sh` (or `sudo take-ownership install`) before durable sudoers. Online install verifies `${SCRIPT_URL}.sha256` when the sidecar is present.  
   - **Local `~/.local/bin/take-ownership` is user-rewritable.** Grant emit **stops** unless the global program exists. Do **not** write the user-bin path into sudoers.  
   - **`--allow-test-local` is absent** (forbidden). There is no test-mode sudoers path.  
   - **`print-sudoers-install-script`** writes an admin handoff script under `/dev/shm` (or temp) that a sudo-capable account runs for `install` / `uninstall` / `replace` of this login’s fragment — the CLI never writes `/etc` itself.  

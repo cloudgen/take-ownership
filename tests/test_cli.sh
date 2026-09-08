@@ -1,5 +1,5 @@
 # =============================================================================
-# tests/test_cli.sh — CLI surface (local-only; no network)
+# tests/test_cli.sh — CLI surface (online-installable Type 0 + domain)
 # =============================================================================
 # Primary REQs: requirement-shell-cli-interface, requirement-shell-cli-zero-arguments,
 # requirement-shell-output-requirements, requirement-shell-cli-storage
@@ -35,12 +35,16 @@ run_test_cli() {
     assert_contains "TP-CLI-03 app field" "$_out" "\"app\":\"${APP_NAME}\""
     assert_contains "TP-CLI-03 version field" "$_out" "\"version\":\"${PRODUCT_VERSION}\""
 
-    # TP-CLI-04 help lists local lifecycle + domain; not online verbs
+    # TP-CLI-04 help lists online lifecycle + domain
     _out=$(sh "${SCRIPT}" help 2>/dev/null)
     _ec=$?
     assert_eq "TP-CLI-04 help exit 0" 0 "$_ec"
     assert_contains "TP-CLI-04 help install" "$_out" "install"
     assert_contains "TP-CLI-04 help uninstall" "$_out" "uninstall"
+    assert_contains "TP-CLI-04 help self-uninstall" "$_out" "self-uninstall"
+    assert_contains "TP-CLI-04 help self-update" "$_out" "self-update"
+    assert_contains "TP-CLI-04 help version-check" "$_out" "version-check"
+    assert_contains "TP-CLI-04 help SCRIPT_URL" "$_out" "SCRIPT_URL"
     assert_contains "TP-CLI-04 help where-is-me" "$_out" "where-is-me"
     assert_contains "TP-CLI-04 help list-folders" "$_out" "list-folders"
     assert_contains "TP-CLI-04 help action" "$_out" "action --path"
@@ -62,10 +66,6 @@ run_test_cli() {
     assert_contains "TP-CLI-04 help --json" "$_out" "--json"
     assert_contains "TP-CLI-04 help menu" "$_out" "Numbered list of live work commands"
     assert_contains "TP-CLI-04 help main" "$_out" "Same as menu"
-    assert_not_contains "TP-CLI-04 no self-update" "$_out" "self-update"
-    assert_not_contains "TP-CLI-04 no self-uninstall" "$_out" "self-uninstall"
-    assert_not_contains "TP-CLI-04 no version-check" "$_out" "version-check"
-    assert_not_contains "TP-CLI-04 no SCRIPT_URL channel" "$_out" "SCRIPT_URL"
     assert_not_contains "TP-CLI-04 no CHECKSUM" "$_out" "CHECKSUM"
 
     # TP-CLI-05 help json
@@ -96,17 +96,26 @@ run_test_cli() {
     assert_contains "TP-CLI-06 host_sudoers_present" "$_out" '"host_sudoers_present"'
     assert_not_contains "TP-CLI-06 no backup_notation" "$_out" "backup_notation"
     assert_not_contains "TP-CLI-06 no CHECKSUM" "$_out" "CHECKSUM"
-    assert_not_contains "TP-CLI-06 no SCRIPT_URL" "$_out" "SCRIPT_URL"
+    assert_contains "TP-CLI-06 script_url field" "$_out" '"script_url"'
 
-    # TP-CLI-07 empty argv = Type N (never install). Off-TTY this is help
-    # (same as menu off-TTY). TTY empty argv is the numbered list (TP-CLI-13).
-    _out=$(sh "${SCRIPT}" 2>/dev/null)
+    # TP-CLI-07 empty argv off-TTY is Type O (not help). Unreachable channel
+    # fails loud and must not print the numbered list or help dump.
+    ci_isolated_env
+    _errf="${CI_HOME}/cli07-err.txt"
+    _out=$(HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" GLOBAL_BIN="${CI_GLOBAL_BIN}" \
+        SCRIPT_URL="http://127.0.0.1:1/${APP_NAME}-missing" \
+        sh "${SCRIPT}" </dev/null 2>"${_errf}")
     _ec=$?
-    assert_eq "TP-CLI-07 empty argv exit 0" 0 "$_ec"
-    assert_contains "TP-CLI-07 empty argv off-TTY is help" "$_out" "Usage:"
-    assert_contains "TP-CLI-07 empty argv mentions help" "$_out" "help"
+    _err=$(cat "${_errf}" 2>/dev/null || true)
+    ci_cleanup_env
+    if [ "$_ec" -ne 0 ]; then
+        t_pass "TP-CLI-07 empty argv off-TTY unreachable non-zero"
+    else
+        t_fail "TP-CLI-07 empty argv off-TTY expected non-zero, got 0"
+    fi
+    assert_not_silent "TP-CLI-07 empty argv off-TTY not silent" "$_out" "$_err"
     assert_not_contains "TP-CLI-07 empty argv off-TTY not numbered list" "$_out" "9. Exit"
-    assert_not_contains "TP-CLI-07 empty argv not install-ensure" "$_out" "already installed"
+    assert_not_contains "TP-CLI-07 empty argv off-TTY not help dump" "$_out" "Global Options"
 
     # TP-CLI-08 unknown command fail-closed
     _err=$(sh "${SCRIPT}" no-such-command 2>&1 >/dev/null)
@@ -130,14 +139,7 @@ run_test_cli() {
         t_fail "TP-CLI-09 quiet expected empty stdout, got '$(_trunc "$_out")'"
     fi
 
-    # TP-CLI-10 online verbs rejected
-    _err=$(sh "${SCRIPT}" self-update 2>&1 >/dev/null)
-    assert_eq "TP-CLI-10 self-update exit 1" 1 "$?"
-    assert_contains "TP-CLI-10 self-update unknown" "$_err" "Unknown command"
-
-    _err=$(sh "${SCRIPT}" version-check 2>&1 >/dev/null)
-    assert_eq "TP-CLI-10 version-check exit 1" 1 "$?"
-
+    # TP-CLI-10 backup/restore/--allow-test-local still rejected; online verbs are live
     _err=$(sh "${SCRIPT}" backup 2>&1 >/dev/null)
     assert_eq "TP-CLI-10 backup unknown exit 1" 1 "$?"
     assert_contains "TP-CLI-10 backup unknown" "$_err" "Unknown command"
@@ -222,9 +224,8 @@ run_test_cli() {
     assert_contains "TP-CLI-15 menu --json off-TTY JSON help" "$_out" '"type":"success"'
     assert_not_contains "TP-CLI-15 menu --json off-TTY not numbered list" "$_out" "9. Exit"
 
-    _out=$(sh "${SCRIPT}" 2>/dev/null)
+    _out=$(SCRIPT_URL="http://127.0.0.1:1/${APP_NAME}-missing" sh "${SCRIPT}" 2>/dev/null || true)
     assert_not_contains "TP-CLI-15 empty argv off-TTY not numbered list" "$_out" "9. Exit"
-    assert_contains "TP-CLI-15 empty argv off-TTY is help" "$_out" "Usage:"
 
     _out=$(sh "${SCRIPT}" --quiet menu 2>/dev/null)
     _ec=$?

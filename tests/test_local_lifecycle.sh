@@ -1,7 +1,7 @@
 # =============================================================================
-# tests/test_local_lifecycle.sh — local install / uninstall / where-is-me
+# tests/test_local_lifecycle.sh — install / uninstall / where-is-me (local channel)
 # =============================================================================
-# Primary REQs: requirement-shell-local-self-management, requirement-shell-idempotency,
+# Primary REQs: requirement-shell-self-management, requirement-shell-idempotency,
 # requirement-shell-interactive-vs-noninteractive
 # TP family: TP-LC-*
 # =============================================================================
@@ -13,16 +13,23 @@ run_test_local_lifecycle() {
     t_header "Local lifecycle (TP-LC)"
 
     require_cmd sh
-    require_cmd tar
+    require_cmd curl
+    require_cmd python3
+    require_cmd sha256sum
 
     ci_isolated_env
+    if ! ci_start_channel; then
+        ci_cleanup_env
+        return 1
+    fi
+    export SCRIPT_URL="${CI_SCRIPT_URL}"
 
     # TP-LC-01 install places binary under USER_BIN
-    _out=$(HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" sh "${SCRIPT}" install 2>&1)
+    _out=$(HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" SCRIPT_URL="${CI_SCRIPT_URL}" sh "${SCRIPT}" install 2>&1)
     _ec=$?
     assert_eq "TP-LC-01 install exit 0" 0 "$_ec"
     assert_file_exists "TP-LC-01 binary at USER_BIN" "${CI_USER_BIN}/${APP_NAME}"
-    assert_contains "TP-LC-01 install success text" "$_out" "Installed"
+    assert_contains "TP-LC-01 install success text" "$_out" "successfully installed"
 
     # TP-LC-02 installed version works
     _out=$(HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" sh "${CI_USER_BIN}/${APP_NAME}" version 2>/dev/null)
@@ -30,7 +37,7 @@ run_test_local_lifecycle() {
     assert_contains "TP-LC-02 installed version" "$_out" "${PRODUCT_VERSION}"
 
     # TP-LC-03 idempotent reinstall without force
-    _out=$(HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" sh "${SCRIPT}" install 2>&1)
+    _out=$(HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" SCRIPT_URL="${CI_SCRIPT_URL}" sh "${SCRIPT}" install 2>&1)
     _ec=$?
     assert_eq "TP-LC-03 reinstall exit 0" 0 "$_ec"
     assert_contains "TP-LC-03 already installed" "$_out" "already installed"
@@ -64,7 +71,7 @@ run_test_local_lifecycle() {
     assert_contains "TP-LC-07 nothing to uninstall" "$_out" "not installed"
 
     # TP-LC-08 about after install shows installed
-    HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" sh "${SCRIPT}" install >/dev/null 2>&1
+    HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" SCRIPT_URL="${CI_SCRIPT_URL}" sh "${SCRIPT}" install >/dev/null 2>&1
     _out=$(HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" sh "${CI_USER_BIN}/${APP_NAME}" --json about 2>/dev/null)
     assert_contains "TP-LC-08 about installed true" "$_out" '"installed":"true"'
 
@@ -83,7 +90,7 @@ run_test_local_lifecycle() {
 
     # TP-LC-10 re-install without --force heals broken mode (0711 trap)
     chmod 0711 "${CI_USER_BIN}/${APP_NAME}" 2>/dev/null || chmod 711 "${CI_USER_BIN}/${APP_NAME}"
-    _out=$(HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" sh "${SCRIPT}" install 2>&1)
+    _out=$(HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" SCRIPT_URL="${CI_SCRIPT_URL}" sh "${SCRIPT}" install 2>&1)
     _ec=$?
     assert_eq "TP-LC-10 heal reinstall exit 0" 0 "$_ec"
     assert_contains "TP-LC-10 already installed path" "$_out" "already installed"
@@ -95,5 +102,6 @@ run_test_local_lifecycle() {
 
     # cleanup remaining binary
     HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" sh "${CI_USER_BIN}/${APP_NAME}" uninstall --force >/dev/null 2>&1 || true
+    ci_stop_channel
     ci_cleanup_env
 }

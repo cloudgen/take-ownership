@@ -1,21 +1,22 @@
 # take-ownership - Take Unix ownership of a named folder with a narrow sudo grant
 
-![Version](https://img.shields.io/badge/Version-2.7.1-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.0.0-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 [![CIAO](https://img.shields.io/badge/Philosophy-CIAO%20(Caution%20%E2%80%A2%20Intentional%20%E2%80%A2%20Anti--fragile%20%E2%80%A2%20Over--engineered)-purple.svg)](https://github.com/cloudgen/ciao)
 [![Stars](https://img.shields.io/github/stars/cloudgen/take-ownership?style=flat-square)](https://github.com/cloudgen/take-ownership)
 
 **take-ownership** lets you ask an admin for one folder, then run `take-ownership action --path <folder> --ownership user:group` to recursively take that folder’s ownership (it does not follow symbolic links).
 
-You install the program for yourself, write a grant for one folder, and hand that grant to an admin. After the admin installs the grant, `action` may re-run the **global** program at `/usr/local/bin/take-ownership`. A copy in `~/.local/bin` is fine for help and local install; it is never written into the sudoers file (you could rewrite that file). There is no download-and-run install.
+You can install it with one `curl | sh` line. Then write a grant for one folder and hand that grant to an admin. After the admin installs the grant, `action` may re-run the **global** program at `/usr/local/bin/take-ownership`. A copy in `~/.local/bin` is fine for help and local use; it is never written into the sudoers file (you could rewrite that file).
 
 | You (your own login) | Admin / already root | Not this |
 |----------------------|----------------------|----------|
-| Install locally, generate and submit a grant for one folder, run `action` after the grant exists | Install into `/usr/local/bin` and install the sudoers fragment | No download-and-run install; a normal login does not write `/etc`; `~/.local/bin` is never in sudoers |
+| `curl \| sh` into your user bin, generate and submit a grant for one folder, run `action` after the grant exists | `sudo curl \| sudo sh` into `/usr/local/bin` and install the sudoers fragment | A normal login does not write `/etc`; `~/.local/bin` is never in sudoers |
 
 ## Features
 
-- **Local self-management**: `install`, `uninstall`, `where-is-me`, `version`, `about`, `help`, `menu` / `main` (TTY numbered work list: action, then family **sudoers** with a grant/draft submenu; empty argv is the same list)
+- **Online self-management**: `curl | sh` install, `version-check`, `self-update`, `self-uninstall`, `about`, plus `menu` / `main` (TTY numbered work list: action, then family **sudoers** with a grant/draft submenu; empty argv on a terminal is the same list; in a pipe it installs)
+- **Automatic SHA-256 companion** on install and self-update (the program fetches `${SCRIPT_URL}.sha256`)
 - **Take ownership**: `action --path <folder> --ownership <user:group>` — recursive chown, no symlink follow, refuse system roots. On a real terminal, `action` (or menu `1`) lists **existing** granted folders by number and uses this login’s `user:group` with no extra prompt. A granted path that is not a directory is listed by `list-folders` as missing; it is not a live pick. Recreate the folder, then run `action` — do not generate a new grant.
 - **Narrow sudoers**: exact `--path`, exact `--ownership user:group`, **global binary only**
 - **Sudoer approval submit**: `generate-sudoer-request --path <folder> --ownership <user:group>` (alias `generate-sudoer-json`) writes a local JSON grant you can review. `--ownership` is an existing `user:group` (never `*`, never a directory listing). `submit-sudoer-request` hands it to sudoer-cli (does not write `/etc`, does not create the public drop box)
@@ -23,32 +24,52 @@ You install the program for yourself, write a grant for one folder, and hand tha
 
 ## Quick Installation
 
-**Local (your own login, no root needed):**
+Default install channel (Config SSOT):  
+`https://raw.githubusercontent.com/cloudgen/take-ownership/main/take-ownership`
+
+**Per-user (non-root):**
 
 ```sh
-# From this repository checkout
-sh src/take-ownership install
-# or force refresh after updates
-sh src/take-ownership install --force
+curl -fsSL https://raw.githubusercontent.com/cloudgen/take-ownership/main/take-ownership | sh
+```
 
-# Ensure ~/.local/bin is on PATH, then:
+**System-wide (root / elevated — preferred before durable sudoers):**
+
+```sh
+sudo curl -fsSL https://raw.githubusercontent.com/cloudgen/take-ownership/main/take-ownership | sudo sh
+```
+
+Managed binary mode is always **0755** so every user can run the shell program. Grant emit requires the global path. Local `~/.local/bin` is not written into sudoers.
+
+### Integrity (automatic checksum)
+
+When `CHECKSUM` is **not** set, install and self-update use **automatic** companion verification:
+
+| Topic | Behavior |
+|-------|----------|
+| **Algorithm** | SHA-256 |
+| **Companion** | Program downloads `${SCRIPT_URL}.sha256` itself — **no** env pin required |
+| **In-repo file** | [`take-ownership.sha256`](./take-ownership.sha256) next to `./take-ownership` |
+| **Transparency** | Human mode shows companion **link**, expected **value**, and **result** |
+| **Match** | Continue install |
+| **Mismatch** | **Abort** — do not install mismatched bytes |
+| **Missing sidecar** | **Warn** and continue (best-effort; not “always verified”) |
+
+### From a local checkout
+
+```sh
+chmod +x ./take-ownership
+./take-ownership install
 take-ownership version
 ```
 
-**Global (preferred before durable sudoers / production elevation):**
-
-```sh
-sudo sh src/take-ownership install
-# or: take-ownership install --global   # needs write access to /usr/local/bin
-# Managed binary mode is always 0755 so every user can run the shell program.
-# Grant emit requires this global path. Local ~/.local/bin is not written into sudoers.
-```
+`install` still downloads from `SCRIPT_URL` (override the env for a fork or a local HTTP channel).
 
 **Sudoers (required before non-root `action`):**
 
 ```sh
 # Global install must exist first (grant emit stops otherwise):
-sudo sh src/take-ownership install
+sudo curl -fsSL https://raw.githubusercontent.com/cloudgen/take-ownership/main/take-ownership | sudo sh
 take-ownership generate-sudoer-request --path /var/www/html --ownership www-data:www-data
 take-ownership submit-sudoer-request --path /var/www/html --ownership www-data:www-data
 # or print a text dual for an admin:
@@ -62,26 +83,24 @@ sudo sh /dev/shm/take-ownership-<user>-sudoers-admin.sh uninstall
 
 **Security note:** Local `~/.local/bin` is **never** written into sudoers (the user could rewrite the file). Only `/usr/local/bin/take-ownership` is a legal grant path. See [`SECURITY.md`](./SECURITY.md).
 
-This product is **local-only** for its install *channel* (no default `SCRIPT_URL` online install). Global vs local here means install *location*, not an online channel.
-
-After install, on a terminal (`take-ownership` with no arguments) the main menu looks like:
+After install, on a terminal (`take-ownership` or `take-ownership menu`) the main menu looks like:
 
 ```text
-[INFO] **take-ownership**(*2.7.1*) — Take Unix ownership of a named folder with a narrow global-only sudo grant
+[INFO] **take-ownership**(*3.0.0*) — Take Unix ownership of a named folder with a narrow global-only sudo grant
 1. action: Recursively take ownership of a named folder
 2. sudoers: Grant and drafts
 9. Exit
 Choice:
 ```
 
-Choose a number, or type the command name. Pick **2** / `sudoers` for grant/drafts (`8` goes back; `9` leaves). `take-ownership sudoers` is not a command — type the member verb instead. In a pipe, `take-ownership` prints help instead.
+Choose a number, or type the command name. Pick **2** / `sudoers` for grant/drafts (`8` goes back; `9` leaves). `take-ownership sudoers` is not a command — type the member verb instead. In a pipe, empty argv is install-ensure (`curl | sh`), not this list.
 
-Git host identity (override with env if needed; does not enable online install while `SCRIPT_URL` is empty): owner `cloudgen`, repository `take-ownership`.
+Git host identity (override with env if needed): owner `cloudgen`, repository `take-ownership`. Channel URL is Config `SCRIPT_URL`.
 
 ## Usage
 
 ```sh
-take-ownership                               # TTY numbered work list; off-TTY is help
+take-ownership                               # TTY numbered work list; off-TTY is install-ensure
 take-ownership help
 take-ownership menu                          # same numbered list as empty argv
 take-ownership about
@@ -93,7 +112,9 @@ take-ownership submit-sudoer-request --path /var/www/html --ownership www-data:w
 take-ownership list-folders
 take-ownership action --path /var/www/html --ownership www-data:www-data
 
-take-ownership uninstall --force
+take-ownership version-check
+take-ownership self-update
+take-ownership self-uninstall --force
 ```
 
 **Environment (selected):**
@@ -102,7 +123,7 @@ take-ownership uninstall --force
 |----------|------|
 | `REPO_USER` | Git host owner (default `cloudgen`) |
 | `REPO_NAME` | Git repository name (default `take-ownership`) |
-| `SCRIPT_URL` | Online install channel (default **empty** — local only) |
+| `SCRIPT_URL` | Online install channel (default `https://raw.githubusercontent.com/cloudgen/take-ownership/main/take-ownership`) |
 | `GLOBAL_BIN` | System bin (default `/usr/local/bin`) — **only this path** is a legal sudoers command |
 | `USER_BIN` | Per-user bin (default `~/.local/bin`) |
 | `PERSIST_DIR` | Persistence storage (default `~/.local/take-ownership`) |
@@ -112,7 +133,8 @@ take-ownership uninstall --force
 ## Examples
 
 ```sh
-sudo sh src/take-ownership install
+curl -fsSL https://raw.githubusercontent.com/cloudgen/take-ownership/main/take-ownership | sh
+sudo curl -fsSL https://raw.githubusercontent.com/cloudgen/take-ownership/main/take-ownership | sudo sh
 take-ownership generate-sudoer-request --path /var/www/html --ownership www-data:www-data
 take-ownership action --path /var/www/html --ownership www-data:www-data
 ```
@@ -132,11 +154,11 @@ take-ownership action --path /var/www/html --ownership www-data:www-data
 - [take-ownership](https://github.com/cloudgen/take-ownership) — this product
 - [CIAO Defensive Programming](https://github.com/cloudgen/ciao)
 - [CIAO-Lite](https://github.com/cloudgen/ciao-lite)
-- [cli-template](https://github.com/cloudgen/cli-template) — bootstrap parent architecture (local-only template)
+- [selfmanaged](https://github.com/cloudgen/selfmanaged) — bootstrap parent (online Type 0)
 
 ## Contributing
 
-Keep changes surgical. Honor **CIAO-Lite Protection Zones** in `src/take-ownership`. Product behavior must stay consistent with live `docs/requirements/requirement-*.md`. Run `sh tests/run.sh` before proposing commits.
+Keep changes surgical. Honor **CIAO-Lite Protection Zones** in `./take-ownership`. Product behavior must stay consistent with live `docs/requirements/requirement-*.md`. After editing the ship unit, regenerate `take-ownership.sha256`. Run `sh tests/run.sh` before proposing commits.
 
 ## License
 
@@ -144,4 +166,4 @@ MIT License — see [`LICENSE.md`](./LICENSE.md).
 
 ## Last Update
 
-2026-09-06 — version **2.7.1** (README people-and-folders voice; granted-but-missing folders are not a live `action` pick; recreate then `action`; coverage maps retargeted off folder-backup). See [`CHANGELOG.md`](./CHANGELOG.md) for earlier releases.
+2026-09-08 — version **3.0.0** (bootstrap from sibling selfmanaged: `curl | sh` install, Type O empty argv off-TTY, self-update / self-uninstall / version-check, companion SHA-256). See [`CHANGELOG.md`](./CHANGELOG.md) for earlier releases.

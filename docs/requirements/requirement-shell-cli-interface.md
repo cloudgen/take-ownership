@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-shell-cli-interface.md  
-**Status**: Active (Version 2.3.0)  
+**Status**: Active (Version 3.0.0)  
 **Area**: shell  
 **Key**: `requirement-shell-cli-interface`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -8,7 +8,7 @@
 
 This requirement is the **project Single Source of Truth** for the **POSIX shell CLI interface** of take-ownership: command surface, privilege typing, global flags, dispatcher behavior, help/about contracts, and mode rules.
 
-It defines a **you-centric local self-managed shell CLI** plus **domain take-ownership** commands and a **narrow elevated `action`** path. Full domain semantics live in `requirement-domain-take-ownership.md`. Full elevation/sudoers rules live in `requirement-three-layer-privilege-model.md`. Recursive chown lives in `requirement-take-ownership-ops.md`.
+It defines a **you-centric online-installable shell CLI** plus **domain take-ownership** commands and a **narrow elevated `action`** path. Full domain semantics live in `requirement-domain-take-ownership.md`. Full elevation/sudoers rules live in `requirement-three-layer-privilege-model.md`. Recursive chown lives in `requirement-take-ownership-ops.md`.
 
 ### 1.1 Human-facing
 
@@ -22,7 +22,7 @@ It defines a **you-centric local self-managed shell CLI** plus **domain take-own
 
 | Includes | Excludes |
 |----------|----------|
-| Routed verbs + global flags | Online `self-update` / `curl\|sh` |
+| Routed verbs + global flags | Dual-class local-only install |
 | Dual mention of domain verbs | Dest approve/reject |
 
 | Surface | What you open | What for |
@@ -45,7 +45,7 @@ Every command **MUST** map to exactly one privilege type. Unclassified commands 
 
 | Category | Privilege | Meaning |
 |----------|-----------|---------|
-| **You – CLI lifecycle + diagnostics** | Invoking user | `install`, `uninstall`, `where-is-me`, `version`, `about`, `help` |
+| **You – CLI lifecycle + diagnostics** | Invoking user | `install`, `version-check`, `self-update`, `self-uninstall` (`uninstall` alias), `where-is-me`, `version`, `about`, `help` |
 | **You – Domain (user work)** | Invoking user | Grant generate/submit/print; `action` until re-exec |
 | **Host change – Narrow elevated action** | Controlled sudo (allowlisted only) | Re-exec `/usr/local/bin/take-ownership action --path … --ownership …` |
 | **Dedicated badge** | Dedicated app user | **Not in scope** |
@@ -70,7 +70,7 @@ Additional flags **MAY** be added only when documented here (or a superseding re
 
 1. **Single entry:** `app_main` **MUST** parse global flags and route commands.  
 2. **Unknown command:** **MUST** fail loudly with pointer to `help` (via output SSOT).  
-3. **Empty argv:** **Type N → `app_main_menu`** (`requirement-shell-cli-zero-arguments.md`). Never install. TTY list / off-TTY help (`requirement-shell-cli-default-interaction.md`).  
+3. **Empty argv:** TTY → `app_main_menu`; off-TTY → Type O install-ensure; `--json` no command → JSON help (`requirement-shell-cli-zero-arguments.md`).  
 4. **No raw user I/O:** User-facing messages **MUST** go through `out_*`.  
 5. Script end **MUST** call `app_main "$@"` (no basename gate that blocks dispatch).
 
@@ -97,25 +97,28 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | Item | Value for take-ownership |
 |------|-------------------------|
 | **Product / binary name** | `take-ownership` (`APP_NAME`) |
-| **Primary executable** | `src/take-ownership` (POSIX `/bin/sh`, single-file ship unit) |
+| **Primary executable** | `./take-ownership` (POSIX `/bin/sh`, single-file ship unit; `src/take-ownership` symlink) |
 | **Dispatcher** | `app_main` |
 | **Output SSOT** | `out_text` + wrappers |
-| **Version SSOT** | ship unit `VERSION=` in `src/take-ownership` |
+| **Version SSOT** | ship unit `VERSION=` in `./take-ownership` |
 | **Install paths** | Global: `/usr/local/bin`; User: `${HOME}/.local/bin` |
-| **Primary install story** | User bin for Type 0; **global bin required** before grant emit |
-| **Online channel** | **Not product UX** (absent) |
+| **Primary install story** | `curl \| sh` → user bin; **global bin required** before grant emit |
+| **Online channel** | `SCRIPT_URL` default `https://raw.githubusercontent.com/cloudgen/take-ownership/main/take-ownership` |
 | **Type 2 commands** | None |
 
 #### Supported commands (normative for this project)
 
 | Command | Type | Handler family | Required behavior |
 |---------|------|----------------|-------------------|
-| *(no args — empty argv)* | You | `app_main` → `app_main_menu` | **Type N** — numbered list on TTY; help off-TTY; not install |
-| `install` | You | `inst_local_install` | Copy running ship unit to privilege-correct bin |
-| `uninstall` | You | `inst_local_uninstall` | Remove managed binary; confirm unless `--force` |
+| *(no args — empty argv)* | You | `app_main` | TTY → `app_main_menu`; off-TTY → Type O `inst_empty_argv_ensure`; `--json` → JSON help |
+| `install` | You | `inst_perform_install` | Channel ensure (download + checksum + atomic place) |
+| `version-check` | You | `ver_check` | Local vs remote `VERSION` |
+| `self-update` | You | `inst_self_update` | Newer remote → reinstall; no silent downgrade |
+| `self-uninstall` | You | `inst_self_uninstall` | Remove managed binary; confirm unless `--force` |
+| `uninstall` | You | `inst_self_uninstall` | Alias of `self-uninstall` |
 | `where-is-me` | You | `app_where_is_me` | Running + install paths + installed flag |
 | `version` | You | `app_version` | Local `VERSION` only; no network |
-| `about` | You | `app_about` | Diagnostics including **global-bin presence**; **Cache folder (preferred)** `/dev/shm/cache/cache-${APP_NAME}` and **Cache folder (fallback)**; **Persistence storage** `${HOME}/.local/${APP_NAME}`; no channel one-liner |
+| `about` | You | `app_about` | Diagnostics including **global-bin presence**, cache/persist, **install channel**; no `CHECKSUM` field |
 | `help` | You | `app_help` | Full usage; test-purpose `generate-sudoer-json` apart |
 | `list-folders` | You | `to_list_folders` | **Operational.** List folders this login may take ownership of |
 | `action` | You (+ host-change re-exec) | `to_action` | **Operational.** `--path` then `--ownership`; confirm against `list-folders` then recursive take-ownership. TTY without `--path`: numbered allowed-folder pick. TTY without `--ownership`: current `user:group` (no prompt). Off-TTY still requires both flags |
@@ -131,14 +134,14 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 #### Dispatcher acceptance criteria
 
 1. Unknown token after flag parse → `out_die` with pointer to `take-ownership help`.  
-2. Zero-arg → `app_main_menu` (not install, not `action`; off-TTY help).  
+2. Zero-arg after flag parse → TTY menu / off-TTY Type O / `--json` JSON help.  
 3. Command routing table in `app_main` **must** include every **Implemented** row above.  
 4. Help text **must** stay aligned. Test-purpose `generate-sudoer-json` **MUST** appear under a heading **apart**. The five sudoers verbs **MUST** stay routed (same handlers as the submenu). **MUST NOT** route `sudoers`.  
 5. Domain catalog detail is owned by `requirement-domain-take-ownership.md`.
 
 #### Explicitly out of scope
 
-- Online: `version-check`, `self-update`, `self-uninstall`, channel `install` via URL  
+- Dual-class local-only copy install as a second product class  
 - `backup` / `restore`  
 - `--allow-test-local`  
 - Creating the sibling inbound  
@@ -161,7 +164,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 - **Caution:** Fail loud on bad input; never silent wrong privilege context.  
 - **Intentional:** Command table + help + dispatcher stay synchronized.  
 - **Anti-fragile:** Works under TTY, quiet, JSON, offline local install.  
-- **Over-protect:** Do not collapse layers, reintroduce online verbs, or raw output.
+- **Over-protect:** Do not collapse layers, drop online verbs while claiming `curl \| sh`, or raw output.
 
 ---
 
@@ -169,8 +172,8 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 
 **Future AI assistants, Grok, or maintainers MUST NOT**:
 
-1. Add online lifecycle commands without an explicit product-mode change and registry update.  
-2. Change empty argv to install-ensure while install mode remains local-only.  
+1. Drop online lifecycle commands while the product remains online-installable.  
+2. Make off-TTY empty argv print help while `curl \| sh` is claimed.  
 3. List commands in help that are not routed (or route commands not listed).  
 4. Bypass `out_*` for product user messages.  
 5. Run the entire CLI as root by default instead of narrow `action` elevation.  

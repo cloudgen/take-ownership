@@ -18,7 +18,7 @@ set -u
 TESTS_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_ROOT=$(CDPATH= cd -- "${TESTS_ROOT}/.." && pwd)
 export TESTS_ROOT REPO_ROOT
-SCRIPT="${REPO_ROOT}/src/take-ownership"
+SCRIPT="${REPO_ROOT}/take-ownership"
 export SCRIPT
 APP_NAME="take-ownership"
 export APP_NAME
@@ -29,6 +29,8 @@ export APP_NAME
 . "${TESTS_ROOT}/test_cli.sh"
 # shellcheck source=test_local_lifecycle.sh
 . "${TESTS_ROOT}/test_local_lifecycle.sh"
+# shellcheck source=test_online_curl_install.sh
+. "${TESTS_ROOT}/test_online_curl_install.sh"
 # shellcheck source=test_domain_take_ownership.sh
 . "${TESTS_ROOT}/test_domain_take_ownership.sh"
 
@@ -37,6 +39,7 @@ FAIL=0
 SKIP=0
 
 _cleanup() {
+    ci_stop_channel 2>/dev/null || true
     ci_cleanup_env 2>/dev/null || true
 }
 trap _cleanup EXIT INT HUP TERM
@@ -54,6 +57,7 @@ fi
 
 run_test_cli
 run_test_local_lifecycle
+run_test_online_curl_install
 run_test_domain_take_ownership
 
 printf '\n== summary ==\n'
