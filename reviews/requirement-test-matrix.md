@@ -1,8 +1,8 @@
 # Requirement ↔ test matrix — take-ownership
 
 **Updated:** 2026-09-30  
-**Product VERSION:** 3.0.1  
-**Suite:** `tests/run.sh` (PASS=348 FAIL=0 SKIP=1)
+**Product VERSION:** 3.0.2  
+**Suite:** `tests/run.sh` on 2026-09-30 — **PASS=382 FAIL=0 SKIP=1** (TP-CURL-09 optional online; menu tree **TP-CLI-21..25** have)
 
 | Requirement key | Area | TP families | Coverage notes |
 |-----------------|------|-------------|----------------|
@@ -14,8 +14,8 @@
 | requirement-incorrect-ownership-parameter | architecture | TP-TAKE-OWNERSHIP-**29**, **29b**, **29c**, **27**, **28**, **28b**, **31** | Fence: generate/action refuse `*`; missing `--ownership` fail-closed |
 | requirement-take-ownership-ops | domain-ops | TP-TAKE-OWNERSHIP-**11**, **11b**, **13**, **14**, **15**, **16**, **17**, **40**, **41**, **42**, **43**, **44** | Recursive chown; ram-drive exception; list-folders gate; TTY live pick; granted-missing recreate |
 | requirement-shell-cli-interface | shell | TP-CLI-* | Commands, flags, dispatch; **menu/main** TP-CLI-13..16; test-purpose `generate-sudoer-json` apart (**TP-CLI-17**) |
-| requirement-shell-cli-zero-arguments | shell | TP-CLI-07, **13**, **15** | Never install; empty argv → `app_main_menu` |
-| requirement-shell-cli-default-interaction | shell | TP-CLI-07, **13**, **14**, **15**, **16**, **19** | Case 3 empty argv + `menu`/`main`; family **sudoers** + submenu |
+| requirement-shell-cli-zero-arguments | shell | TP-CLI-07, **13**, **15** | TTY menu; off-TTY Type O install-ensure |
+| requirement-shell-cli-default-interaction | shell | TP-CLI-07, **13**, **14**, **15**, **16**, **19**, **21–25** | Front **1 / 7 / 8 / 9**; **0** Back; sudoers **71–75**; self-management **81–86** |
 | requirement-shell-local-self-management | shell | TP-LC-* (incl. **09/10** mode) | install/uninstall/where-is-me; **0755** |
 | requirement-shell-output-requirements | shell | TP-CLI-03,05,08,09, **19** | JSON / quiet / errors |
 | requirement-operator-readable-error | shell | TP-TAKE-OWNERSHIP-**28**, **44** | Operator-facing `[ERROR]`; granted-missing recreate |

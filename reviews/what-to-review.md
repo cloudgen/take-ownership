@@ -5,7 +5,7 @@
 **Always load first:** `reviews/lessons.md`
 
 **Last plan update:** 2026-09-30  
-**Ship unit VERSION:** 3.0.1  
+**Ship unit VERSION:** 3.0.2  
 **Suite baseline:** see `reviews/test-plan.md`
 
 ---
@@ -41,8 +41,8 @@
 | **Incorrect ownership** | `requirement-incorrect-ownership-parameter.md` | no `*`; no cwd listings |
 | **Operator-readable error** | `requirement-operator-readable-error.md` | Blocking `[ERROR]` what-happened + next step; granted-missing recreate |
 | CLI interface | `requirement-shell-cli-interface.md` | Commands, flags; five sudoers verbs live; `sudoers` unknown |
-| Default interaction | `requirement-shell-cli-default-interaction.md` | Empty argv + `menu`/`main`; family **sudoers** + submenu |
-| Empty argv | `requirement-shell-cli-zero-arguments.md` | Never install; empty argv → `app_main_menu` |
+| Default interaction | `requirement-shell-cli-default-interaction.md` | Front **1 / 7 / 8 / 9**; sudoers **71–75**; self-management **81–86**; **0** Back |
+| Empty argv | `requirement-shell-cli-zero-arguments.md` | TTY menu; off-TTY Type O install-ensure |
 | Local self-management | `requirement-shell-local-self-management.md` | install/uninstall; **0755**; global preferred for elev |
 | Output | `requirement-shell-output-requirements.md` | `out_*`; JSON errors |
 | Modular design | `requirement-shell-modular-function-design.md` | `to_*` domain prefix |

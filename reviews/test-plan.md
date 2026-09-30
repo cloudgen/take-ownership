@@ -3,9 +3,9 @@
 Maps **TP-*** coverage to `tests/`.  
 **Suite entry:** `./tests/run.sh`  
 **Ship unit:** `src/take-ownership`  
-**Product VERSION:** 3.0.1  
+**Product VERSION:** 3.0.2  
 **Last plan update:** 2026-09-30  
-**Last suite run:** `./tests/run.sh` (3.0.1: PASS=348 FAIL=0 SKIP=1 — **TP-CACHE-01..03** · **TP-CURL-09** optional online skip)
+**Last suite run:** `./tests/run.sh` on 2026-09-30 — **PASS=382 FAIL=0 SKIP=1** (TP-CURL-09 optional online; 3.0.2 menu tree)
 
 Status: **have** = automated today · **todo** = needed · **optional** · **n/a** · **skip** (environment)
 
@@ -17,7 +17,7 @@ Status: **have** = automated today · **todo** = needed · **optional** · **n/a
 |------|--------|----------|
 | Syntax `sh -n` | have | TP-CLI-01 |
 | version / help / about human + JSON | have | TP-CLI-02..06 |
-| Empty argv never install; off-TTY help; TTY menu | have | TP-CLI-07, **13**, **15** |
+| Empty argv off-TTY Type O; TTY menu | have | TP-CLI-07, **13**, **15** |
 | empty argv / `menu`/`main` TTY list / off-TTY help | have | TP-CLI-13..16 |
 | TTY main-menu look (nametag + gray italic explain) | have | TP-CLI-19 |
 | Unknown + quiet + set -u HOME | have | TP-CLI-08..11 |
@@ -49,20 +49,25 @@ Status: **have** = automated today · **todo** = needed · **optional** · **n/a
 | TP-CLI-04 | help local verbs; no online; no backup/restore | test_cli | requirement-shell-cli-interface · domain | **have** |
 | TP-CLI-05 | help JSON short | test_cli | requirement-shell-output-requirements | **have** |
 | TP-CLI-06 | about JSON cache used/preferred/fallbacks + persistence; no retired persist key | test_cli | requirement-shell-cli-storage · domain | **have** |
-| TP-CLI-07 | empty argv never install; off-TTY help | test_cli | requirement-shell-cli-zero-arguments | **have** |
+| TP-CLI-07 | empty argv off-TTY is Type O (unreachable channel fails loud; not the list) | test_cli | requirement-shell-cli-zero-arguments | **have** |
 | TP-CLI-08 | unknown fail-closed | test_cli | requirement-shell-cli-interface | **have** |
 | TP-CLI-09 | quiet suppresses version | test_cli | requirement-shell-output-requirements | **have** |
 | TP-CLI-10 | online verbs rejected; backup/restore unknown | test_cli | requirement-bootstrap-chain | **have** |
 | TP-CLI-11 | env -u HOME version | test_cli | class / defensive | **have** |
 | TP-CLI-12 | preferred cache `/dev/shm/cache/cache-${APP_NAME}-${login}-$$` | test_cli | requirement-shell-cli-storage | **have** |
-| TP-CLI-13 | interactive `menu` **and** empty argv print `action` + family `sudoers` + `9. Exit` | test_cli | shell-cli-default-interaction | **have** |
+| TP-CLI-13 | interactive `menu` and empty argv print front **1 / 7 / 8 / 9** | test_cli | shell-cli-default-interaction | **have** |
 | TP-CLI-14 | interactive `menu --json` still prints the list | test_cli | shell-cli-default-interaction | **have** |
-| TP-CLI-15 | non-interactive `menu` and empty argv are help | test_cli | shell-cli-default-interaction | **have** |
-| TP-CLI-16 | numbered list omits help/install/version/about/test-purpose/`list-folders` | test_cli | shell-cli-default-interaction | **have** |
+| TP-CLI-15 | non-interactive `menu` is help | test_cli | shell-cli-default-interaction | **have** |
+| TP-CLI-16 | front board omits install/version/about; those rows are **81–83** | test_cli | shell-cli-default-interaction | **have** |
 | TP-CLI-17 | help lists test-purpose `generate-sudoer-json` apart | test_cli | shell-cli-interface | **have** |
 | TP-CLI-18 | persist `${HOME}/.local/${APP_NAME}` (no override) | test_cli | requirement-shell-cli-storage | **have** |
 | TP-CLI-19 | default CLI main menu style | test_cli | shell-cli-default-interaction · output | **have** |
 | TP-CLI-20 | Git Bash (`MSYSTEM`) still runs Type 0 `version` | test_cli | shell-sudo-command · command line for normal user only | **have** |
+| TP-CLI-21 | front **1 / 7 / 8 / 9**; `sudoers` and `self-management` unknown as argv | test_cli | shell-cli-default-interaction | **have** |
+| TP-CLI-22 | sudoers **71–75**, **0** Back, no submenu **9** | test_cli | shell-cli-default-interaction | **have** |
+| TP-CLI-23 | self-management **81–86**, **0** Back, **87** absent | test_cli | shell-cli-default-interaction | **have** |
+| TP-CLI-24 | after a leaf, front board returns; unknown token reprints this layer | test_cli | shell-cli-default-interaction | **have** |
+| TP-CLI-25 | Termux / Git Bash / Windows cmd omits front **7** and prints the reason first | test_cli | shell-cli-default-interaction | **have** |
 | TP-CACHE-01 | about JSON and human cache labels | test_cli | requirement-shell-cli-storage | **have** |
 | TP-CACHE-02 | Linux / Git Bash / macOS chains, silent skip, mode 0700, one leaf per process | test_cli | requirement-shell-cli-storage | **have** |
 | TP-CACHE-03 | scratch file and directory stay in the cache leaf; absent `mktemp`; refuse `$$` names | test_cli | requirement-shell-cli-storage | **have** |

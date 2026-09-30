@@ -5,6 +5,13 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [3.0.2] - 2026-09-30
+
+### Changed
+
+- **Main menu tree.** On a real terminal the front board is **1** `action`, **7** sudoers, **8** self-management, **9** Exit. Sudoers is **71–75**. Self-management is **81** `install` through **86** `self-uninstall`. **0** goes back. **9** leaves only from the front board. After a command finishes, the front board returns. An unknown number warns and reprints that board. On Termux, Git Bash, and Windows cmd, row **7** is omitted and the menu says why. `take-ownership sudoers` and `take-ownership self-management` stay unknown. Law: `requirement-shell-cli-default-interaction` **3.0.1**. Suite **TP-CLI-13**, **TP-CLI-14**, **TP-CLI-16**, **TP-CLI-19**, **TP-CLI-21** through **TP-CLI-25**.
+- Product version **3.0.2**.
+
 ## [3.0.1] - 2026-09-30
 
 ### Changed

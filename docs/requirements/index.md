@@ -15,9 +15,9 @@
 | requirement-take-ownership-ops | **Ops SSOT**: recursive chown, no symlink follow; `--path` then `--ownership`; refuse-list; TTY numbered **existing** folder pick; granted-missing → recreate then `action` | domain-ops | Active (1.4.0) | `requirement-take-ownership-ops.md` | 2026-09-06 |
 | requirement-shell-script-coding | POSIX `/bin/sh` coding-style specialize-in (without it, portable lessons arrive raw) | shell | Active (1.0.0) | `requirement-shell-script-coding.md` | 2026-08-25 |
 | requirement-shell-sudo-command | In-tool `util_sudo`; check before sudo; chmod example; `action` re-execs global binary | shell | Active (1.0.0) | `requirement-shell-sudo-command.md` | 2026-08-25 |
-| requirement-shell-cli-interface | Shell CLI interface (commands, flags, dispatch, modes); `action`; online lifecycle; empty argv TTY menu / off-TTY Type O; five sudoers verbs live; `sudoers` not dispatched | shell | Active (3.0.0) | `requirement-shell-cli-interface.md` | 2026-09-08 |
-| requirement-shell-cli-zero-arguments | Empty argv: TTY menu / off-TTY Type O install-ensure; `--json` JSON help | shell | Active (2.0.0) | `requirement-shell-cli-zero-arguments.md` | 2026-09-08 |
-| requirement-shell-cli-default-interaction | Claimed TTY numbered list on empty argv and `menu`/`main` (family **sudoers** + submenu); off-TTY empty argv is Type O (peer) | shell | Active (2.5.0) | `requirement-shell-cli-default-interaction.md` | 2026-09-08 |
+| requirement-shell-cli-interface | Shell CLI interface (commands, flags, dispatch, modes); `action`; online lifecycle; empty argv TTY menu / off-TTY Type O; sudoers **71–75** and self-management **81–86** live; `sudoers` and `self-management` not dispatched | shell | Active (3.1.0) | `requirement-shell-cli-interface.md` | 2026-09-30 |
+| requirement-shell-cli-zero-arguments | Empty argv: TTY menu / off-TTY Type O install-ensure; `--json` JSON help | shell | Active (2.0.1) | `requirement-shell-cli-zero-arguments.md` | 2026-09-30 |
+| requirement-shell-cli-default-interaction | TTY tree: front **1** `action` / **7** sudoers / **8** self-management / **9** Exit; **71–75** and **81–86**; **0** Back; ship unit draws this tree | shell | Active (3.0.1) | `requirement-shell-cli-default-interaction.md` | 2026-09-30 |
 | requirement-shell-self-management | Online self-management: version-check, self-update, self-uninstall, about; `install` ensure; mode **0755** | shell | Active (1.0.1) | `requirement-shell-self-management.md` | 2026-09-08 |
 | requirement-shell-automatic-checksum | Automatic companion-digest integrity (transparent link/value/result; CHECKSUM not help/about) | shell | Active (1.0.1) | `requirement-shell-automatic-checksum.md` | 2026-09-08 |
 | requirement-shell-output-requirements | Central `out_*` output SSOT; `util_app_ident` / `out_menu_choice` | shell | Active (1.1.0) | `requirement-shell-output-requirements.md` | 2026-09-03 |
@@ -26,7 +26,7 @@
 | requirement-shell-idempotency | Re-run safety; `action` already-matching success; install-ensure no-op | shell | Active | `requirement-shell-idempotency.md` | 2026-08-25 |
 | requirement-shell-interactive-vs-noninteractive | Interactive vs non-interactive / confirm policy; `curl\|sh` auto-install; `action` TTY walk | shell | Active | `requirement-shell-interactive-vs-noninteractive.md` | 2026-08-25 |
 | requirement-shell-cli-storage | Cache folder (Linux shm → tmp → `~/.cache`; Git Bash tmp → AppData; Mac tmp → Library/Caches → `~/cache`) and persistence `${HOME}/.local/${APP_NAME}`; silent tier miss | shell | Active (2.1.1) | `requirement-shell-cli-storage.md` | 2026-09-30 |
-| requirement-domain-take-ownership | Domain **surface** SSOT (four pillars); ops defer to take-ownership-ops; submit public inbound; independent generate; five grant/draft verbs operational (sudoers submenu); `generate-sudoer-json` test-purpose; `--ownership user:group` | domain | Active (1.5.0) | `requirement-domain-take-ownership.md` | 2026-09-08 |
+| requirement-domain-take-ownership | Domain **surface** SSOT (four pillars); ops defer to take-ownership-ops; submit public inbound; independent generate; five grant/draft verbs operational (sudoers **71–75**); `generate-sudoer-json` test-purpose; `--ownership user:group` | domain | Active (1.6.0) | `requirement-domain-take-ownership.md` | 2026-09-30 |
 
 ## Superseded (lineage only — not live law)
 

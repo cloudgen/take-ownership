@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-shell-cli-zero-arguments.md  
-**Status**: Active (Version 2.0.0)  
+**Status**: Active (Version 2.0.1)  
 **Area**: shell  
 **Key**: `requirement-shell-cli-zero-arguments`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -81,24 +81,24 @@ This file owns the TTY vs off-TTY split for **no command token**. List membershi
 |------|--------|
 | **Product** | `take-ownership` |
 | **Type** | **Type O off-TTY + TTY menu** |
-| **Default empty-argv handler** | `app_main_menu` |
-| **Default COMMAND after flags with no token** | `help` |
-| **Contrast parent** | cli-template is Type N help-default. This product **keeps Type N (no install)** and **routes empty argv to the claimed numbered list**. (Historical: selfmanaged Type O was trimmed in 2026-08-03; not live origin.) |
+| **Default empty-argv handler** | TTY `app_main_menu`; off-TTY `inst_empty_argv_ensure`; `--json` JSON help |
+| **Default COMMAND after flags with no token** | TTY `menu`; off-TTY `ensure`; `--json` `help` |
+| **Contrast parent** | cli-template is Type N help-default. This product is online-installable: off-TTY empty argv is Type O install-ensure; a real terminal uses the numbered list. |
 
 ### 2.4 Why This Requirement Exists (CIAO)
 
-- **Principle 2 – Intentional**: Empty argv meaning is explicit: Type N (not install) **and** the claimed default work list.  
-- **Principle 1 – Caution**: Avoid surprise install on bare invocation for an ops CLI.  
-- **Principle 16 – Interactive**: TTY list vs pipe help; no hang.
+- **Principle 2 – Intentional**: Empty argv meaning is explicit: off-TTY Type O install-ensure, and the numbered list on a real terminal.  
+- **Principle 1 – Caution**: A pipe installs. A terminal does not. An unreachable channel fails loud.  
+- **Principle 16 – Interactive**: TTY list vs pipe ensure; no hang.
 
 ---
 
 ## 3. Design Principles (CIAO / CIAO-Lite)
 
-- **Caution**: No silent ensure on empty argv.  
-- **Intentional**: Type N declared; empty argv shares `app_main_menu` with `menu` / `main`.  
-- **Anti-fragile**: Off-TTY help works offline; explicit `help` still full usage.  
-- **Over-protect**: Do not reintroduce Type O without reclassifying product install mode.
+- **Caution**: Off-TTY ensure does not draw a menu. TTY empty argv does not install.  
+- **Intentional**: Type O off-TTY; a real terminal shares `app_main_menu` with `menu` / `main`.  
+- **Anti-fragile**: An unreachable channel is non-zero and not silent; explicit `help` is still full usage.  
+- **Over-protect**: Do not turn TTY empty argv into install-ensure. Do not turn a pipe into the help dump.
 
 ---
 
@@ -120,11 +120,11 @@ This file owns the TTY vs off-TTY split for **no command token**. List membershi
 
 | ID | Criterion |
 |----|-----------|
-| AC-1 | Empty argv does not install |
-| AC-2 | Type N is the declared empty-argv type |
+| AC-1 | Off-TTY empty argv is Type O install-ensure (non-zero and not silent when the channel is unreachable) |
+| AC-2 | Declared type is Type O off-TTY plus a TTY menu (Type N does not apply) |
 | AC-3 | `install` remains an explicit command |
 | AC-4 | Interactive empty argv uses `app_main_menu` (numbered list) |
-| AC-5 | Non-interactive empty argv is help (no hang, no numbered list) |
+| AC-5 | Non-interactive empty argv does not hang, does not draw the numbered list, and is not the help dump |
 | AC-6 | Explicit `help` still prints full usage |
 
 ---
@@ -145,16 +145,16 @@ This file owns the TTY vs off-TTY split for **no command token**. List membershi
 
 | TP family / ID | Suite | Status |
 |----------------|-------|--------|
-| **TP-CLI-07** | `tests/test_cli.sh` | **have** — off-TTY empty argv is help; not install (AC-1, AC-5) |
-| **TP-CLI-13** | `tests/test_cli.sh` | **have** — interactive empty argv and `menu` print the list (AC-4) |
-| **TP-CLI-15** | `tests/test_cli.sh` | **have** — non-interactive empty argv / `menu` is help (AC-5) |
+| **TP-CLI-07** | `tests/test_cli.sh` | **have** — off-TTY unreachable channel is non-zero, not the numbered list, not the help dump (AC-1, AC-5) |
+| **TP-CLI-13** | `tests/test_cli.sh` | **have** — interactive empty argv and `menu` print the front board (AC-4) |
+| **TP-CLI-15** | `tests/test_cli.sh` | **have** — non-interactive `menu` is help; off-TTY empty argv is not that help dump (AC-5) |
 
 **Matrix:** `reviews/requirement-test-matrix.md`  
 **Map:** `reviews/test-plan.md`
 
 ## Under command line for normal user only
 
-When this program runs on Termux, Git Bash, or Windows Command Prompt, it **MUST** stay on **your own login**. Empty argv **MUST NOT** install and **MUST NOT** wrap `sudo`.
+When this program runs on Termux, Git Bash, or Windows Command Prompt, it **MUST** stay on **your own login**. Empty argv keeps the same split as §2.1 (TTY menu, off-TTY Type O ensure). That ensure **MUST NOT** wrap `sudo`.
 
 Detect (typical): Termux — `PREFIX` contains `com.termux`; Git Bash — `MSYSTEM` is `MINGW*` / `MSYS*`; Windows cmd — `OS=Windows_NT` after excluding Git Bash / WSL.
 
@@ -164,9 +164,11 @@ Detect (typical): Termux — `PREFIX` contains `com.termux`; Git Bash — `MSYST
 |------|--------|------|
 | 2026-08-03 | Active 1.0.0 | Type N for local-only take-ownership; empty argv = help |
 | 2026-08-30 | Active 1.1.0 | Type N kept (no install); empty argv routes to `app_main_menu` (same as `menu`/`main`) |
+| 2026-09-08 | Active 2.0.0 | Online-installable: off-TTY empty argv is Type O; TTY menu kept (§1–§2.1) |
+| 2026-09-30 | Active 2.0.1 | Acceptance, notes, and principles aligned with §2.1. They still said Type N / help after the 2.0.0 purpose edit. |
 
 ---
 
-**Last Updated**: 2026-08-30  
+**Last Updated**: 2026-09-30  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

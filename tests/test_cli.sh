@@ -457,61 +457,85 @@ run_test_cli() {
     _err=$(sh "${SCRIPT}" sudoers 2>&1 >/dev/null)
     assert_eq "TP-CLI-13 sudoers not a live command" 1 "$?"
     assert_contains "TP-CLI-13 sudoers unknown" "$_err" "Unknown command"
+    _err=$(sh "${SCRIPT}" self-management 2>&1 >/dev/null)
+    assert_eq "TP-CLI-21 self-management not a live command" 1 "$?"
+    assert_contains "TP-CLI-21 self-management unknown" "$_err" "Unknown command"
 
     if command -v python3 >/dev/null 2>&1; then
         _esc=$(printf '\033')
         _out=$(PTY_IN="9" ci_pty_run menu)
         _plain=$(ci_strip_ansi "$_out")
         assert_contains "TP-CLI-13 TTY menu action row" "$_plain" "1. action: Recursively take ownership of a named folder"
-        assert_contains "TP-CLI-13 TTY menu family sudoers" "$_plain" "2. sudoers: Grant and drafts"
+        assert_contains "TP-CLI-13 TTY menu family sudoers" "$_plain" "7. sudoers: Grant and drafts"
+        assert_contains "TP-CLI-13 TTY menu family self-management" "$_plain" "8. self-management: This CLI install, version, update, uninstall"
         assert_contains "TP-CLI-13 TTY menu Exit 9" "$_plain" "9. Exit"
         assert_contains "TP-CLI-13 TTY menu ident token" "$_plain" "${APP_NAME}(${PRODUCT_VERSION})"
+        assert_not_contains "TP-CLI-13 TTY menu no old family row 2" "$_plain" "2. sudoers:"
         assert_not_contains "TP-CLI-13 TTY menu no list-folders row" "$_plain" "list-folders: List folders this login may take ownership of"
         assert_not_contains "TP-CLI-13 TTY menu no backup row" "$_plain" "1. backup:"
-        assert_not_contains "TP-CLI-13 TTY main hides generate row" "$_plain" "1. generate-sudoer-request:"
-        assert_not_contains "TP-CLI-13 TTY main hides remove row" "$_plain" "2. remove-project-sudoers:"
-        assert_not_contains "TP-CLI-13 TTY main hides submit row" "$_plain" "3. submit-sudoer-request:"
+        assert_not_contains "TP-CLI-13 TTY main hides generate row" "$_plain" "71. generate-sudoer-request:"
+        assert_not_contains "TP-CLI-13 TTY main hides install row" "$_plain" "81. install:"
 
         _out=$(PTY_IN="9" ci_pty_run)
         _plain=$(ci_strip_ansi "$_out")
         assert_contains "TP-CLI-13 TTY empty argv action row" "$_plain" "1. action: Recursively take ownership of a named folder"
-        assert_contains "TP-CLI-13 TTY empty argv family sudoers" "$_plain" "2. sudoers: Grant and drafts"
+        assert_contains "TP-CLI-13 TTY empty argv family sudoers" "$_plain" "7. sudoers: Grant and drafts"
+        assert_contains "TP-CLI-13 TTY empty argv family self-management" "$_plain" "8. self-management: This CLI install, version, update, uninstall"
         assert_contains "TP-CLI-13 TTY empty argv Exit 9" "$_plain" "9. Exit"
         assert_contains "TP-CLI-13 TTY empty argv ident token" "$_plain" "${APP_NAME}(${PRODUCT_VERSION})"
         assert_not_contains "TP-CLI-13 TTY empty argv no list-folders row" "$_plain" "list-folders: List folders this login may take ownership of"
         assert_not_contains "TP-CLI-13 TTY empty argv not help Usage" "$_plain" "Usage:"
 
-        _out=$(PTY_IN="2
-8
+        _out=$(PTY_IN="7
+0
 9" ci_pty_run menu)
         _plain=$(ci_strip_ansi "$_out")
-        assert_contains "TP-CLI-13 TTY submenu generate row" "$_plain" "1. generate-sudoer-request: Write a JSON grant you can read"
-        assert_contains "TP-CLI-13 TTY submenu submit row" "$_plain" "2. submit-sudoer-request: Queue the JSON grant inbound"
-        assert_contains "TP-CLI-13 TTY submenu print row" "$_plain" "3. print-sudoers: Emit sudoers draft"
-        assert_contains "TP-CLI-13 TTY submenu install-script row" "$_plain" "4. print-sudoers-install-script: Write admin install script"
-        assert_contains "TP-CLI-13 TTY submenu remove row" "$_plain" "5. remove-project-sudoers: Remove sudoers draft only"
-        assert_contains "TP-CLI-13 TTY submenu Back 8" "$_plain" "8. Back"
-        assert_contains "TP-CLI-13 TTY submenu Exit 9" "$_plain" "9. Exit"
+        assert_contains "TP-CLI-22 TTY submenu generate row" "$_plain" "71. generate-sudoer-request: Write a JSON grant you can read"
+        assert_contains "TP-CLI-22 TTY submenu submit row" "$_plain" "72. submit-sudoer-request: Queue the JSON grant inbound"
+        assert_contains "TP-CLI-22 TTY submenu print row" "$_plain" "73. print-sudoers: Emit sudoers draft"
+        assert_contains "TP-CLI-22 TTY submenu install-script row" "$_plain" "74. print-sudoers-install-script: Write admin install script"
+        assert_contains "TP-CLI-22 TTY submenu remove row" "$_plain" "75. remove-project-sudoers: Remove sudoers draft only"
+        assert_contains "TP-CLI-22 TTY submenu Back 0" "$_plain" "0. Back"
+        assert_not_contains "TP-CLI-22 TTY submenu no Back 8" "$_plain" "8. Back"
+        _mid=$(printf '%s\n' "$_plain" | sed -n '/sudoers (grant and drafts)/,/0\. Back/p')
+        assert_not_contains "TP-CLI-22 TTY submenu no Exit 9" "$_mid" "9. Exit"
 
         _out=$(PTY_IN="9" ci_pty_run --json menu)
         _plain=$(ci_strip_ansi "$_out")
         assert_contains "TP-CLI-14 TTY menu --json still numbered list" "$_plain" "9. Exit"
         assert_contains "TP-CLI-14 TTY menu --json action row" "$_plain" "1. action: Recursively take ownership"
-        assert_contains "TP-CLI-14 TTY menu --json family sudoers" "$_plain" "2. sudoers: Grant and drafts"
+        assert_contains "TP-CLI-14 TTY menu --json family sudoers" "$_plain" "7. sudoers: Grant and drafts"
+        assert_contains "TP-CLI-14 TTY menu --json family self-management" "$_plain" "8. self-management:"
         assert_not_contains "TP-CLI-14 TTY menu --json ignores JSON help" "$_out" '"type":"success"'
 
         _out=$(PTY_IN="9" ci_pty_run menu)
         _plain=$(ci_strip_ansi "$_out")
         assert_not_contains "TP-CLI-16 no help row" "$_plain" "help: Show this help"
-        assert_not_contains "TP-CLI-16 no install row" "$_plain" "install: Copy this program"
-        assert_not_contains "TP-CLI-16 no uninstall row" "$_plain" "uninstall: Remove the managed binary"
+        assert_not_contains "TP-CLI-16 front no install row" "$_plain" "81. install:"
+        assert_not_contains "TP-CLI-16 front no install explain" "$_plain" "install: Ensure this program from the channel"
+        assert_not_contains "TP-CLI-16 front no uninstall row" "$_plain" "self-uninstall: Remove the managed binary"
         assert_not_contains "TP-CLI-16 no where-is-me row" "$_plain" "where-is-me: Show running"
-        assert_not_contains "TP-CLI-16 no version row" "$_plain" "version: Show the local version"
-        assert_not_contains "TP-CLI-16 no about row" "$_plain" "about: Show diagnostics"
+        assert_not_contains "TP-CLI-16 front no version row" "$_plain" "version: Show the local version"
+        assert_not_contains "TP-CLI-16 front no about row" "$_plain" "about: Show diagnostics"
         assert_not_contains "TP-CLI-16 no generate-sudoer-json row" "$_plain" "generate-sudoer-json:"
         assert_not_contains "TP-CLI-16 no menu row" "$_plain" "menu: Show the numbered list"
         assert_not_contains "TP-CLI-16 no main row" "$_plain" "main: Same numbered list"
-        assert_not_contains "TP-CLI-16 no list-folders row" "$_plain" "2. list-folders:"
+        assert_not_contains "TP-CLI-16 no list-folders row" "$_plain" "list-folders:"
+        _out=$(PTY_IN="8
+0
+9" ci_pty_run menu)
+        _plain=$(ci_strip_ansi "$_out")
+        assert_contains "TP-CLI-16 submenu install row" "$_plain" "81. install: Ensure this program from the channel"
+        assert_contains "TP-CLI-23 submenu version row" "$_plain" "82. version: Show the local version"
+        assert_contains "TP-CLI-23 submenu about row" "$_plain" "83. about: Show diagnostics including global-bin presence"
+        assert_contains "TP-CLI-23 submenu version-check row" "$_plain" "84. version-check: Compare local version to the channel"
+        assert_contains "TP-CLI-23 submenu self-update row" "$_plain" "85. self-update: Update this program when the channel is newer"
+        assert_contains "TP-CLI-23 submenu self-uninstall row" "$_plain" "86. self-uninstall: Remove the managed binary (not the host grant)"
+        assert_contains "TP-CLI-23 submenu Back 0" "$_plain" "0. Back"
+        assert_not_contains "TP-CLI-23 submenu no self-install row" "$_plain" "87. self-install"
+        assert_not_contains "TP-CLI-23 submenu no where-is-me row" "$_plain" "where-is-me:"
+        _mid=$(printf '%s\n' "$_plain" | sed -n '/self-management (this CLI)/,/0\. Back/p')
+        assert_not_contains "TP-CLI-23 TTY submenu no Exit 9" "$_mid" "9. Exit"
         if grep -E '^[[:space:]]*[^#]*\$\(prompt_|^[[:space:]]*[^#]*`prompt_' "${SCRIPT}" >/dev/null 2>&1; then
             t_fail "TP-CLI-16 ship unit captures a prompt helper with \$()"
         else
@@ -529,7 +553,8 @@ run_test_cli() {
         assert_contains "TP-CLI-19 TTY explain SGR 3;37" "$_out" "${_esc}[3;37m"
         assert_contains "TP-CLI-19 TTY action name unstyled" "$_out" "1. action: "
         assert_contains "TP-CLI-19 TTY Exit unstyled" "$_plain" "9. Exit"
-        _out=$(PTY_IN="2
+        _out=$(PTY_IN="7
+0
 9" ci_pty_run menu)
         _plain=$(ci_strip_ansi "$_out")
         assert_contains "TP-CLI-19 TTY submenu header ident" "$_plain" "${APP_NAME}(${PRODUCT_VERSION})"
@@ -539,11 +564,61 @@ run_test_cli() {
         assert_not_contains "TP-CLI-19 off-TTY menu no ident CSI" "$_off" "${_esc}[1m${APP_NAME}"
         _empty=$(sh "${SCRIPT}" 2>/dev/null)
         assert_not_contains "TP-CLI-19 off-TTY empty argv no explain CSI" "$_empty" "${_esc}[3;37m"
+
+        # TP-CLI-24 — after version, the front board returns; a bad token reprints this layer
+        _out=$(PTY_IN="8
+82
+9" ci_pty_run menu)
+        _plain=$(ci_strip_ansi "$_out")
+        assert_contains "TP-CLI-24 version leaf ran" "$_plain" "${APP_NAME} version ${PRODUCT_VERSION}"
+        _nfront=$(printf '%s\n' "$_plain" | grep -c '1\. action: Recursively take ownership of a named folder' || true)
+        assert_eq "TP-CLI-24 front board returns after leaf" "2" "${_nfront}"
+        _out=$(PTY_IN="no-such
+9" ci_pty_run menu)
+        _plain=$(ci_strip_ansi "$_out")
+        assert_contains "TP-CLI-24 unknown token named" "$_plain" "Not a menu choice: 'no-such'"
+        assert_contains "TP-CLI-24 unknown token says choose listed" "$_plain" "Choose a listed number or command name."
+        assert_not_contains "TP-CLI-24 unknown token is not ERROR" "$_plain" "[ERROR]"
+        _nfront=$(printf '%s\n' "$_plain" | grep -c '1\. action: Recursively take ownership of a named folder' || true)
+        assert_eq "TP-CLI-24 unknown token reprints front" "2" "${_nfront}"
+        _out=$(PTY_IN="7
+9
+0
+9" ci_pty_run menu)
+        _plain=$(ci_strip_ansi "$_out")
+        assert_contains "TP-CLI-24 submenu 9 is not Exit" "$_plain" "Not a menu choice: '9'"
+        _nsudo=$(printf '%s\n' "$_plain" | grep -c '71\. generate-sudoer-request:' || true)
+        assert_eq "TP-CLI-24 submenu 9 reprints sudoers" "2" "${_nsudo}"
+
+        # TP-CLI-25 — Termux / Git Bash / Windows cmd omit row 7 and name why
+        _out=$(PREFIX="/data/data/com.termux/files/usr" PTY_IN="9" ci_pty_run menu)
+        _plain=$(ci_strip_ansi "$_out")
+        _head=${_plain%%1. action:*}
+        assert_contains "TP-CLI-25 termux reason before numbers" "$_head" "sudoers not available for termux"
+        assert_not_contains "TP-CLI-25 termux omits row 7" "$_plain" "7. sudoers:"
+        assert_contains "TP-CLI-25 termux keeps self-management" "$_plain" "8. self-management:"
+        assert_contains "TP-CLI-25 termux keeps Exit 9" "$_plain" "9. Exit"
+        _gbhome=$(mktemp -d "${TMPDIR:-/tmp}/to-menu-gb.XXXXXX")
+        _out=$(MSYSTEM="MINGW64" HOME="${_gbhome}" PTY_IN="9" ci_pty_run menu)
+        _plain=$(ci_strip_ansi "$_out")
+        _head=${_plain%%1. action:*}
+        assert_contains "TP-CLI-25 gitbash reason before numbers" "$_head" "sudoers not available for gitbash"
+        assert_not_contains "TP-CLI-25 gitbash omits row 7" "$_plain" "7. sudoers:"
+        rm -rf "${_gbhome}"
+        _out=$(OS="Windows_NT" PTY_IN="9" ci_pty_run menu)
+        _plain=$(ci_strip_ansi "$_out")
+        _head=${_plain%%1. action:*}
+        assert_contains "TP-CLI-25 windows-cmd reason before numbers" "$_head" "sudoers not available for windows-cmd"
+        assert_not_contains "TP-CLI-25 windows-cmd omits row 7" "$_plain" "7. sudoers:"
+        assert_contains "TP-CLI-25 windows-cmd keeps action" "$_plain" "1. action:"
     else
         t_skip "TP-CLI-13 TTY menu / empty argv (no python3 for PTY)"
-        t_skip "TP-CLI-13 TTY sudoers submenu (no python3 for PTY)"
         t_skip "TP-CLI-14 TTY menu --json (no python3 for PTY)"
         t_skip "TP-CLI-16 TTY exclusions (no python3 for PTY)"
         t_skip "TP-CLI-19 TTY menu look (no python3 for PTY)"
+        t_skip "TP-CLI-22 TTY sudoers submenu (no python3 for PTY)"
+        t_skip "TP-CLI-23 TTY self-management submenu (no python3 for PTY)"
+        t_skip "TP-CLI-24 menu return and invalid choice (no python3 for PTY)"
+        t_skip "TP-CLI-25 menu-hidden sudoers (no python3 for PTY)"
     fi
 }

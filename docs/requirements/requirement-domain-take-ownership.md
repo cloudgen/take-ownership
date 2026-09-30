@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-domain-take-ownership.md  
-**Status**: Active (Version 1.5.0)  
+**Status**: Active (Version 1.6.0)  
 **Area**: domain  
 **Key**: `requirement-domain-take-ownership`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -58,7 +58,7 @@ Must-not-confuse: JSON field **`action`** means add vs update of a grant. CLI ve
 | `generate-sudoer-json` | same as `generate-sudoer-request` | `to_*` | **Test-purpose alias** of generate-sudoer-request. Canonical JSON for tests: `"--ownership","<user:group>"` plus `--json` twin (never `"*"`, never cwd names) | same |
 | `submit-sudoer-request` | **`--path <folder>`** and **`--ownership <user:group>`** when emitting; optional sudoers file; `--purpose`; `--update` / `--add` | `to_*` | Type 0 submitter into sibling public inbound. **Fails closed** unless global binary exists. Default **update** if this user’s host fragment exists, else add | workflow: **`requirement-three-layer-privilege-model`** · JSON body: **`requirement-sudoer-json-file`** |
 
-**Purpose (this product):** `list-folders`, `action`, `generate-sudoer-request`, `submit-sudoer-request`, `print-sudoers`, `print-sudoers-install-script`, and `remove-project-sudoers` are **operational**. `generate-sudoer-json` is **test-purpose** (alias of generate-sudoer-request). `list-folders` stays on `help` and is **not** a numbered main-menu row. The five grant/draft verbs live on the **sudoers** submenu (`requirement-shell-cli-default-interaction`) and **MUST** stay live dispatcher commands. **`sudoers` is not a live command.** Test-purpose `generate-sudoer-json` stays on `help` under a heading **apart** from operational work and **MUST NOT** appear on the numbered main menu or the sudoers submenu.
+**Purpose (this product):** `list-folders`, `action`, `generate-sudoer-request`, `submit-sudoer-request`, `print-sudoers`, `print-sudoers-install-script`, and `remove-project-sudoers` are **operational**. `generate-sudoer-json` is **test-purpose** (alias of generate-sudoer-request). `list-folders` stays on `help` and is **not** a numbered menu row. `action` is front row **1**. The five grant/draft verbs live on the **sudoers** submenu **71–75** (`requirement-shell-cli-default-interaction`) and **MUST** stay live dispatcher commands. **`sudoers` is not a live command.** Test-purpose `generate-sudoer-json` stays on `help` under a heading **apart** from operational work and **MUST NOT** appear on the front board or the sudoers submenu. Self-management **81–86** is not a domain row.
 
 **Routing:** Dispatcher in `app_main` **MUST** route these verbs; unknown operands fail closed.
 
@@ -191,7 +191,7 @@ take-ownership action --path /var/www/html --ownership www-data:www-data
 3. Put domain law into bootstrap parent `folder-backup` or `cli-template`.  
 4. Create a second Active `requirement-domain-*` without superseding this one.  
 5. Let Type 0 `mkdir` `/var/sudoer-cli/sudoer-request`.  
-6. Mix test-purpose `generate-sudoer-json` into operational help grouping, put it on the numbered main menu or sudoers submenu, or wire `sudoers` as a live command.  
+6. Mix test-purpose `generate-sudoer-json` into operational help grouping, put it on the front board or sudoers submenu, or wire `sudoers` as a live command.  
 7. Elevate `${USER_BIN}/take-ownership` or treat local install as a production grant path.  
 8. Collapse JSON field `action` (add/update) with CLI verb `action`.  
 9. Reintroduce `backup` / `restore` as live domain verbs.  
@@ -225,7 +225,7 @@ take-ownership action --path /var/www/html --ownership www-data:www-data
 | `requirement-sudoer-json-file` | JSON sudoer file body (`take-ownership` only; `--ownership user:group`) |
 | `requirement-incorrect-ownership-parameter` | Fence: no `--ownership *`; no cwd listings |
 | `requirement-shell-cli-interface` | Routes domain verbs; help purpose split |
-| `requirement-shell-cli-default-interaction` | Main menu family **sudoers**; submenu holds the five grant/draft verbs |
+| `requirement-shell-cli-default-interaction` | Front **1** `action`; sudoers **71–75**; **0** Back |
 | `requirement-bootstrap-chain` | Domain replace from folder-backup |
 | `docs/requirements/index.md` | Registry |
 | `./src/take-ownership` | Implementation under test |
@@ -258,9 +258,10 @@ Detect (typical): Termux — `PREFIX` contains `com.termux`; Git Bash — `MSYST
 | 2026-08-26 | Active 1.2.0 | `generate-sudoer-json` test-purpose alias (then taught `"*"` as gold — withdrawn) |
 | 2026-08-26 | Active 1.3.0 | Canonical JSON is `"--ownership","<user:group>"`. Help/examples require `--ownership`. |
 | 2026-09-03 | Active 1.4.0 | Five grant/draft verbs operational (sudoers submenu); `generate-sudoer-json` remains test-purpose |
+| 2026-09-30 | Active 1.6.0 | Menu pointers follow default-interaction **3.0.0**: `action` is **1**; grant/draft verbs are **71–75** |
 
 ---
 
-**Last Updated**: 2026-09-03  
+**Last Updated**: 2026-09-30  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).
