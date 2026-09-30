@@ -78,14 +78,19 @@ run_test_cli() {
     _ec=$?
     assert_eq "TP-CLI-06 about --json exit 0" 0 "$_ec"
     assert_contains "TP-CLI-06 type about" "$_out" '"type":"about"'
+    assert_contains "TP-CLI-06 cache_used" "$_out" '"cache_used"'
     assert_contains "TP-CLI-06 cache_preferred" "$_out" '"cache_preferred"'
     assert_contains "TP-CLI-06 cache_fallback" "$_out" '"cache_fallback"'
+    assert_contains "TP-CLI-06 cache_fallback_2" "$_out" '"cache_fallback_2"'
+    assert_contains "TP-CLI-06 persistence_storage" "$_out" '"persistence_storage"'
     assert_contains "TP-CLI-06 effective_storage" "$_out" '"effective_storage"'
-    assert_contains "TP-CLI-06 persist_dir" "$_out" '"persist_dir"'
+    assert_not_contains "TP-CLI-06 no retired persist_dir" "$_out" '"persist_dir"'
     _hum=$(sh "${SCRIPT}" about 2>/dev/null)
-    assert_contains "TP-CLI-06 human Cache folder preferred" "$_hum" "Cache folder (preferred)"
-    assert_contains "TP-CLI-06 human Cache folder fallback" "$_hum" "Cache folder (fallback)"
-    assert_contains "TP-CLI-06 human Persistence storage" "$_hum" "Persistence storage"
+    assert_contains "TP-CLI-06 human Cache folder used" "$_hum" "Cache folder used:"
+    assert_contains "TP-CLI-06 human Cache folder preferred" "$_hum" "Cache folder (preferred):"
+    assert_contains "TP-CLI-06 human Cache folder 1st" "$_hum" "Cache folder (1st fallback):"
+    assert_contains "TP-CLI-06 human Cache folder 2nd" "$_hum" "Cache folder (2nd fallback):"
+    assert_contains "TP-CLI-06 human Persistence storage" "$_hum" "Persistence storage:"
     assert_not_contains "TP-CLI-06 no Storage (effective) label" "$_hum" "Storage (effective)"
     assert_not_contains "TP-CLI-06 no Storage (fallback) label" "$_hum" "Storage (fallback)"
     assert_contains "TP-CLI-06 global_bin_present" "$_out" '"global_bin_present"'
@@ -164,15 +169,20 @@ run_test_cli() {
 
     # TP-CLI-12 cache isolation under temp HOME
     ci_isolated_env
+    _login=$(id -un 2>/dev/null || echo "unknown")
+    case "${_login}" in
+        *[!A-Za-z0-9._-]*)
+            _login=$(printf '%s' "${_login}" | tr -c 'A-Za-z0-9._-' '_')
+            ;;
+    esac
+    [ -n "${_login}" ] || _login="unknown"
     _out=$(HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" sh "${SCRIPT}" --json about 2>/dev/null)
     assert_contains "TP-CLI-12 isolated about has app in cache" "$_out" "${APP_NAME}"
     _pref=$(printf '%s' "$_out" | sed -n 's/.*"cache_preferred":"\([^"]*\)".*/\1/p' | head -n1)
-    assert_eq "TP-CLI-12 cache_preferred path" "/dev/shm/cache/cache-${APP_NAME}" "$_pref"
+    _pid="${_pref##*-}"
+    assert_eq "TP-CLI-12 cache_preferred path" "/dev/shm/cache/cache-${APP_NAME}-${_login}-${_pid}" "${_pref}"
     _fb=$(printf '%s' "$_out" | sed -n 's/.*"cache_fallback":"\([^"]*\)".*/\1/p' | head -n1)
-    case "${_fb}" in
-        */cache-${APP_NAME}) t_pass "TP-CLI-12 cache_fallback ends cache-${APP_NAME}" ;;
-        *) t_fail "TP-CLI-12 cache_fallback unexpected: '${_fb:-empty}'" ;;
-    esac
+    assert_eq "TP-CLI-12 cache_fallback 1st" "/tmp/cache/cache-${APP_NAME}-${_login}-${_pid}" "${_fb}"
     _eff=$(printf '%s' "$_out" | sed -n 's/.*"effective_storage":"\([^"]*\)".*/\1/p' | head -n1)
     if [ -n "$_eff" ] && [ -d "$_eff" ]; then
         t_pass "TP-CLI-12 effective cache directory exists"
@@ -180,13 +190,17 @@ run_test_cli() {
         t_fail "TP-CLI-12 effective cache missing: '${_eff:-empty}'"
     fi
     case "${_eff}" in
-        */${APP_NAME}-*) t_fail "TP-CLI-12 effective cache must not be APP-USERNAME ram-drive shape: '${_eff}'" ;;
-        *) t_pass "TP-CLI-12 effective cache is not APP-USERNAME ram-drive shape" ;;
+        /dev/shm/${APP_NAME}|/dev/shm/${APP_NAME}-*)
+            t_fail "TP-CLI-12 effective cache must not be a ram-drive project shape: '${_eff}'"
+            ;;
+        *)
+            t_pass "TP-CLI-12 effective cache is not a ram-drive project shape"
+            ;;
     esac
 
     # TP-CLI-18 persistence storage under isolated HOME
-    _persist=$(printf '%s' "$_out" | sed -n 's/.*"persist_dir":"\([^"]*\)".*/\1/p' | head -n1)
-    assert_eq "TP-CLI-18 persist_dir path" "${CI_HOME}/.local/${APP_NAME}" "${_persist}"
+    _persist=$(printf '%s' "$_out" | sed -n 's/.*"persistence_storage":"\([^"]*\)".*/\1/p' | head -n1)
+    assert_eq "TP-CLI-18 persistence_storage path" "${CI_HOME}/.local/${APP_NAME}" "${_persist}"
     if [ -n "$_persist" ] && [ -d "$_persist" ]; then
         t_pass "TP-CLI-18 persist directory exists"
     else
@@ -205,6 +219,206 @@ run_test_cli() {
     _hum_iso=$(HOME="${CI_HOME}" USER_BIN="${CI_USER_BIN}" sh "${SCRIPT}" about 2>/dev/null)
     assert_contains "TP-CLI-18 human Persistence storage" "$_hum_iso" "Persistence storage"
     ci_cleanup_env
+
+    # TP-CACHE-01 / TP-CACHE-02 / TP-CACHE-03 cache folder.
+    # about is not an ownership path. HOME is this login (not a scratch dir).
+    _cache_home=$(getent passwd "$(id -un 2>/dev/null || echo "")" 2>/dev/null | cut -d: -f6)
+    if [ -z "${_cache_home}" ] || [ ! -d "${_cache_home}" ]; then
+        _cache_home="${HOME}"
+    fi
+    _json=$(HOME="${_cache_home}" sh "${SCRIPT}" --json about 2>/dev/null)
+    _ec=$?
+    assert_eq "TP-CACHE-01 about json exit" 0 "${_ec}"
+    assert_contains "TP-CACHE-01 cache_used" "${_json}" '"cache_used"'
+    assert_contains "TP-CACHE-01 cache_preferred" "${_json}" '"cache_preferred"'
+    assert_contains "TP-CACHE-01 cache_fallback" "${_json}" '"cache_fallback"'
+    assert_contains "TP-CACHE-01 cache_fallback_2" "${_json}" '"cache_fallback_2"'
+    assert_contains "TP-CACHE-01 persistence_storage" "${_json}" '"persistence_storage"'
+    assert_contains "TP-CACHE-01 effective_storage" "${_json}" '"effective_storage"'
+    assert_not_contains "TP-CACHE-01 no CHECKSUM" "${_json}" "CHECKSUM"
+    _hum=$(HOME="${_cache_home}" sh "${SCRIPT}" about 2>/dev/null)
+    assert_contains "TP-CACHE-01 human used" "${_hum}" "Cache folder used:"
+    assert_contains "TP-CACHE-01 human preferred" "${_hum}" "Cache folder (preferred):"
+    assert_contains "TP-CACHE-01 human 1st" "${_hum}" "Cache folder (1st fallback):"
+    assert_contains "TP-CACHE-01 human 2nd" "${_hum}" "Cache folder (2nd fallback):"
+    assert_contains "TP-CACHE-01 human persistence" "${_hum}" "Persistence storage:"
+    assert_not_contains "TP-CACHE-01 no Storage (effective)" "${_hum}" "Storage (effective)"
+    assert_not_contains "TP-CACHE-01 no Storage (fallback)" "${_hum}" "Storage (fallback)"
+    _pref=$(printf '%s' "${_json}" | sed -n 's/.*"cache_preferred":"\([^"]*\)".*/\1/p' | head -n1)
+    _pid="${_pref##*-}"
+    case "${_pref}" in
+        /dev/shm/cache/cache-${APP_NAME}-${_login}-[0-9]*)
+            t_pass "TP-CACHE-02 cache_preferred is shm login process leaf"
+            ;;
+        *)
+            t_fail "TP-CACHE-02 cache_preferred unexpected: ${_pref:-empty}"
+            ;;
+    esac
+    _fb=$(printf '%s' "${_json}" | sed -n 's/.*"cache_fallback":"\([^"]*\)".*/\1/p' | head -n1)
+    assert_eq "TP-CACHE-02 cache_fallback 1st" "/tmp/cache/cache-${APP_NAME}-${_login}-${_pid}" "${_fb}"
+    _fb2=$(printf '%s' "${_json}" | sed -n 's/.*"cache_fallback_2":"\([^"]*\)".*/\1/p' | head -n1)
+    assert_eq "TP-CACHE-02 cache_fallback 2nd" "${_cache_home}/.cache/cache-${APP_NAME}-${_pid}" "${_fb2}"
+    _used=$(printf '%s' "${_json}" | sed -n 's/.*"cache_used":"\([^"]*\)".*/\1/p' | head -n1)
+    _eff=$(printf '%s' "${_json}" | sed -n 's/.*"effective_storage":"\([^"]*\)".*/\1/p' | head -n1)
+    _sdir=$(printf '%s' "${_json}" | sed -n 's/.*"storage_dir":"\([^"]*\)".*/\1/p' | head -n1)
+    assert_eq "TP-CACHE-02 cache_used matches effective" "${_eff}" "${_used}"
+    assert_eq "TP-CACHE-02 storage_dir is 1st fallback" "${_fb}" "${_sdir}"
+    if [ -n "${_eff}" ] && [ -d "${_eff}" ]; then
+        t_pass "TP-CACHE-02 effective cache directory exists"
+    else
+        t_fail "TP-CACHE-02 effective cache missing: ${_eff:-empty}"
+    fi
+    case "${_eff}" in
+        /dev/shm/${APP_NAME}|/dev/shm/${APP_NAME}-*)
+            t_fail "TP-CACHE-02 effective cache must not be a ram-drive project shape: ${_eff}"
+            ;;
+        *)
+            t_pass "TP-CACHE-02 effective cache is not a ram-drive project shape"
+            ;;
+    esac
+    _mode=$(stat -c %a "${_eff}" 2>/dev/null || echo "")
+    assert_eq "TP-CACHE-02 effective cache mode 0700" "700" "${_mode}"
+    _errc=$(HOME="${_cache_home}" TO_CACHE_SKIP=preferred sh "${SCRIPT}" about 2>&1 >/dev/null)
+    assert_not_contains "TP-CACHE-02 silent cache fallback" "${_errc}" "fallback"
+    assert_not_contains "TP-CACHE-02 silent cache fallback error" "${_errc}" "Cannot create cache"
+    _skip_hum=$(HOME="${_cache_home}" TO_CACHE_SKIP=preferred sh "${SCRIPT}" about 2>/dev/null)
+    assert_not_contains "TP-CACHE-02 no warn on skip" "${_skip_hum}" "[WARN]"
+    assert_not_contains "TP-CACHE-02 no error on skip" "${_skip_hum}" "[ERROR]"
+    _skip=$(HOME="${_cache_home}" TO_CACHE_SKIP=preferred sh "${SCRIPT}" --json about 2>/dev/null)
+    _skip_eff=$(printf '%s' "${_skip}" | sed -n 's/.*"effective_storage":"\([^"]*\)".*/\1/p' | head -n1)
+    _skip_fb=$(printf '%s' "${_skip}" | sed -n 's/.*"cache_fallback":"\([^"]*\)".*/\1/p' | head -n1)
+    _skip_pref=$(printf '%s' "${_skip}" | sed -n 's/.*"cache_preferred":"\([^"]*\)".*/\1/p' | head -n1)
+    assert_eq "TP-CACHE-02 skipped preferred uses 1st fallback" "${_skip_fb}" "${_skip_eff}"
+    if [ -n "${_skip_pref}" ] && [ "${_skip_pref}" != "${_skip_eff}" ]; then
+        t_pass "TP-CACHE-02 skipped preferred still names the preferred path"
+    else
+        t_fail "TP-CACHE-02 preferred path should stay visible when unused"
+    fi
+    _gb=$(HOME="${_cache_home}" TO_CACHE_HOST=gitbash sh "${SCRIPT}" --json about 2>/dev/null)
+    _gb_pref=$(printf '%s' "${_gb}" | sed -n 's/.*"cache_preferred":"\([^"]*\)".*/\1/p' | head -n1)
+    _gb_pid="${_gb_pref##*-}"
+    assert_eq "TP-CACHE-02 gitbash preferred" "/tmp/cache/cache-${APP_NAME}-${_login}-${_gb_pid}" "${_gb_pref}"
+    _gb_fb=$(printf '%s' "${_gb}" | sed -n 's/.*"cache_fallback":"\([^"]*\)".*/\1/p' | head -n1)
+    assert_eq "TP-CACHE-02 gitbash 1st fallback" "${_cache_home}/AppData/Local/Temp/cache-${APP_NAME}-${_gb_pid}" "${_gb_fb}"
+    assert_contains "TP-CACHE-02 gitbash json has empty cache_fallback_2" "${_gb}" '"cache_fallback_2":""'
+    _gb_fb2=$(printf '%s' "${_gb}" | sed -n 's/.*"cache_fallback_2":"\([^"]*\)".*/\1/p' | head -n1)
+    assert_eq "TP-CACHE-02 gitbash no 2nd fallback" "" "${_gb_fb2}"
+    _mac=$(HOME="${_cache_home}" TO_CACHE_HOST=mac sh "${SCRIPT}" --json about 2>/dev/null)
+    _mac_pref=$(printf '%s' "${_mac}" | sed -n 's/.*"cache_preferred":"\([^"]*\)".*/\1/p' | head -n1)
+    _mac_pid="${_mac_pref##*-}"
+    assert_eq "TP-CACHE-02 mac preferred" "/tmp/cache/cache-${APP_NAME}-${_login}-${_mac_pid}" "${_mac_pref}"
+    _mac_fb=$(printf '%s' "${_mac}" | sed -n 's/.*"cache_fallback":"\([^"]*\)".*/\1/p' | head -n1)
+    assert_eq "TP-CACHE-02 mac 1st fallback" "${_cache_home}/Library/Caches/cache-${APP_NAME}-${_mac_pid}" "${_mac_fb}"
+    _mac_fb2=$(printf '%s' "${_mac}" | sed -n 's/.*"cache_fallback_2":"\([^"]*\)".*/\1/p' | head -n1)
+    assert_eq "TP-CACHE-02 mac 2nd fallback" "${_cache_home}/cache/cache-${APP_NAME}-${_mac_pid}" "${_mac_fb2}"
+    _hum_l=$(HOME="${_cache_home}" sh "${SCRIPT}" about 2>/dev/null)
+    _used_line=$(printf '%s\n' "${_hum_l}" | sed -n 's/.*Cache folder used: //p' | head -n1)
+    _pref_line=$(printf '%s\n' "${_hum_l}" | sed -n 's/.*Cache folder (preferred): //p' | head -n1)
+    assert_eq "TP-CACHE-02 used matches preferred when preferred works" "${_pref_line}" "${_used_line}"
+    assert_contains "TP-CACHE-02 linux about preferred path" "${_hum_l}" "/dev/shm/cache/cache-${APP_NAME}-${_login}-"
+    assert_contains "TP-CACHE-02 linux about 2nd path" "${_hum_l}" "/.cache/cache-${APP_NAME}-"
+    _hum_gb=$(HOME="${_cache_home}" TO_CACHE_HOST=gitbash sh "${SCRIPT}" about 2>/dev/null)
+    assert_contains "TP-CACHE-02 gitbash about 1st" "${_hum_gb}" "AppData/Local/Temp/cache-${APP_NAME}-"
+    assert_not_contains "TP-CACHE-02 gitbash about omits 2nd" "${_hum_gb}" "Cache folder (2nd fallback)"
+    _hum_mac=$(HOME="${_cache_home}" TO_CACHE_HOST=mac sh "${SCRIPT}" about 2>/dev/null)
+    assert_contains "TP-CACHE-02 mac about 1st" "${_hum_mac}" "Library/Caches/cache-${APP_NAME}-"
+    assert_contains "TP-CACHE-02 mac about 2nd path" "${_hum_mac}" "Cache folder (2nd fallback): ${_cache_home}/cache/cache-${APP_NAME}-"
+    _persist=$(printf '%s' "${_json}" | sed -n 's/.*"persistence_storage":"\([^"]*\)".*/\1/p' | head -n1)
+    assert_eq "TP-CACHE-02 persistence_storage path" "${_cache_home}/.local/${APP_NAME}" "${_persist}"
+    if [ -n "${_persist}" ] && [ -d "${_persist}" ]; then
+        t_pass "TP-CACHE-02 persistence storage directory exists"
+    else
+        t_fail "TP-CACHE-02 persistence storage missing: ${_persist:-empty}"
+    fi
+    case "${_persist}" in
+        */.local/bin|*/.local/bin/)
+            t_fail "TP-CACHE-02 persistence must not be USER_BIN: ${_persist}"
+            ;;
+        *)
+            t_pass "TP-CACHE-02 persistence is not the install bin directory"
+            ;;
+    esac
+    _j2=$(HOME="${_cache_home}" sh "${SCRIPT}" --json about 2>/dev/null)
+    _p2=$(printf '%s' "${_j2}" | sed -n 's/.*"cache_preferred":"\([^"]*\)".*/\1/p' | head -n1)
+    _p2="${_p2##*-}"
+    if [ -n "${_pid}" ] && [ -n "${_p2}" ] && [ "${_pid}" != "${_p2}" ]; then
+        t_pass "TP-CACHE-02 each process has its own cache leaf"
+    else
+        t_fail "TP-CACHE-02 cache leaf pid reused (${_pid:-empty} vs ${_p2:-empty})"
+    fi
+
+    # TP-CACHE-03 scratch names stay inside the cache directory.
+    _lib=$(mktemp /tmp/take-ownership-lib.XXXXXX) || exit 2
+    awk '
+        /^app_main "\$@"$/ { print "# app_main stripped"; next }
+        { print }
+    ' "${SCRIPT}" > "${_lib}"
+    _leaf=$(HOME="${_cache_home}" sh -c '. "$1"; util_mktemp tmp' sh "${_lib}" 2>/dev/null) || _leaf=""
+    case "${_leaf}" in
+        /dev/shm/cache/cache-${APP_NAME}-${_login}-[0-9]*/${APP_NAME}.tmp.*)
+            _base=${_leaf##*/}
+            case "${_base}" in
+                *.\$\$|${APP_NAME}.\$\$)
+                    t_fail "TP-CACHE-03 scratch file uses a dollar name: ${_base}"
+                    ;;
+                *)
+                    t_pass "TP-CACHE-03 scratch file is an mktemp name under the cache leaf"
+                    ;;
+            esac
+            ;;
+        *)
+            t_fail "TP-CACHE-03 scratch file unexpected: ${_leaf:-empty}"
+            ;;
+    esac
+    if [ -n "${_leaf}" ] && [ -f "${_leaf}" ]; then
+        rm -f -- "${_leaf}"
+    fi
+    _dollars=$(printf '%s%s' '$' '$')
+    _bad=$(HOME="${_cache_home}" sh -c '. "$1"; util_mktemp "$2"' sh "${_lib}" "x${_dollars}y" 2>&1 >/dev/null) || true
+    assert_contains "TP-CACHE-03 refuses a dollar file name" "${_bad}" "refuse predictable"
+    _fbfile=$(HOME="${_cache_home}" sh -c '. "$1"; TO_MKTEMP_BIN= util_mktemp tmp' sh "${_lib}" 2>/dev/null) || _fbfile=""
+    case "${_fbfile}" in
+        /dev/shm/cache/cache-${APP_NAME}-${_login}-[0-9]*/${APP_NAME}.tmp.*)
+            _base=${_fbfile##*/}
+            case "${_base}" in
+                *'$$'*)
+                    t_fail "TP-CACHE-03 absent mktemp uses a dollar name: ${_base}"
+                    ;;
+                *)
+                    _mode=$(stat -c '%a' "${_fbfile}" 2>/dev/null || echo "")
+                    if [ "${_mode}" = "600" ]; then
+                        t_pass "TP-CACHE-03 absent mktemp writes a mode-0600 file under the cache leaf"
+                    else
+                        t_fail "TP-CACHE-03 absent mktemp mode ${_mode:-empty} for ${_fbfile}"
+                    fi
+                    ;;
+            esac
+            ;;
+        *)
+            t_fail "TP-CACHE-03 absent mktemp unexpected: ${_fbfile:-empty}"
+            ;;
+    esac
+    if [ -n "${_fbfile}" ] && [ -f "${_fbfile}" ]; then
+        rm -f -- "${_fbfile}"
+    fi
+    _fbdir=$(HOME="${_cache_home}" sh -c '. "$1"; TO_MKTEMP_BIN= util_mktemp_dir' sh "${_lib}" 2>/dev/null) || _fbdir=""
+    case "${_fbdir}" in
+        /dev/shm/cache/cache-${APP_NAME}-${_login}-[0-9]*/${APP_NAME}-work.*)
+            _mode=$(stat -c '%a' "${_fbdir}" 2>/dev/null || echo "")
+            if [ "${_mode}" = "700" ] && [ -x "${_fbdir}" ] && [ -w "${_fbdir}" ]; then
+                t_pass "TP-CACHE-03 absent mktemp directory is mode 0700 and searchable"
+            else
+                t_fail "TP-CACHE-03 absent mktemp directory mode ${_mode:-empty} for ${_fbdir}"
+            fi
+            ;;
+        *)
+            t_fail "TP-CACHE-03 absent mktemp directory unexpected: ${_fbdir:-empty}"
+            ;;
+    esac
+    if [ -n "${_fbdir}" ] && [ -d "${_fbdir}" ]; then
+        rmdir "${_fbdir}" 2>/dev/null || rm -rf -- "${_fbdir}"
+    fi
+    rm -f -- "${_lib}"
 
     # TP-CLI-15 non-interactive menu is help; --json JSON help; empty argv off-TTY is help
     _out=$(sh "${SCRIPT}" menu 2>/dev/null)

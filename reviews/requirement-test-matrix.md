@@ -1,12 +1,12 @@
 # Requirement ↔ test matrix — take-ownership
 
-**Updated:** 2026-09-06  
-**Product VERSION:** 2.7.1  
-**Suite:** `tests/run.sh` (PASS=277 FAIL=0 SKIP=0)
+**Updated:** 2026-09-30  
+**Product VERSION:** 3.0.1  
+**Suite:** `tests/run.sh` (PASS=348 FAIL=0 SKIP=1)
 
 | Requirement key | Area | TP families | Coverage notes |
 |-----------------|------|-------------|----------------|
-| requirement-class-software-dev | class | TP-CLI-01, TP-CLI-11 | Syntax + stack residual; no online package |
+| requirement-class-software-dev | class | TP-CLI-01, TP-CLI-11 | Syntax + stack residual |
 | requirement-bootstrap-chain | architecture | TP-CLI-04, TP-CLI-10 | Online surface absent; backup/restore unknown |
 | requirement-project-folder | architecture | TP-LC-01 | src ship unit |
 | requirement-three-layer-privilege-model | architecture | TP-TAKE-OWNERSHIP-**03**, **20**, **24**, **30**, **31**, **32** | Global-only grant; no `/etc` write; print-sudoers text dual |
@@ -22,11 +22,11 @@
 | requirement-shell-modular-function-design | shell | (indirect) | `to_*` domain prefix |
 | requirement-shell-idempotency | shell | TP-LC-03,07 · TP-TAKE-OWNERSHIP-13 | Re-install; already-matching |
 | requirement-shell-interactive-vs-noninteractive | shell | TP-LC-05 · TP-TAKE-OWNERSHIP-14, **42**, **43** | Uninstall confirm; TTY `action` |
-| requirement-shell-cli-storage | shell | TP-CLI-**06**, **12**, **18** | Cache + persist |
+| requirement-shell-cli-storage | shell | TP-CLI-**06**, **12**, **18** · TP-CACHE-**01**, **02**, **03** | Per-login per-process cache; silent miss; fixed persistence path |
 | requirement-domain-take-ownership | domain | TP-CLI-04 · TP-TAKE-OWNERSHIP-20, **40** | Surface verbs/help/about |
 | requirement-shell-script-coding | shell | TP-CLI-01 | POSIX `/bin/sh` |
 | requirement-shell-sudo-command | shell | TP-TAKE-OWNERSHIP-13 · TP-CLI-20 | `util_sudo`; command line for normal user only |
 
 **Superseded (not live law, no Core TP):** `requirement-domain-folder-backup`, `requirement-folder-archive-backup`, retention-total, retention-daily.
 
-**Absent by design (no TP Core):** online-install, remote self-management, automatic channel checksum, `--allow-test-local`.
+**Absent by design (no TP Core):** backup/restore, `--allow-test-local`. Online `curl | sh` is **TP-CURL-*** (public network stays **TP-CURL-09** skip unless opted in).

@@ -114,7 +114,8 @@ ci_isolated_env() {
     mkdir -p "${CI_SUDOERS_D}"
     export SUDOERS_D_DIR="${CI_SUDOERS_D}"
     unset CHECKSUM 2>/dev/null || true
-    unset PERSIST_DIR 2>/dev/null || true
+    unset PERSIST_DIR PERSISTENT_STORAGE_DIR 2>/dev/null || true
+    unset TO_CACHE_HOST TO_CACHE_SKIP TO_MKTEMP_BIN 2>/dev/null || true
 }
 
 ci_start_channel() {
@@ -156,10 +157,25 @@ ci_stop_channel() {
 
 ci_cleanup_env() {
     if [ -n "${CI_HOME:-}" ] && [ -d "${CI_HOME}" ]; then
-        rm -rf "${CI_HOME}"
+        _gone="${CI_HOME}"
         CI_HOME=
         CI_USER_BIN=
         CI_GLOBAL_BIN=
+        # The fixture was exported as HOME. A home-guard refuses to remove
+        # the login home, so point HOME back at the real account first.
+        if [ "${HOME:-}" = "${_gone}" ]; then
+            unset HOME
+            if command -v getent >/dev/null 2>&1; then
+                HOME=$(getent passwd "$(id -un 2>/dev/null || echo "")" 2>/dev/null | cut -d: -f6)
+            fi
+            if [ -n "${HOME:-}" ] && [ -d "${HOME}" ]; then
+                export HOME
+            else
+                unset HOME
+            fi
+        fi
+        rm -rf "${_gone}"
+        unset _gone
     fi
     unset GLOBAL_BIN 2>/dev/null || true
 }

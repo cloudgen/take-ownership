@@ -1,6 +1,6 @@
 # take-ownership - Take Unix ownership of a named folder with a narrow sudo grant
 
-![Version](https://img.shields.io/badge/Version-3.0.0-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.0.1-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 [![CIAO](https://img.shields.io/badge/Philosophy-CIAO%20(Caution%20%E2%80%A2%20Intentional%20%E2%80%A2%20Anti--fragile%20%E2%80%A2%20Over--engineered)-purple.svg)](https://github.com/cloudgen/ciao)
 [![Stars](https://img.shields.io/github/stars/cloudgen/take-ownership?style=flat-square)](https://github.com/cloudgen/take-ownership)
@@ -21,6 +21,7 @@ You can install it with one `curl | sh` line. Then write a grant for one folder 
 - **Narrow sudoers**: exact `--path`, exact `--ownership user:group`, **global binary only**
 - **Sudoer approval submit**: `generate-sudoer-request --path <folder> --ownership <user:group>` (alias `generate-sudoer-json`) writes a local JSON grant you can review. `--ownership` is an existing `user:group` (never `*`, never a directory listing). `submit-sudoer-request` hands it to sudoer-cli (does not write `/etc`, does not create the public drop box)
 - **Stops when the grant would be unsafe**: missing global program, missing user:group, refuse-list paths, swapped flags, or a grant that is not a real `user:group`
+- **Scratch for this run**: a cache folder named for this login and this process. `about` prints the folder that was used, the preferred folder, and this host’s fallbacks. A skipped tier stays silent. Durable notes stay in `~/.local/take-ownership` (not an override, and not the install bin).
 
 ## Quick Installation
 
@@ -86,7 +87,7 @@ sudo sh /dev/shm/take-ownership-<user>-sudoers-admin.sh uninstall
 After install, on a terminal (`take-ownership` or `take-ownership menu`) the main menu looks like:
 
 ```text
-[INFO] **take-ownership**(*3.0.0*) — Take Unix ownership of a named folder with a narrow global-only sudo grant
+[INFO] **take-ownership**(*3.0.1*) — Take Unix ownership of a named folder with a narrow global-only sudo grant
 1. action: Recursively take ownership of a named folder
 2. sudoers: Grant and drafts
 9. Exit
@@ -126,9 +127,10 @@ take-ownership self-uninstall --force
 | `SCRIPT_URL` | Online install channel (default `https://raw.githubusercontent.com/cloudgen/take-ownership/main/take-ownership`) |
 | `GLOBAL_BIN` | System bin (default `/usr/local/bin`) — **only this path** is a legal sudoers command |
 | `USER_BIN` | Per-user bin (default `~/.local/bin`) |
-| `PERSIST_DIR` | Persistence storage (default `~/.local/take-ownership`) |
 | `SUDOER_CLI` | Override path to `sudoer-cli` |
 | `SUDOER_ADM_USER` | Approver login to detect (default `sudoer-adm`) |
+
+Persistence storage is always `~/.local/take-ownership`. It is not the cache folder and not `~/.local/bin`.
 
 ## Examples
 
@@ -166,4 +168,4 @@ MIT License — see [`LICENSE.md`](./LICENSE.md).
 
 ## Last Update
 
-2026-09-08 — version **3.0.0** (bootstrap from sibling selfmanaged: `curl | sh` install, Type O empty argv off-TTY, self-update / self-uninstall / version-check, companion SHA-256). See [`CHANGELOG.md`](./CHANGELOG.md) for earlier releases.
+2026-09-30 — version **3.0.1** (per-login, per-process cache folder; persistence fixed at `~/.local/take-ownership`). See [`CHANGELOG.md`](./CHANGELOG.md) for earlier releases.

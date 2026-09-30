@@ -2,13 +2,13 @@
 
 **Product:** take-ownership (POSIX `/bin/sh` online-installable CLI — take Unix ownership of a named folder with a narrow global-only sudo grant)  
 **Workspace state:** Specialized product law; **software-development** class; bootstrap **selfmanaged → take-ownership** (online Type 0 inherited; domain kept from earlier folder-backup hop).  
-**Updated:** 2026-09-08
+**Updated:** 2026-09-30
 
 | ID / key | Title | Area | Status | Path | Updated |
 |----------|-------|------|--------|------|---------|
 | requirement-class-software-dev | Software-development class law + residual stack (posix-sh, online-installable); dest approver/fences **None**; coding-style + sudo-wrap peers | class | Active (3.0.0) | `requirement-class-software-dev.md` | 2026-09-08 |
 | requirement-bootstrap-chain | Bootstrap chain A=selfmanaged → B=take-ownership (online install keep; domain kept) | architecture | Active (4.0.0) | `requirement-bootstrap-chain.md` | 2026-09-08 |
-| requirement-project-folder | Project layout (root ship unit), install bins, config drafts; preferred cache `/dev/shm/cache/cache-${APP_NAME}`; persist `${HOME}/.local/${APP_NAME}/` | architecture | Active (3.0.0) | `requirement-project-folder.md` | 2026-09-08 |
+| requirement-project-folder | Project layout (root ship unit), install bins, config drafts; cache leaf `cache-${APP_NAME}-${login}-$$` under `/dev/shm/cache`; persist `${HOME}/.local/${APP_NAME}/` | architecture | Active (3.0.1) | `requirement-project-folder.md` | 2026-09-30 |
 | requirement-three-layer-privilege-model | You + narrow `action` elev; sudoers emit + install-script; **global-only** grant; **no** `--allow-test-local`; per-user fragments; submit workflow; `--ownership user:group` | architecture | Active (2.2.0) | `requirement-three-layer-privilege-model.md` | 2026-08-26 |
 | requirement-sudoer-json-file | JSON sudoer file SSOT: one recursive **folder per line**; `--ownership user:group` (never `*`); later submit = replacement union of unique folders; text dual escapes `:` | architecture | Active (2.4.0) | `requirement-sudoer-json-file.md` | 2026-08-26 |
 | requirement-incorrect-ownership-parameter | Product grant/inbound fence: `--ownership` is existing `user:group`; `*` and cwd listings fail closed | architecture | Active (1.0.0) | `requirement-incorrect-ownership-parameter.md` | 2026-08-26 |
@@ -25,7 +25,7 @@
 | requirement-shell-modular-function-design | Single-file modular prefixes (`out_`/`inst_`/`app_`/`to_`) | shell | Active | `requirement-shell-modular-function-design.md` | 2026-08-25 |
 | requirement-shell-idempotency | Re-run safety; `action` already-matching success; install-ensure no-op | shell | Active | `requirement-shell-idempotency.md` | 2026-08-25 |
 | requirement-shell-interactive-vs-noninteractive | Interactive vs non-interactive / confirm policy; `curl\|sh` auto-install; `action` TTY walk | shell | Active | `requirement-shell-interactive-vs-noninteractive.md` | 2026-08-25 |
-| requirement-shell-cli-storage | Cache `/dev/shm/cache/cache-${APP_NAME}` **and** persist `${HOME}/.local/${APP_NAME}/`; about Cache folder + Persistence storage | shell | Active (2.0.0) | `requirement-shell-cli-storage.md` | 2026-08-30 |
+| requirement-shell-cli-storage | Cache folder (Linux shm → tmp → `~/.cache`; Git Bash tmp → AppData; Mac tmp → Library/Caches → `~/cache`) and persistence `${HOME}/.local/${APP_NAME}`; silent tier miss | shell | Active (2.1.1) | `requirement-shell-cli-storage.md` | 2026-09-30 |
 | requirement-domain-take-ownership | Domain **surface** SSOT (four pillars); ops defer to take-ownership-ops; submit public inbound; independent generate; five grant/draft verbs operational (sudoers submenu); `generate-sudoer-json` test-purpose; `--ownership user:group` | domain | Active (1.5.0) | `requirement-domain-take-ownership.md` | 2026-09-08 |
 
 ## Superseded (lineage only — not live law)

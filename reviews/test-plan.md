@@ -3,9 +3,9 @@
 Maps **TP-*** coverage to `tests/`.  
 **Suite entry:** `./tests/run.sh`  
 **Ship unit:** `src/take-ownership`  
-**Product VERSION:** 2.7.1  
-**Last plan update:** 2026-09-06  
-**Last suite run:** `./tests/run.sh` (2.7.1: PASS=277 FAIL=0 SKIP=0 — **TP-TAKE-OWNERSHIP-44** granted-missing · **TP-CLI-20**)
+**Product VERSION:** 3.0.1  
+**Last plan update:** 2026-09-30  
+**Last suite run:** `./tests/run.sh` (3.0.1: PASS=348 FAIL=0 SKIP=1 — **TP-CACHE-01..03** · **TP-CURL-09** optional online skip)
 
 Status: **have** = automated today · **todo** = needed · **optional** · **n/a** · **skip** (environment)
 
@@ -21,8 +21,8 @@ Status: **have** = automated today · **todo** = needed · **optional** · **n/a
 | empty argv / `menu`/`main` TTY list / off-TTY help | have | TP-CLI-13..16 |
 | TTY main-menu look (nametag + gray italic explain) | have | TP-CLI-19 |
 | Unknown + quiet + set -u HOME | have | TP-CLI-08..11 |
-| Storage isolation | have | TP-CLI-12, **18** |
-| No online verbs / no SCRIPT_URL UX | have | TP-CLI-04, TP-CLI-10 |
+| Storage isolation | have | TP-CLI-06, **12**, **18** · TP-CACHE-**01..03** |
+| Online `curl \| sh` on a local channel | have | TP-CURL-01..08; **TP-CURL-09** skip unless opted in |
 | Command line for normal user only (Git Bash still Type 0) | have | TP-CLI-20 |
 | Local install / idempotent / uninstall / mode 0755 | have | TP-LC-01..10 |
 | Grant emit requires global binary | have | TP-TAKE-OWNERSHIP-03, **30** |
@@ -32,7 +32,7 @@ Status: **have** = automated today · **todo** = needed · **optional** · **n/a
 | TTY numbered pick + current `user:group` | have | TP-TAKE-OWNERSHIP-42, **43** |
 | Granted-missing dir not a live pick; recreate-then-action | have | TP-TAKE-OWNERSHIP-**44** |
 | Ram-drive `--path` exception | have | TP-TAKE-OWNERSHIP-11b, **16** |
-| Online curl / companion checksum | n/a | Local-only product |
+| Online curl / companion checksum | have | TP-CURL-* (local HTTP channel) |
 | Backup / restore / retention | n/a | Retired with folder-backup domain |
 
 ---
@@ -48,21 +48,24 @@ Status: **have** = automated today · **todo** = needed · **optional** · **n/a
 | TP-CLI-03 | version JSON | test_cli | requirement-shell-output-requirements | **have** |
 | TP-CLI-04 | help local verbs; no online; no backup/restore | test_cli | requirement-shell-cli-interface · domain | **have** |
 | TP-CLI-05 | help JSON short | test_cli | requirement-shell-output-requirements | **have** |
-| TP-CLI-06 | about JSON cache + persist | test_cli | requirement-shell-cli-storage · domain | **have** |
+| TP-CLI-06 | about JSON cache used/preferred/fallbacks + persistence; no retired persist key | test_cli | requirement-shell-cli-storage · domain | **have** |
 | TP-CLI-07 | empty argv never install; off-TTY help | test_cli | requirement-shell-cli-zero-arguments | **have** |
 | TP-CLI-08 | unknown fail-closed | test_cli | requirement-shell-cli-interface | **have** |
 | TP-CLI-09 | quiet suppresses version | test_cli | requirement-shell-output-requirements | **have** |
 | TP-CLI-10 | online verbs rejected; backup/restore unknown | test_cli | requirement-bootstrap-chain | **have** |
 | TP-CLI-11 | env -u HOME version | test_cli | class / defensive | **have** |
-| TP-CLI-12 | preferred cache `/dev/shm/cache/cache-${APP_NAME}` | test_cli | requirement-shell-cli-storage | **have** |
+| TP-CLI-12 | preferred cache `/dev/shm/cache/cache-${APP_NAME}-${login}-$$` | test_cli | requirement-shell-cli-storage | **have** |
 | TP-CLI-13 | interactive `menu` **and** empty argv print `action` + family `sudoers` + `9. Exit` | test_cli | shell-cli-default-interaction | **have** |
 | TP-CLI-14 | interactive `menu --json` still prints the list | test_cli | shell-cli-default-interaction | **have** |
 | TP-CLI-15 | non-interactive `menu` and empty argv are help | test_cli | shell-cli-default-interaction | **have** |
 | TP-CLI-16 | numbered list omits help/install/version/about/test-purpose/`list-folders` | test_cli | shell-cli-default-interaction | **have** |
 | TP-CLI-17 | help lists test-purpose `generate-sudoer-json` apart | test_cli | shell-cli-interface | **have** |
-| TP-CLI-18 | persist `${HOME}/.local/${APP_NAME}` | test_cli | requirement-shell-cli-storage | **have** |
+| TP-CLI-18 | persist `${HOME}/.local/${APP_NAME}` (no override) | test_cli | requirement-shell-cli-storage | **have** |
 | TP-CLI-19 | default CLI main menu style | test_cli | shell-cli-default-interaction · output | **have** |
 | TP-CLI-20 | Git Bash (`MSYSTEM`) still runs Type 0 `version` | test_cli | shell-sudo-command · command line for normal user only | **have** |
+| TP-CACHE-01 | about JSON and human cache labels | test_cli | requirement-shell-cli-storage | **have** |
+| TP-CACHE-02 | Linux / Git Bash / macOS chains, silent skip, mode 0700, one leaf per process | test_cli | requirement-shell-cli-storage | **have** |
+| TP-CACHE-03 | scratch file and directory stay in the cache leaf; absent `mktemp`; refuse `$$` names | test_cli | requirement-shell-cli-storage | **have** |
 
 ### TP-LC (local lifecycle)
 
@@ -128,6 +131,6 @@ Status: **have** = automated today · **todo** = needed · **optional** · **n/a
 
 1. Closing a **bug** finding updates the matching TP to **have**.  
 2. Do not mark TP **have** without a suite assertion (or honest skip/n/a).  
-3. Do not reintroduce online TP-CURL/TP-CSUM as Core without product-mode change.  
+3. Online `curl | sh` proof is Core (**TP-CURL-***). Public-network **TP-CURL-09** stays skip unless `RUN_ONLINE_CURL_TESTS=1`.  
 4. Do not reintroduce backup/restore TPs as Core.  
 5. JSON grant / submit reviews require **TP-TAKE-OWNERSHIP-27/28** stay **have**.  

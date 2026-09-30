@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-project-folder.md  
-**Status**: Active (Version 3.0.0)  
+**Status**: Active (Version 3.0.1)  
 **Area**: architecture  
 **Key**: `requirement-project-folder`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -70,18 +70,18 @@ Rules:
 
 | Purpose | Pattern |
 |---------|---------|
-| Preferred cache | `/dev/shm/cache/cache-take-ownership` (`requirement-shell-cli-storage`) |
-| Fallback cache | `${XDG_CACHE_HOME}/cache-take-ownership` |
+| Preferred cache (Linux) | `/dev/shm/cache/cache-${APP_NAME}-${login}-$$` (`requirement-shell-cli-storage`) |
+| 1st / 2nd cache | Host chain in `requirement-shell-cli-storage` (not `XDG_CACHE_HOME`) |
 | Live cache root | From `util_resolve_storage` |
-| Persistence storage | `${HOME}/.local/take-ownership` (`util_resolve_persist`) |
+| Persistence storage | `${HOME}/.local/take-ownership` (`util_resolve_persistent_storage`) |
 | Temps | `util_mktemp` under the cache root |
 | Sudoers fragment draft | `${HOME}/.config/take-ownership/sudoers.fragment-<user>` |
 | JSON grant draft | `${HOME}/.config/take-ownership/sudoer-request-<user>.json` |
 
 Rules:
 
-1. Preferred cache **MUST** be `/dev/shm/cache/cache-${APP_NAME}` — **MUST NOT** `/dev/shm/${APP_NAME}` or `/dev/shm/${APP_NAME}-${USERNAME}` (those look like ram-drive project folders).  
-2. Fallback **MUST** be under this login’s XDG cache as `cache-${APP_NAME}`.  
+1. Linux preferred cache **MUST** be `/dev/shm/cache/cache-${APP_NAME}-${login}-$$` — **MUST NOT** `/dev/shm/${APP_NAME}` or `/dev/shm/${APP_NAME}-${USERNAME}` (those look like ram-drive project folders) and **MUST NOT** be one shared `cache-${APP_NAME}` leaf.  
+2. Fallback chain **MUST** follow `requirement-shell-cli-storage` (Linux, Git Bash, Mac). **MUST NOT** replace it with `XDG_CACHE_HOME`.  
 3. Persistence **MUST** be `${HOME}/.local/${APP_NAME}` — **MUST NOT** `${HOME}/.local/bin` (that is `USER_BIN`).  
 4. Temps **MUST** clean up (`trap`) after success/failure of an `action` run.  
 5. **MUST NOT** auto-write `/etc/sudoers.d`.  
@@ -168,9 +168,10 @@ Rules:
 | 2026-08-25 | Active 2.0.0 | take-ownership; drop backup deposit |
 | 2026-08-30 | Active 2.0.1 | Preferred cache `/dev/shm/cache/cache-${APP_NAME}` |
 | 2026-08-30 | Active 2.1.0 | Persistence storage `${HOME}/.local/${APP_NAME}/` |
+| 2026-09-30 | Active 3.0.1 | Cache leaf is per login and per process; host chain owns fallbacks |
 
 ---
 
-**Last Updated**: 2026-08-30  
+**Last Updated**: 2026-09-30  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

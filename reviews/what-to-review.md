@@ -1,11 +1,11 @@
 # What to review — take-ownership
 
 **Living checklist** (review plan). Product: **take-ownership** local self-managed CLI + recursive folder ownership + narrow sudo grant.  
-**Class:** software-development · domain SSOT present · **local-only** install channel (online package intentionally absent).  
+**Class:** software-development · domain SSOT present · online `curl | sh` install (live since 3.0.0).  
 **Always load first:** `reviews/lessons.md`
 
-**Last plan update:** 2026-09-06  
-**Ship unit VERSION:** 2.7.1  
+**Last plan update:** 2026-09-30  
+**Ship unit VERSION:** 3.0.1  
 **Suite baseline:** see `reviews/test-plan.md`
 
 ---
@@ -18,7 +18,7 @@
 | P2 | Confirm ship unit `src/take-ownership` | `APP_NAME` / `VERSION` hard-assign |
 | P3 | Load `reviews/lessons.md` and re-check every open L-* | Mandatory (esp. **L-SUDOERS-02** · **L-OPS-01** · **L-MAP-01** · **L-OUTPUT-01**) |
 | P4 | Run `./tests/run.sh` | Record PASS/FAIL/SKIP; **TP-TAKE-OWNERSHIP-*** (not folder-backup backup/restore) |
-| P5 | Confirm install **channel** still local-only | No SCRIPT_URL product UX |
+| P5 | Confirm install **channel** is online `curl \| sh` | Config `SCRIPT_URL` + companion digest; local HTTP proof is **TP-CURL-*** |
 | P6 | Privilege law | three-layer global-only; sudoer-json `action --path` `--ownership user:group`; operator-readable-error |
 | P7 | Host elev posture (if reviewing runtime) | Global vs local binary; `/etc/sudoers.d/take-ownership-<user>` |
 | P8 | **JSON grant / inbound fidelity** | `action --path F --ownership user:group` plus `--json` twin; never `"*"` |
@@ -33,7 +33,7 @@
 
 | Surface | Path | Review focus |
 |---------|------|--------------|
-| Class | `requirement-class-software-dev.md` | posix-sh, local-only residual |
+| Class | `requirement-class-software-dev.md` | posix-sh |
 | Bootstrap chain | `requirement-bootstrap-chain.md` | A0=cli-template → A1=folder-backup → B take-ownership |
 | Project folder | `requirement-project-folder.md` | `src/`, bins; **no** `/var/backup` |
 | **Privilege / sudoers** | `requirement-three-layer-privilege-model.md` | Global-only grant; no `--allow-test-local`; print-sudoers; install-script; generate/submit |
@@ -48,11 +48,11 @@
 | Modular design | `requirement-shell-modular-function-design.md` | `to_*` domain prefix |
 | Idempotency | `requirement-shell-idempotency.md` | Re-install; already-matching `action` |
 | Interactive modes | `requirement-shell-interactive-vs-noninteractive.md` | Uninstall / TTY `action` walk |
-| CLI storage | `requirement-shell-cli-storage.md` | Cache + persist |
+| CLI storage | `requirement-shell-cli-storage.md` | Per-login per-process cache; silent tier miss; fixed persistence path |
 | Domain | `requirement-domain-take-ownership.md` | Four pillars; ops deferred |
 | Ops | `requirement-take-ownership-ops.md` | Recursive chown; TTY live pick; granted-missing |
 
-**Intentionally absent (do not “restore” without owner order):** online-install, remote self-management, companion channel checksum, backup/restore, `--allow-test-local`.
+**Intentionally absent (do not “restore” without owner order):** backup/restore, `--allow-test-local`. Online `curl | sh` and the companion digest are live (3.0.0).
 
 ---
 
@@ -66,7 +66,7 @@
 | `inst_local_install` | Mode `0711` (non-owners cannot run shell unit) | L-INST-MODE-01 · TP-LC-09/10 |
 | `to_print_sudoers` | Broad sudoers; write `/etc`; local=production | L-SUDOERS-01/02 · TP-TAKE-OWNERSHIP-03/30/31 |
 | `to_action` TTY pick | Numbers a granted path that is not a directory | L-OPS-01 · TP-TAKE-OWNERSHIP-44 |
-| `util_resolve_storage` / `util_resolve_persist` | Isolation break | L-STOR-01 · TP-CLI-12 · TP-CLI-18 |
+| `util_resolve_storage` / `util_resolve_persistent_storage` | Shared leaf, silent-miss warning, or persist override | L-STOR-01 · TP-CLI-06 · TP-CLI-12 · TP-CLI-18 · TP-CACHE-01..03 |
 | Config `HOME` under `set -u` | nounset crash | L-SETU-01 · TP-CLI-11 |
 
 ---
@@ -96,8 +96,7 @@
 
 ## Explicit non-goals for default review
 
-- Online install / curl|sh channel  
-- Companion `.sha256` channel integrity  
+- Treating the live `curl | sh` channel or companion digest as absent (both shipped in 3.0.0)
 - Backup / restore / `/var/backup`  
 - Auto-writing `/etc/sudoers.d` from a normal login  
 - `--allow-test-local` / USER_BIN in sudoers  

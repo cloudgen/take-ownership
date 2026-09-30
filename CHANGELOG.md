@@ -5,6 +5,19 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [3.0.1] - 2026-09-30
+
+### Changed
+
+- **Per-login, per-process cache.** On Linux the preferred leaf is `/dev/shm/cache/cache-${APP_NAME}-${login}-$$`, then `/tmp/cache/` with the same leaf, then `${HOME}/.cache/cache-${APP_NAME}-$$`. Git Bash uses `/tmp/cache/` then `${HOME}/AppData/Local/Temp/` and has no second fallback. macOS uses `/tmp/cache/`, then `${HOME}/Library/Caches/`, then `${HOME}/cache/`. A skipped tier is silent. `about` prints Cache folder used, preferred, 1st fallback, and 2nd fallback only when this host has one.
+- **Persistence is fixed** at `${HOME}/.local/take-ownership`. The `PERSIST_DIR` override is gone. One resolver writes that directory.
+- Product version **3.0.1**. Law: `requirement-shell-cli-storage` **2.1.1**, `requirement-project-folder` **3.0.1**. Suite **TP-CLI-06 / 12 / 18** and **TP-CACHE-01 / 02 / 03**.
+
+### Fixed
+
+- Scratch files stay inside the cache folder. A missing `mktemp` still writes a mode-0600 file or a mode-0700 directory there. The file name is not a `$$` name.
+- Remover status text no longer joins the grant path list (an extra `--path` line).
+
 ## [3.0.0] - 2026-09-08
 
 ### Added
