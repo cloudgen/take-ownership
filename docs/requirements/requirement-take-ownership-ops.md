@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-take-ownership-ops.md  
-**Status**: Active (Version 1.4.0)  
+**Status**: Active (Version 1.5.0)  
 **Area**: domain-ops  
 **Key**: `requirement-take-ownership-ops`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -34,7 +34,7 @@ It is **not** the domain four-pillar file (`requirement-domain-take-ownership`).
 | You do… | What it means | What you type |
 |---------|---------------|---------------|
 | Take a web root | The tree becomes `www-data:www-data` | `take-ownership action --path /var/www/html --ownership www-data:www-data` |
-| Miss `--path` on a real terminal | Numbered list of allowed folders; pick a number | `1` |
+| Miss `--path` on a real terminal | Numbered list of allowed folders plus **0** Back. A bad number stays on the list. **0** leaves the list without an error | `1`, or `0` |
 | Miss `--ownership` on a real terminal | Uses this login’s `user:group` (`id -un`:`id -gn`); **no prompt** | (none) |
 | Miss a switch in a pipe | Stop; no hang | `take-ownership action --path /var/www/html` → error |
 | Granted folder gone (ram-drive wiped) | Recreate the folder, then `action` — do not write a new grant | recreate the directory, then `take-ownership action --path …` |
@@ -69,7 +69,7 @@ When **interactive** (`TTY=1`, not `--json`) and a field is missing:
 
 | Field | MUST | MUST NOT |
 |-------|------|----------|
-| `path` | Print a **numbered list** of this login’s **existing** allowed folders and accept a **number** (or an exact listed live path). Empty live set → fail closed; if the grant still names a missing directory, next step is recreate-then-action (not generate) | Number a granted path that is not an existing directory; ask for a free-typed absolute path; hang |
+| `path` | Print a **numbered list** of this login’s **existing** allowed folders, then **0** Back, and accept a **number** (or an exact listed live path). **0** / `back` / `q` / an empty line / EOF leaves the picker and returns success to the caller (the menu shows the front board again). An unknown token warns, names the token, and reprints the list. Empty live set → fail closed; if the grant still names a missing directory, next step is recreate-then-action (not generate) | Number a granted path that is not an existing directory; ask for a free-typed absolute path; hang; `out_die` on **0** or on an unknown token |
 | `ownership` | Use this login’s current `user:group` (`id -un`:`id -gn`, or `SUDO_USER` after re-exec) with **no prompt** | Ask for `user:group`; use `*` |
 
 Skip-if: `--path` / `--ownership` already set (including explicit flags and sudo re-exec argv).
@@ -227,6 +227,7 @@ Detect (typical): Termux — `PREFIX` contains `com.termux`, `TERMUX_VERSION` se
 | AC-8 | `list-folders` prints this login’s allowed `--path` set (empty set is success with a next step); granted-missing paths are marked, not omitted from the grant list |
 | AC-9 | `action` fails closed when `--path` is missing from that set, including already-matching trees |
 | AC-10 | Granted `--path` that is not an existing directory is not a live TTY pick; `action --path` names recreate-then-action and **MUST NOT** name `generate-sudoer-request` |
+| AC-11 | TTY folder picker prints **0** Back; **0** / `q` leaves without `[ERROR]`; an unknown token reprints the list and does not exit |
 
 ---
 
@@ -257,6 +258,8 @@ Detect (typical): Termux — `PREFIX` contains `com.termux`, `TERMUX_VERSION` se
 | **TP-TAKE-OWNERSHIP-42** | same | **have** — TTY `action` without `--path` prints numbered allowed folders |
 | **TP-TAKE-OWNERSHIP-43** | same | **have** — TTY pick uses current `user:group` with no ownership prompt |
 | **TP-TAKE-OWNERSHIP-44** | same | **have** — granted-missing dir is not a live pick; recreate-then-action |
+| **TP-TAKE-OWNERSHIP-45** | same | **have** — TTY picker **0** Back; unknown token reprints; menu **1** then **0** returns to the front board |
+| **TP-TAKE-OWNERSHIP-46** | same | **have** — multi-draft remove list **0** Back; unknown token reprints |
 
 **Matrix:** `reviews/requirement-test-matrix.md`  
 **Map:** `reviews/test-plan.md`
@@ -268,9 +271,10 @@ Detect (typical): Termux — `PREFIX` contains `com.termux`, `TERMUX_VERSION` se
 | 2026-08-25 | Active 1.0.0 | Ops SSOT for take-ownership; replaces folder-archive-backup on this product |
 | 2026-08-30 | Active 1.3.0 | Interactive `action`: numbered allowed-folder pick; current `user:group` with no prompt |
 | 2026-09-06 | Active 1.4.0 | Granted-missing dir is not a live TTY pick; recreate-then-action (INC-20260830-001) |
+| 2026-09-30 | Active 1.5.0 | TTY folder picker prints **0** Back. Back and an unknown token do not exit. **TP-TAKE-OWNERSHIP-45** / **46** |
 
 ---
 
-**Last Updated**: 2026-09-06  
+**Last Updated**: 2026-09-30  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

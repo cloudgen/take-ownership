@@ -12,7 +12,7 @@ Public product review surface (peer of `tests/`).
 | `reports/` | Dated review run reports |
 | `cli-routed-verb-table.md` | Live dispatcher inventory |
 
-**Ship unit:** `./take-ownership` (`src/take-ownership` is a symlink) (**VERSION 3.0.2**)  
+**Ship unit:** `./take-ownership` (`src/take-ownership` is a symlink) (**VERSION 3.0.3**)  
 **Suite:** `./tests/run.sh`  
 **Last suite baseline:** see `test-plan.md` (2026-09-30: PASS=382 FAIL=0 SKIP=1)
 

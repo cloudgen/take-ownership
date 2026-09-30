@@ -45,7 +45,7 @@ Do not list `menu` / `main` as choices on their own menu.
 
 Empty argv (`take-ownership` with no command) uses the same handler as `menu` / `main` (`app_main_menu`) on a TTY. Off-TTY empty argv is Type O install-ensure. Off-TTY `menu` / `main` is help.
 
-**Front board** (law `requirement-shell-cli-default-interaction` **3.0.0**): **1** `action`, **7** category `sudoers`, **8** category `self-management`, **9** Exit. Sudoers children **71–75**. Self-management children **81** `install`, **82** `version`, **83** `about`, **84** `version-check`, **85** `self-update`, **86** `self-uninstall`, **0** Back. **87** is reserved and not printed. `where-is-me`, `list-folders`, `help`, `menu`/`main`, and test-purpose `generate-sudoer-json` stay off every numbered list. **`sudoers` and `self-management` are not live dispatcher tokens.** Ship unit `app_main_menu` draws this tree.
+**Front board** (law `requirement-shell-cli-default-interaction` **3.0.2**): **1** `action`, **7** category `sudoers`, **8** category `self-management`, **9** Exit. Sudoers children **71–75**. Self-management children **81** `install`, **82** `version`, **83** `about`, **84** `version-check`, **85** `self-update`, **86** `self-uninstall`, **0** Back. **87** is reserved and not printed. The allowed-folder list inside `action` and the multi-draft list also print **0** Back. The front board does not. `where-is-me`, `list-folders`, `help`, `menu`/`main`, and test-purpose `generate-sudoer-json` stay off every numbered list. **`sudoers` and `self-management` are not live dispatcher tokens.** Ship unit `app_main_menu` draws this tree.
 
 ## Honesty
 

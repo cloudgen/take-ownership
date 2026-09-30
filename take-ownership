@@ -38,7 +38,7 @@
 # Single file at repo root for curl | sh. Global bin still required before sudoers emit.
 #
 # APP NAME: hard-assign APP_NAME="take-ownership"
-# VERSION: hard-assign VERSION="3.0.2"
+# VERSION: hard-assign VERSION="3.0.3"
 #
 # =============================================================================
 
@@ -55,7 +55,7 @@ APP_NAME="take-ownership"
 : "${SHORT_DESCRIPTION:=${APP_DESC}}"
 : "${DESCRIPTION:=POSIX /bin/sh online-installable CLI: curl|sh install, version-check, self-update, self-uninstall, about, plus take-ownership action and grant/draft verbs.}"
 # Product version SSOT (semver). Extractors use: grep '^VERSION="'
-VERSION="3.0.2"
+VERSION="3.0.3"
 : "${VERSION:=3.0.2}"
 # Repository identity → install channel (inherited from selfmanaged).
 : "${REPO_USER:=cloudgen}"
@@ -3230,8 +3230,13 @@ to_current_login_ownership() {
 # to_prompt_allowed_folder_choice() - TTY numbered pick from list-folders set
 # =============================================================================
 #
+# Item indexes 1…N plus 0 Back. 0 / back / q / empty / EOF returns 2 (parent).
+# An unknown token warns and reprints this list. Neither path calls out_die.
+# An empty live set still fails closed (that is not a choice).
+#
 # ALIGNMENT: requirement-take-ownership-ops.md §2.2 / §2.5a
-# Last updated: 2026-09-06
+#            requirement-shell-cli-default-interaction.md §2.4
+# Last updated: 2026-09-30
 # =============================================================================
 to_prompt_allowed_folder_choice() {
     : "${APP_NAME:=take-ownership}"
@@ -3257,25 +3262,25 @@ to_prompt_allowed_folder_choice() {
         fi
         out_die "This login has no take-ownership folders yet. Next: ${APP_NAME} generate-sudoer-request --path <folder> --ownership user:group"
     fi
-    out_info "Folders this login may take ownership of (${_count}):"
-    _i=0
-    while IFS= read -r _p; do
-        [ -n "${_p}" ] || continue
-        _i=$((_i + 1))
-        out_plain "${_i}. ${_p}"
-    done <"${_live}"
-    _list="${_live}"
 
     while true; do
+        out_info "Folders this login may take ownership of (${_count}):"
+        _i=0
+        while IFS= read -r _p; do
+            [ -n "${_p}" ] || continue
+            _i=$((_i + 1))
+            out_plain "${_i}. ${_p}"
+        done <"${_live}"
+        out_menu_choice 0 Back
         if ! prompt_line "Choice"; then
-            rm -f "${_list}"
-            out_die "No folder chosen. Next: ${APP_NAME} action --path /var/www/html --ownership user:group"
+            rm -f "${_live}"
+            return 2
         fi
         _pick="${_prompt_line}"
         case "${_pick}" in
-            ''|0|q|Q|quit|QUIT|cancel|Cancel)
-                rm -f "${_list}"
-                out_die "No folder chosen. Next: ${APP_NAME} action --path /var/www/html --ownership user:group"
+            ''|0|back|Back|BACK|q|Q)
+                rm -f "${_live}"
+                return 2
                 ;;
         esac
         _chosen=""
@@ -3286,7 +3291,7 @@ to_prompt_allowed_folder_choice() {
                         _chosen="${_p}"
                         break
                     fi
-                done <"${_list}"
+                done <"${_live}"
                 ;;
             *)
                 if [ "${_pick}" -ge 1 ] && [ "${_pick}" -le "${_count}" ]; then
@@ -3298,17 +3303,17 @@ to_prompt_allowed_folder_choice() {
                             _chosen="${_p}"
                             break
                         fi
-                    done <"${_list}"
+                    done <"${_live}"
                 fi
                 ;;
         esac
         if [ -n "${_chosen}" ]; then
             TO_PATH="${_chosen}"
             export TO_PATH
-            rm -f "${_list}"
+            rm -f "${_live}"
             return 0
         fi
-        out_warn "Not a listed folder. Type a number 1-${_count}, or 0 to leave."
+        out_warn "Not a listed folder: '${_pick}'. Choose a number 1-${_count}, or 0 Back."
     done
 }
 
@@ -3316,11 +3321,11 @@ to_prompt_allowed_folder_choice() {
 # to_collect_missing_action_fields() - TTY pick or fail closed
 # =============================================================================
 #
-# Interactive: numbered allowed-folder list; ownership is current user:group
-# with no prompt. Non-interactive: fail closed (no hang).
+# Interactive: numbered allowed-folder list (0 Back returns 2); ownership is
+# current user:group with no prompt. Non-interactive: fail closed (no hang).
 #
 # ALIGNMENT: requirement-take-ownership-ops.md §2.2 (Question 12b)
-# Last updated: 2026-08-30
+# Last updated: 2026-09-30
 # =============================================================================
 to_collect_missing_action_fields() {
     : "${TTY:=0}"
@@ -3331,6 +3336,9 @@ to_collect_missing_action_fields() {
     if [ -z "${TO_PATH}" ]; then
         if [ "${TTY}" -eq 1 ] && [ "${JSON}" -ne 1 ]; then
             to_prompt_allowed_folder_choice
+            if [ "$?" -eq 2 ]; then
+                return 2
+            fi
         fi
     fi
     if [ -z "${TO_OWNERSHIP}" ]; then
@@ -3550,15 +3558,16 @@ to_list_folders() {
 # GENERAL PURPOSE:
 # Validate --path and --ownership, confirm --path is in list-folders, then
 # chown -R without following symlinks. Interactive: numbered allowed-folder
-# pick; ownership defaults to current user:group (no prompt). Non-root
-# re-execs the global binary via sudo -n. Already-root chowns directly.
+# pick (0 Back returns to the caller without chown); ownership defaults to
+# current user:group (no prompt). Non-root re-execs the global binary via
+# sudo -n. Already-root chowns directly.
 #
 # ALIGNMENT:
 # - requirement-take-ownership-ops.md
 # - requirement-shell-sudo-command.md
 # - requirement-three-layer-privilege-model.md
 #
-# Last updated: 2026-09-06
+# Last updated: 2026-09-30
 # =============================================================================
 to_action() {
     : "${APP_NAME:=take-ownership}"
@@ -3573,6 +3582,9 @@ to_action() {
     fi
 
     to_collect_missing_action_fields
+    if [ "$?" -eq 2 ]; then
+        return 0
+    fi
 
     _path=$(to_require_absolute_path "${TO_PATH}") || out_die "--path must be an absolute directory (not relative, not *). You passed: ${TO_PATH}. Next: ${APP_NAME} action --path /var/www/html --ownership user:group"
     TO_PATH="${_path}"
@@ -4987,51 +4999,77 @@ to_remove_project_sudoers() {
         elif [ "${_count}" -eq 1 ]; then
             _path=$(printf '%s\n' "${_draft_list}" | head -n 1)
         else
-            # Multiple drafts: list and choose (interactive) or fail closed with list
-            out_info "Multiple project-sudoers-file drafts found under ${HOME}/.config/${APP_NAME}/:"
+            # Multiple drafts: list and choose (interactive) or fail closed with list.
+            # 0 Back / empty / q / EOF cancels. An unknown token reprints this list.
             _i=0
             # shellcheck disable=SC2039
             _indexed=""
             while IFS= read -r _line; do
                 [ -n "${_line}" ] || continue
                 _i=$((_i + 1))
-                out_plain "  ${_i}) ${_line}"
                 _indexed="${_indexed}${_i}|${_line}
 "
             done <<EOF
 ${_draft_list}
 EOF
-            out_plain "  0) cancel"
-            out_info "Pass an explicit path to remove one non-interactively, e.g.:"
-            out_plain "  ${APP_NAME} remove-project-sudoers --force <path>"
 
             if [ "${JSON}" -eq 1 ] || [ "${QUIET}" -eq 1 ] || [ "${TTY}" -eq 0 ]; then
+                out_info "Multiple project-sudoers-file drafts found under ${HOME}/.config/${APP_NAME}/:"
+                _n=0
+                while IFS= read -r _line; do
+                    [ -n "${_line}" ] || continue
+                    _n=$((_n + 1))
+                    out_plain "${_n}. ${_line}"
+                done <<EOF
+${_draft_list}
+EOF
                 out_die "remove-project-sudoers: multiple drafts present; specify path argument (non-interactive)."
             fi
 
-            prompt_line "Choose draft number to remove" || true
-            _choice="${_prompt_line:-0}"
-            case "${_choice}" in
-                ''|0|[Cc][Aa][Nn][Cc][Ee][Ll]*)
+            while true; do
+                out_info "Multiple project-sudoers-file drafts found under ${HOME}/.config/${APP_NAME}/:"
+                _n=0
+                while IFS= read -r _line; do
+                    [ -n "${_line}" ] || continue
+                    _n=$((_n + 1))
+                    out_plain "${_n}. ${_line}"
+                done <<EOF
+${_draft_list}
+EOF
+                out_menu_choice 0 Back
+                out_info "Pass an explicit path to remove one non-interactively, e.g.:"
+                out_plain "  ${APP_NAME} remove-project-sudoers --force <path>"
+                if ! prompt_line "Choice"; then
                     out_info "Remove cancelled"
                     return 0
-                    ;;
-                *[!0-9]*)
-                    out_die "Invalid choice: ${_choice}"
-                    ;;
-            esac
-            if [ "${_choice}" -lt 1 ] || [ "${_choice}" -gt "${_i}" ]; then
-                out_die "Choice out of range: ${_choice} (1-${_i}, or 0 to cancel)"
-            fi
-            _path=$(printf '%s\n' "${_indexed}" | while IFS='|' read -r _n _p; do
-                if [ "${_n}" = "${_choice}" ]; then
-                    printf '%s' "${_p}"
+                fi
+                _choice="${_prompt_line}"
+                case "${_choice}" in
+                    ''|0|back|Back|BACK|q|Q)
+                        out_info "Remove cancelled"
+                        return 0
+                        ;;
+                esac
+                _path=""
+                case "${_choice}" in
+                    *[!0-9]*)
+                        ;;
+                    *)
+                        if [ "${_choice}" -ge 1 ] && [ "${_choice}" -le "${_i}" ]; then
+                            _path=$(printf '%s\n' "${_indexed}" | while IFS='|' read -r _n _p; do
+                                if [ "${_n}" = "${_choice}" ]; then
+                                    printf '%s' "${_p}"
+                                    break
+                                fi
+                            done)
+                        fi
+                        ;;
+                esac
+                if [ -n "${_path}" ]; then
                     break
                 fi
-            done)
-            if [ -z "${_path}" ]; then
-                out_die "Could not resolve choice ${_choice}"
-            fi
+                out_warn "Not a listed draft: '${_choice}'. Choose a number 1-${_i}, or 0 Back."
+            done
         fi
     fi
 
@@ -5855,7 +5893,7 @@ app_help() {
     out_plain "  action --path <folder> --ownership <user:group>"
     out_plain "                       Recursively take ownership (no symlink follow)."
     out_plain "                       Confirms --path is on list-folders first."
-    out_plain "                       On a real terminal with no --path: numbered folder list."
+    out_plain "                       On a real terminal with no --path: numbered folder list (0 Back)."
     out_plain "                       Then uses this login's user:group (no ownership prompt)."
     out_plain "                       Needs a grant for that folder and the global binary."
     out_plain "  generate-sudoer-request --path <folder> --ownership <user:group> [dest]"

@@ -4,7 +4,8 @@
 
 | Version | Supported |
 |---------|-----------|
-| 3.0.2 (current) | Yes |
+| 3.0.3 (current) | Yes |
+| 3.0.2 | Yes |
 | 3.0.1 | Yes |
 | 3.0.0 | Yes |
 | 2.7.1 | Yes |

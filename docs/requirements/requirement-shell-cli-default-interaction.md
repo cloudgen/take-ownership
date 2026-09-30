@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-shell-cli-default-interaction.md  
-**Status**: Active (Version 3.0.1)  
+**Status**: Active (Version 3.0.2)  
 **Area**: shell  
 **Key**: `requirement-shell-cli-default-interaction`  
 **Optional RQ-ID**: `RQ-SHELL-CLI-DEFAULT-INTERACTION`  
@@ -44,7 +44,7 @@ The numbering follows the sibling **sshd-cli** tree where the cards match: front
 | You do… | What it means | What you type |
 |---------|---------------|---------------|
 | Open the front board | Daily `action`, then sudoers, then self-management. `--json` is ignored on a real terminal for `menu`/`main`. | `take-ownership` or `take-ownership menu` |
-| Take ownership | Choose `action`, then pick a numbered allowed folder. Ownership is this login’s `user:group` (no prompt). | `1` |
+| Take ownership | Choose `action`, then pick a numbered allowed folder. **0** Back returns to the front board. A bad number stays on that list. Ownership is this login’s `user:group` (no prompt). | `1`, then a folder number, or `0` |
 | Open grant/drafts | Sudoers board **71–75** | `7` then `71` |
 | Open install / version / update / remove | Self-management board **81–86** | `8` then `81` |
 | Leave a side board | Back to the front board | `0` |
@@ -106,7 +106,7 @@ Unused integers **2–6** are omitted. They are not client-side, server-side, or
 2. A child number **starts with its parent’s digits** (**71…** under **7**, **81…** under **8**).  
 3. Every submenu prints **0** Back (return to the front board). An empty line on a submenu **MUST** mean Back.  
 4. A reserved hidden number stays reserved. Picking it is an invalid choice (§2.4.2). **MUST NOT** compact the remaining rows into the hole.  
-5. The allowed-folder list inside `action` stays item indexes **1…N** plus **0** to leave that picker. That picker is `requirement-take-ownership-ops`. This file **MUST NOT** renumber it, and that **0** is not front Exit.
+5. The allowed-folder list inside `action` is a data picker: item indexes **1…N** plus **0** Back. Print `0. Back` on that list. **0** / `back` / `q` / an empty line / EOF leaves the picker and returns to the parent. When `action` was opened from this menu, the parent is the front board. A direct `action` returns 0. That **0** is not front Exit. The front board itself does **not** print **0** Back; **0** there is an invalid choice (§2.4.2). An invalid folder token warns, names the token, reprints this picker, and reads again. **MUST NOT** `out_die` for Back or for that invalid token. An empty allowed set still fails closed (that is not a choice). The same Back / invalid-choice rule applies to the draft list inside `remove-project-sudoers` when several drafts are present. Numbering of the folder rows stays on `requirement-take-ownership-ops`. This file **MUST NOT** renumber those rows.
 
 **MUST NOT** restart a submenu at **1**. **MUST NOT** use **9** as submenu Exit. **0** is not a command.
 
@@ -199,7 +199,7 @@ The ship unit omits row **7** on that class and prints the reason line before th
 | **Sudoers** | **71–75**, **0** Back |
 | **Self-management** | **81–86**, **0** Back; **87** reserved |
 | **Exit** | **9** on the front board only |
-| **Back** | **0** on every submenu |
+| **Back** | **0** on every submenu and data picker; not on the front board |
 | **Test-purpose (this product)** | `generate-sudoer-json` (off every numbered list; stays on `help` apart) |
 | **README capture** | Product README shows this front board and the two submenus. |
 
@@ -211,6 +211,15 @@ The ship unit omits row **7** on that class and prints the reason line before th
 7. sudoers: Grant and drafts
 8. self-management: This CLI install, version, update, uninstall
 9. Exit
+Choice:
+```
+
+Choosing **1** with no `--path` opens the allowed-folder picker. **0** returns to the front board. A token that is not on the list warns and prints the list again.
+
+```text
+[INFO] Folders this login may take ownership of (1):
+1. /var/www/html
+0. Back
 Choice:
 ```
 
@@ -321,6 +330,7 @@ On a real terminal those four **MUST** show the front board (`--json` is ignored
 | AC-14 | After a valid leaf returns, the front board is shown again |
 | AC-15 | An unknown menu token warns and reprints **this** layer; it does not `out_die` |
 | AC-16 | On Termux, Git Bash, or Windows cmd, front **7** is omitted and the menu-hidden message is printed before the numbers |
+| AC-17 | The allowed-folder picker prints **0** Back; **0** returns to the parent without `[ERROR]`; an unknown token reprints that picker. The front board has no **0** Back row; **0** there warns and reprints the front board |
 
 ---
 
@@ -354,6 +364,8 @@ On a real terminal those four **MUST** show the front board (`--json` is ignored
 | **TP-CLI-23** | same | **have** — self-management **81–86**, **0** Back, **87** absent, `where-is-me` not a row (AC-13) |
 | **TP-CLI-24** | same | **have** — after a leaf, front board returns; unknown token reprints this layer (AC-14, AC-15) |
 | **TP-CLI-25** | same | **have** — Termux / Git Bash / Windows cmd omits **7** and prints the menu-hidden message (AC-16) |
+| **TP-CLI-26** | same | **have** — front **0** warns and reprints; it does not leave (AC-17) |
+| **TP-TAKE-OWNERSHIP-45** | `tests/test_domain_take_ownership.sh` | **have** — folder picker **0** Back; invalid token reprints (AC-17) |
 
 **Matrix:** `reviews/requirement-test-matrix.md`  
 **Map:** `reviews/test-plan.md`
@@ -381,6 +393,7 @@ Detect (typical): Termux — `PREFIX` contains `com.termux`; Git Bash — `MSYST
 | 2026-09-08 | Active 2.5.0 | Registry aligned with 2.4.0 tree |
 | 2026-09-30 | Active 3.0.0 | Sibling sshd-cli numbering: front **1** `action` / **7** sudoers / **8** self-management / **9** Exit; sudoers **71–75**; self-management **81–86**; **0** Back; **87** reserved. Ship unit still on the 2.4.0 tree at that writing. |
 | 2026-09-30 | Active 3.0.1 | Ship unit draws this tree. **TP-CLI-13**, **TP-CLI-16**, and **TP-CLI-21** through **TP-CLI-25** are **have**. |
+| 2026-09-30 | Active 3.0.2 | Allowed-folder picker and the multi-draft list print **0** Back. Back and an invalid token do not `out_die`. Front **0** stays an invalid choice. **TP-CLI-26** and **TP-TAKE-OWNERSHIP-45** are **have**. |
 
 ---
 

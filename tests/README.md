@@ -16,7 +16,7 @@ Exit **0** when all assertions pass; **1** on failure; **2** if ship unit missin
 |------|--------|-------------|
 | `run.sh` | Entrypoint | — |
 | `helpers.sh` | Asserts + isolated HOME | — |
-| `test_cli.sh` | CLI surface, TTY menu tree **1 / 7 / 8 / 9** (sudoers **71–75**, self-management **81–86**, **0** Back), off-TTY Type O, numbered-list look, cache folder | **TP-CLI-*** (incl. **TP-CLI-13** · **TP-CLI-21..25** · **TP-CLI-19** look · **TP-CACHE-01..03**) |
+| `test_cli.sh` | CLI surface, TTY menu tree **1 / 7 / 8 / 9** (sudoers **71–75**, self-management **81–86**, **0** Back on submenus), off-TTY Type O, numbered-list look, cache folder | **TP-CLI-*** (incl. **TP-CLI-13** · **TP-CLI-21..26** · **TP-CLI-19** look · **TP-CACHE-01..03**) |
 | `test_local_lifecycle.sh` | install / uninstall / where-is-me (local HTTP channel) | **TP-LC-*** |
 | `test_online_curl_install.sh` | `curl \| sh` against a local HTTP channel | **TP-CURL-*** |
 | `test_domain_take_ownership.sh` | `action` + grant emit (global-only sudoers JSON) | **TP-TAKE-OWNERSHIP-*** |

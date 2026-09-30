@@ -243,6 +243,36 @@ run_test_domain_take_ownership() {
         assert_contains "TP-TAKE-OWNERSHIP-42 TTY action numbered list" "$_out" "Folders this login may take ownership of"
         assert_contains "TP-TAKE-OWNERSHIP-42 TTY action lists granted folder" "$_out" "${CI_HOME}/owned2"
         assert_not_contains "TP-TAKE-OWNERSHIP-42 TTY action no ownership prompt" "$_out" "Unix user:group for the new owner"
+        _plain=$(ci_strip_ansi "$_out")
+        assert_contains "TP-TAKE-OWNERSHIP-45 q shows 0 Back" "$_plain" "0. Back"
+        assert_not_contains "TP-TAKE-OWNERSHIP-45 q is not an error" "$_plain" "[ERROR]"
+        assert_not_contains "TP-TAKE-OWNERSHIP-45 q is not No folder chosen" "$_plain" "No folder chosen"
+        _out=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" USER_BIN="${CI_USER_BIN}" \
+            PTY_IN="0" ci_pty_run action 2>&1) || true
+        _plain=$(ci_strip_ansi "$_out")
+        assert_contains "TP-TAKE-OWNERSHIP-45 0 shows the folder list" "$_plain" "Folders this login may take ownership of"
+        assert_contains "TP-TAKE-OWNERSHIP-45 0 Back row" "$_plain" "0. Back"
+        assert_not_contains "TP-TAKE-OWNERSHIP-45 0 is not an error" "$_plain" "[ERROR]"
+        assert_not_contains "TP-TAKE-OWNERSHIP-45 0 is not No folder chosen" "$_plain" "No folder chosen"
+        _out=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" USER_BIN="${CI_USER_BIN}" \
+            PTY_IN="no-such
+0" ci_pty_run action 2>&1) || true
+        _plain=$(ci_strip_ansi "$_out")
+        assert_contains "TP-TAKE-OWNERSHIP-45 unknown folder names the token" "$_plain" "Not a listed folder: 'no-such'"
+        assert_not_contains "TP-TAKE-OWNERSHIP-45 unknown folder is not an error" "$_plain" "[ERROR]"
+        _nback=$(printf '%s\n' "$_plain" | grep -c '0\. Back' || true)
+        assert_eq "TP-TAKE-OWNERSHIP-45 unknown folder reprints 0 Back" "2" "${_nback}"
+        _out=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" USER_BIN="${CI_USER_BIN}" \
+            PTY_IN="1
+0
+9" ci_pty_run menu 2>&1) || true
+        _plain=$(ci_strip_ansi "$_out")
+        assert_contains "TP-TAKE-OWNERSHIP-45 menu action opens the folder list" "$_plain" "Folders this login may take ownership of"
+        assert_contains "TP-TAKE-OWNERSHIP-45 menu folder list has 0 Back" "$_plain" "0. Back"
+        assert_not_contains "TP-TAKE-OWNERSHIP-45 menu 0 does not error" "$_plain" "[ERROR]"
+        assert_not_contains "TP-TAKE-OWNERSHIP-45 menu 0 is not No folder chosen" "$_plain" "No folder chosen"
+        _nfront=$(printf '%s\n' "$_plain" | grep -c '1\. action: Recursively take ownership of a named folder' || true)
+        assert_eq "TP-TAKE-OWNERSHIP-45 menu 0 returns to the front board" "2" "${_nfront}"
         _out=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" USER_BIN="${CI_USER_BIN}" \
             PTY_IN="${CI_HOME}/owned2" ci_pty_run action 2>&1)
         _ec=$?
@@ -253,6 +283,7 @@ run_test_domain_take_ownership() {
     else
         t_skip "TP-TAKE-OWNERSHIP-42 TTY action numbered list (no python3 for PTY)"
         t_skip "TP-TAKE-OWNERSHIP-43 TTY action current user:group (no python3 for PTY)"
+        t_skip "TP-TAKE-OWNERSHIP-45 TTY folder 0 Back (no python3 for PTY)"
     fi
 
     # TP-TAKE-OWNERSHIP-44 granted --path whose directory is missing is not a
@@ -293,6 +324,32 @@ run_test_domain_take_ownership() {
         rmdir "${_ram}" 2>/dev/null || true
     else
         t_skip "TP-TAKE-OWNERSHIP-16 ram-drive tree (no writable /dev/shm)"
+    fi
+
+    # TP-TAKE-OWNERSHIP-46 — several drafts: 0 Back, unknown token reprints, no exit.
+    mkdir -p "${CI_HOME}/.config/${APP_NAME}"
+    printf '%s\n' "draft-a" > "${CI_HOME}/.config/${APP_NAME}/sudoers.fragment-ci-a"
+    printf '%s\n' "draft-b" > "${CI_HOME}/.config/${APP_NAME}/sudoers.fragment-ci-b"
+    _err=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" USER_BIN="${CI_USER_BIN}" \
+        sh "${SCRIPT}" remove-project-sudoers 2>&1 >/dev/null)
+    _ec=$?
+    assert_eq "TP-TAKE-OWNERSHIP-46 off-TTY multiple drafts exit 1" 1 "$_ec"
+    assert_contains "TP-TAKE-OWNERSHIP-46 off-TTY names multiple drafts" "${_err}" "multiple drafts"
+    if command -v python3 >/dev/null 2>&1; then
+        _out=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" USER_BIN="${CI_USER_BIN}" \
+            PTY_IN="no-such
+0" ci_pty_run remove-project-sudoers 2>&1) || true
+        _plain=$(ci_strip_ansi "$_out")
+        assert_contains "TP-TAKE-OWNERSHIP-46 draft list has 0 Back" "$_plain" "0. Back"
+        assert_contains "TP-TAKE-OWNERSHIP-46 unknown draft names the token" "$_plain" "Not a listed draft: 'no-such'"
+        assert_contains "TP-TAKE-OWNERSHIP-46 0 cancels" "$_plain" "Remove cancelled"
+        assert_not_contains "TP-TAKE-OWNERSHIP-46 unknown draft is not an error" "$_plain" "[ERROR]"
+        _nback=$(printf '%s\n' "$_plain" | grep -c '0\. Back' || true)
+        assert_eq "TP-TAKE-OWNERSHIP-46 unknown draft reprints 0 Back" "2" "${_nback}"
+        assert_file_exists "TP-TAKE-OWNERSHIP-46 draft a still present" "${CI_HOME}/.config/${APP_NAME}/sudoers.fragment-ci-a"
+        assert_file_exists "TP-TAKE-OWNERSHIP-46 draft b still present" "${CI_HOME}/.config/${APP_NAME}/sudoers.fragment-ci-b"
+    else
+        t_skip "TP-TAKE-OWNERSHIP-46 TTY draft 0 Back (no python3 for PTY)"
     fi
 
     ci_cleanup_env

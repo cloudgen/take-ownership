@@ -3,9 +3,9 @@
 Maps **TP-*** coverage to `tests/`.  
 **Suite entry:** `./tests/run.sh`  
 **Ship unit:** `src/take-ownership`  
-**Product VERSION:** 3.0.2  
+**Product VERSION:** 3.0.3  
 **Last plan update:** 2026-09-30  
-**Last suite run:** `./tests/run.sh` on 2026-09-30 — **PASS=382 FAIL=0 SKIP=1** (TP-CURL-09 optional online; 3.0.2 menu tree)
+**Last suite run:** `./tests/run.sh` on 2026-09-30 — **PASS=411 FAIL=0 SKIP=1** (TP-CURL-09 optional online; 3.0.3 folder-list **0** Back)
 
 Status: **have** = automated today · **todo** = needed · **optional** · **n/a** · **skip** (environment)
 
@@ -68,6 +68,7 @@ Status: **have** = automated today · **todo** = needed · **optional** · **n/a
 | TP-CLI-23 | self-management **81–86**, **0** Back, **87** absent | test_cli | shell-cli-default-interaction | **have** |
 | TP-CLI-24 | after a leaf, front board returns; unknown token reprints this layer | test_cli | shell-cli-default-interaction | **have** |
 | TP-CLI-25 | Termux / Git Bash / Windows cmd omits front **7** and prints the reason first | test_cli | shell-cli-default-interaction | **have** |
+| TP-CLI-26 | Front **0** warns and reprints; the front board has no **0** Back row | test_cli | shell-cli-default-interaction | **have** |
 | TP-CACHE-01 | about JSON and human cache labels | test_cli | requirement-shell-cli-storage | **have** |
 | TP-CACHE-02 | Linux / Git Bash / macOS chains, silent skip, mode 0700, one leaf per process | test_cli | requirement-shell-cli-storage | **have** |
 | TP-CACHE-03 | scratch file and directory stay in the cache leaf; absent `mktemp`; refuse `$$` names | test_cli | requirement-shell-cli-storage | **have** |
@@ -123,6 +124,8 @@ Status: **have** = automated today · **todo** = needed · **optional** · **n/a
 | TP-TAKE-OWNERSHIP-42 | TTY `action` numbered allowed folders | test_domain | take-ownership-ops | **have** |
 | TP-TAKE-OWNERSHIP-43 | TTY pick uses current `user:group` | test_domain | take-ownership-ops | **have** |
 | TP-TAKE-OWNERSHIP-44 | Granted-missing dir not a live pick; recreate-then-action | test_domain | take-ownership-ops · operator-readable-error · L-OPS-01 | **have** |
+| TP-TAKE-OWNERSHIP-45 | TTY folder picker **0** Back; unknown token reprints; menu **1** then **0** returns to the front board | test_domain | take-ownership-ops · default-interaction | **have** |
+| TP-TAKE-OWNERSHIP-46 | Multi-draft remove list **0** Back; unknown token reprints | test_domain | take-ownership-ops · default-interaction | **have** |
 
 ---
 

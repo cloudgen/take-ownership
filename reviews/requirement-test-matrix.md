@@ -1,7 +1,7 @@
 # Requirement ↔ test matrix — take-ownership
 
 **Updated:** 2026-09-30  
-**Product VERSION:** 3.0.2  
+**Product VERSION:** 3.0.3  
 **Suite:** `tests/run.sh` on 2026-09-30 — **PASS=382 FAIL=0 SKIP=1** (TP-CURL-09 optional online; menu tree **TP-CLI-21..25** have)
 
 | Requirement key | Area | TP families | Coverage notes |

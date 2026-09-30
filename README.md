@@ -1,6 +1,6 @@
 # take-ownership - Take Unix ownership of a named folder with a narrow sudo grant
 
-![Version](https://img.shields.io/badge/Version-3.0.2-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.0.3-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 [![CIAO](https://img.shields.io/badge/Philosophy-CIAO%20(Caution%20%E2%80%A2%20Intentional%20%E2%80%A2%20Anti--fragile%20%E2%80%A2%20Over--engineered)-purple.svg)](https://github.com/cloudgen/ciao)
 [![Stars](https://img.shields.io/github/stars/cloudgen/take-ownership?style=flat-square)](https://github.com/cloudgen/take-ownership)
@@ -87,7 +87,7 @@ sudo sh /dev/shm/take-ownership-<user>-sudoers-admin.sh uninstall
 After install, on a terminal (`take-ownership` or `take-ownership menu`) the front board looks like:
 
 ```text
-[INFO] **take-ownership**(*3.0.2*) — Take Unix ownership of a named folder with a narrow global-only sudo grant
+[INFO] **take-ownership**(*3.0.3*) — Take Unix ownership of a named folder with a narrow global-only sudo grant
 1. action: Recursively take ownership of a named folder
 7. sudoers: Grant and drafts
 8. self-management: This CLI install, version, update, uninstall
@@ -95,10 +95,19 @@ After install, on a terminal (`take-ownership` or `take-ownership menu`) the fro
 Choice:
 ```
 
+**1** opens the folders this login may take. That list has **0** Back. **0** returns to the front board. A number that is not on the list warns and shows the list again. It does not leave the program.
+
+```text
+[INFO] Folders this login may take ownership of (1):
+1. /var/www/html
+0. Back
+Choice:
+```
+
 **7** opens grant and drafts. **0** returns to the front board. **9** on that board is not Exit.
 
 ```text
-[INFO] **take-ownership**(*3.0.2*) — sudoers (grant and drafts)
+[INFO] **take-ownership**(*3.0.3*) — sudoers (grant and drafts)
 71. generate-sudoer-request: Write a JSON grant you can read
 72. submit-sudoer-request: Queue the JSON grant inbound
 73. print-sudoers: Emit sudoers draft
@@ -111,7 +120,7 @@ Choice:
 **8** opens install, version, update, and remove. **0** returns. `self-install` is not a row.
 
 ```text
-[INFO] **take-ownership**(*3.0.2*) — self-management (this CLI)
+[INFO] **take-ownership**(*3.0.3*) — self-management (this CLI)
 81. install: Ensure this program from the channel
 82. version: Show the local version
 83. about: Show diagnostics including global-bin presence
@@ -196,4 +205,4 @@ MIT License — see [`LICENSE.md`](./LICENSE.md).
 
 ## Last Update
 
-2026-09-30 — version **3.0.2** (main menu: **1** action, **7** sudoers, **8** self-management, **9** Exit; **0** Back). See [`CHANGELOG.md`](./CHANGELOG.md) for earlier releases.
+2026-09-30 — version **3.0.3** (folder list and other layers except the front board: **0** Back; a bad choice stays on that list). See [`CHANGELOG.md`](./CHANGELOG.md) for earlier releases.

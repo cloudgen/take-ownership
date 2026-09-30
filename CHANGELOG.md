@@ -5,6 +5,13 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [3.0.3] - 2026-09-30
+
+### Fixed
+
+- **0 Back on every layer except the front board.** The allowed-folder list inside `action` prints **0** Back. **0**, `back`, `q`, an empty line, or EOF returns to the front board when `action` was opened from the menu. A direct `action` returns without an error. A token that is not a listed folder warns, names the token, and shows the list again. It does not exit. The draft list inside `remove-project-sudoers`, when several drafts exist, follows the same rule. The front board still has **9** Exit and no **0** Back; **0** there warns and reprints the front board. Law: `requirement-shell-cli-default-interaction` **3.0.2**, `requirement-take-ownership-ops` **1.5.0**. Suite **TP-CLI-26**, **TP-TAKE-OWNERSHIP-45**, **TP-TAKE-OWNERSHIP-46**.
+- Product version **3.0.3**.
+
 ## [3.0.2] - 2026-09-30
 
 ### Changed

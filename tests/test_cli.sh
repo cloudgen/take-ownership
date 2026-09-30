@@ -611,6 +611,18 @@ run_test_cli() {
         assert_contains "TP-CLI-25 windows-cmd reason before numbers" "$_head" "sudoers not available for windows-cmd"
         assert_not_contains "TP-CLI-25 windows-cmd omits row 7" "$_plain" "7. sudoers:"
         assert_contains "TP-CLI-25 windows-cmd keeps action" "$_plain" "1. action:"
+
+        # TP-CLI-26 — 0 is Back on every layer except the front board.
+        # On the front board, 0 is an invalid choice: warn, reprint, do not exit.
+        _out=$(PTY_IN="0
+9" ci_pty_run menu)
+        _plain=$(ci_strip_ansi "$_out")
+        assert_contains "TP-CLI-26 front 0 names the token" "$_plain" "Not a menu choice: '0'"
+        assert_contains "TP-CLI-26 front 0 says choose listed" "$_plain" "Choose a listed number or command name."
+        assert_not_contains "TP-CLI-26 front 0 is not ERROR" "$_plain" "[ERROR]"
+        assert_not_contains "TP-CLI-26 front board has no 0 Back" "$_plain" "0. Back"
+        _nfront=$(printf '%s\n' "$_plain" | grep -c '1\. action: Recursively take ownership of a named folder' || true)
+        assert_eq "TP-CLI-26 front 0 reprints the front board" "2" "${_nfront}"
     else
         t_skip "TP-CLI-13 TTY menu / empty argv (no python3 for PTY)"
         t_skip "TP-CLI-14 TTY menu --json (no python3 for PTY)"
@@ -620,5 +632,6 @@ run_test_cli() {
         t_skip "TP-CLI-23 TTY self-management submenu (no python3 for PTY)"
         t_skip "TP-CLI-24 menu return and invalid choice (no python3 for PTY)"
         t_skip "TP-CLI-25 menu-hidden sudoers (no python3 for PTY)"
+        t_skip "TP-CLI-26 front 0 stays on the front board (no python3 for PTY)"
     fi
 }
