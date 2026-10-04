@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-shell-cli-default-interaction.md  
-**Status**: Active (Version 3.0.2)  
+**Status**: Active (Version 3.1.0)  
 **Area**: shell  
 **Key**: `requirement-shell-cli-default-interaction`  
 **Optional RQ-ID**: `RQ-SHELL-CLI-DEFAULT-INTERACTION`  
@@ -7,7 +7,7 @@
 
 ## 1. Purpose
 
-This requirement is the **product Single Source of Truth** for take-ownership’s **default interaction**: a **TTY numbered tree**. The front board is **1** `action`, **7** sudoers, **8** self-management, **9** Exit. Child numbers **keep the parent prefix** and **never repeat** a parent integer. **0** is Back on every submenu. **9** is Exit **only** on the front board.
+This requirement is the **product Single Source of Truth** for take-ownership’s **default interaction**: a **TTY numbered tree**. The front board is **1** `action`, **5** language, **7** sudoers, **8** self-management, **9** Exit. Child numbers **keep the parent prefix** and **never repeat** a parent integer, except the language block **50–69** under front **5**. **0** is Back on every submenu. **9** is Exit **only** on the front board.
 
 take-ownership has `requirement-shell-cli-zero-arguments` (**case 3**): that REQ **defers TTY empty argv** to this menu and **owns off-TTY empty argv as Type O install-ensure**. The menu **MUST** also be the command **`menu`**. **`main` MAY** be accepted as the same handler.
 
@@ -15,11 +15,11 @@ On a **real terminal**, empty argv and `take-ownership menu` (or `main`) **MUST*
 
 Empty-argv type and the TTY vs off-TTY split for **no command token** stay on `requirement-shell-cli-zero-arguments`. Confirm / no-hang stays on `requirement-shell-interactive-vs-noninteractive`. Live command inventory stays dispatcher truth (`requirement-shell-cli-interface`). Lifecycle handlers stay on `requirement-shell-self-management`.
 
-The numbering follows the sibling **sshd-cli** tree where the cards match: front **7** sudoers (**71–75**), front **8** self-management (**81–86**), front **9** Exit, submenu **0** Back. This product has no client-side board, no server-side board, and no language board, so front **2–6** are unused and **not** printed. Front **1** is the daily leaf `action`, not a category.
+The numbering follows the sibling **sshd-cli** tree where the cards match: front **5** language (block **50–69**, assigned **51–63**), front **7** sudoers (**71–75**), front **8** self-management (**81–86**), front **9** Exit, submenu **0** Back. This product has no client-side board and no server-side board, so front **2**, **3**, **4**, and **6** are unused and **not** printed. Front **6** is not a row. Front **1** is the daily leaf `action`, not a category. Menu copy follows `requirement-shell-cli-language`.
 
 ### 1.1 Human-facing
 
-**In one sentence:** At a real terminal, `take-ownership` shows **take-ownership**(*version*), then take-ownership, sudoers, and self-management; **0** walks back; **9** leaves.
+**In one sentence:** At a real terminal, `take-ownership` shows **take-ownership**(*version*), then take-ownership, language, sudoers, and self-management; **0** walks back; **9** leaves.
 
 | Box | Meaning | Example |
 |-----|---------|---------|
@@ -29,7 +29,7 @@ The numbering follows the sibling **sshd-cli** tree where the cards match: front
 
 | Includes | Excludes |
 |----------|----------|
-| Front **1** `action`, **7** sudoers, **8** self-management, **9** Exit | Restarting a submenu at **1**; **9** as submenu Exit; Back **8** |
+| Front **1** `action`, **5** language, **7** sudoers, **8** self-management, **9** Exit | Restarting a submenu at **1**; **9** as submenu Exit; Back **8**; front **6** as a row |
 | Sudoers **71–75**; self-management **81–86**; **0** Back | `self-install` as a row (**87** reserved, not printed); `where-is-me` as a row |
 | Default CLI main menu style (header `APP_NAME(APP_VERSION)`; TTY explain italic + light gray) | A bare `take-ownership` on that first line; color codes in a pipe |
 | After a finished command, the front board again | `help`, `menu`/`main`, `list-folders`, `generate-sudoer-json` as numbered rows |
@@ -43,7 +43,8 @@ The numbering follows the sibling **sshd-cli** tree where the cards match: front
 
 | You do… | What it means | What you type |
 |---------|---------------|---------------|
-| Open the front board | Daily `action`, then sudoers, then self-management. `--json` is ignored on a real terminal for `menu`/`main`. | `take-ownership` or `take-ownership menu` |
+| Open the front board | Daily `action`, then language, then sudoers, then self-management. `--json` is ignored on a real terminal for `menu`/`main`. | `take-ownership` or `take-ownership menu` |
+| Change the menu language | Language board **51** English through **63** Ελληνικά. The next run opens in that language. | `5`, then `53` |
 | Take ownership | Choose `action`, then pick a numbered allowed folder. **0** Back returns to the front board. A bad number stays on that list. Ownership is this login’s `user:group` (no prompt). | `1`, then a folder number, or `0` |
 | Open grant/drafts | Sudoers board **71–75** | `7` then `71` |
 | Open install / version / update / remove | Self-management board **81–86** | `8` then `81` |
@@ -83,7 +84,7 @@ Measure interactive capability **outside functions** (`TTY=1` only when stdin an
 2. **MUST NOT** list install, version, about, version-check, self-update, self-uninstall, uninstall, where-is-me, help, menu, main, list-folders, setup, or `generate-sudoer-json` on this board.  
 3. Command-row text **MUST** be `command: what it does`. Category explain for **7** and **8** is this table.  
 4. **`sudoers` is not a live CLI command.** **`self-management` is not a live CLI command.** `take-ownership sudoers` and `take-ownership self-management` **MUST** remain unknown.  
-5. Choosing **7** / typing `sudoers` at this prompt **MUST** open §2.5. Choosing **8** / typing `self-management` **MUST** open §2.6. Choosing **1** / typing `action` **MUST** run `action`.  
+5. Choosing **5** / typing `language` (or the category short in §2.4.3) **MUST** open the language board. Choosing **7** / typing `sudoers` at this prompt **MUST** open §2.5. Choosing **8** / typing `self-management` (or that category’s displayed short) **MUST** open §2.6. Choosing **1** / typing `action` **MUST** run `action`.  
 6. Front leave tokens: **9**, `exit`, `quit`, an empty line, or EOF. Each returns 0. **0** is **not** a front-board row.  
 7. A typed **live** verb at this prompt (including a verb that lives on a submenu) **MUST** run that handler, then follow §2.4.1.  
 8. **Do not capture `read`:** the choice **MUST** be read in the **current shell**. Typical: `prompt_line "Choice"` then `_pick="${_prompt_line}"`. **MUST NOT** `_pick=$(prompt_line …)` / `_pick=$(prompt_ask …)` / `$()` / backticks of **any** function whose body contains `read`. stderr+$() is **not** a license.
@@ -94,16 +95,17 @@ Normative **front** order:
 |---|-------|-------|------|
 | *(header)* | — | `take-ownership(VERSION) — Take Unix ownership of a named folder with a narrow global-only sudo grant` | — |
 | **1** | `action` | `action: Recursively take ownership of a named folder` | `action` |
+| **5** | category `language` | `language: display language for this menu` | §2.4.3 |
 | **7** | category `sudoers` | `sudoers: Grant and drafts` | §2.5 |
 | **8** | category `self-management` | `self-management: This CLI install, version, update, uninstall` | §2.6 |
 | **9** | **Exit** | leave the program | return 0 |
 
-Unused integers **2–6** are omitted. They are not client-side, server-side, or language rows.
+Unused integers **2**, **3**, **4**, and **6** are omitted. They are not client-side or server-side rows. Front **6** is not the language row.
 
 ### 2.4 Numbering
 
 1. A command number appears **once** in the whole tree.  
-2. A child number **starts with its parent’s digits** (**71…** under **7**, **81…** under **8**).  
+2. A child number **starts with its parent’s digits** (**71…** under **7**, **81…** under **8**). The language board is the exception: front **5** reserves **50** through **69** and no other row uses those numbers.  
 3. Every submenu prints **0** Back (return to the front board). An empty line on a submenu **MUST** mean Back.  
 4. A reserved hidden number stays reserved. Picking it is an invalid choice (§2.4.2). **MUST NOT** compact the remaining rows into the hole.  
 5. The allowed-folder list inside `action` is a data picker: item indexes **1…N** plus **0** Back. Print `0. Back` on that list. **0** / `back` / `q` / an empty line / EOF leaves the picker and returns to the parent. When `action` was opened from this menu, the parent is the front board. A direct `action` returns 0. That **0** is not front Exit. The front board itself does **not** print **0** Back; **0** there is an invalid choice (§2.4.2). An invalid folder token warns, names the token, reprints this picker, and reads again. **MUST NOT** `out_die` for Back or for that invalid token. An empty allowed set still fails closed (that is not a choice). The same Back / invalid-choice rule applies to the draft list inside `remove-project-sudoers` when several drafts are present. Numbering of the folder rows stays on `requirement-take-ownership-ops`. This file **MUST NOT** renumber those rows.
@@ -118,11 +120,37 @@ After a **valid leaf** finishes (numbered command, or a typed live verb), the ha
 
 ### 2.4.2 Invalid choice
 
-An invalid choice is any input that is not a listed number, not a listed name, and not this layer’s leave or back token. A hidden reserved number (**87**, and **7** when §2.7 hides sudoers) is an invalid choice on that layer.
+An invalid choice is any input that is not a listed number, not a listed name, and not this layer’s leave or back token. A hidden reserved number (**87**, front **2** / **3** / **4** / **6**, language **50** and **64** through **69**, and **7** when §2.7 hides sudoers) is an invalid choice on that layer.
 
 **MUST:** print a warning that names the token and tells the operator to choose a listed number or command name (`out_warn`), reprint **this** layer, and read again in the current shell.
 
 **MUST NOT** `out_die` for that pick. **MUST NOT** exit non-zero solely for that pick. **MUST NOT** treat the pick as an unknown command-line verb. EOF / a failed `read` leaves this layer without spinning (front → return 0; submenu → parent).
+
+### 2.4.3 Language board (parent **5**)
+
+Choosing front **5** / `language` (or the displayed category short from `requirement-shell-cli-language`) **MUST** print the language board. Header **MUST** use the same nametag, then ` — language` in English, or the category short in another language. **51** through **63** are the only printed rows, then **0** Back. **50** and **64** through **69** are not printed. **9** is not printed.
+
+| # | Name | English long |
+|---|------|----------------|
+| **51** | English | `use English for this menu` |
+| **52** | 简体中文 | `use Simplified Chinese for this menu` |
+| **53** | 繁體中文 | `use Traditional Chinese for this menu` |
+| **54** | Español | `use Spanish for this menu` |
+| **55** | العربية | `use Arabic for this menu` |
+| **56** | Français | `use French for this menu` |
+| **57** | Português | `use Portuguese for this menu` |
+| **58** | Русский | `use Russian for this menu` |
+| **59** | Deutsch | `use German for this menu` |
+| **60** | 日本語 | `use Japanese for this menu` |
+| **61** | 한국어 | `use Korean for this menu` |
+| **62** | Nederlands | `use Dutch for this menu` |
+| **63** | Ελληνικά | `use Greek for this menu` |
+| **0** | **Back** | return to the front board; do not write the file |
+
+- **0** / `back` / `q` / empty / EOF returns to the front board and does not write the file.
+- **9** on this board is an invalid choice. It does not leave the program.
+- **51** through **63** save that code, print the saved line in the new language, then §2.4.1 redisplays the front board in that language.
+- Codes, the file, and the copy are `requirement-shell-cli-language`. This file owns the row numbers.
 
 ### 2.5 Sudoers submenu (parent **7**)
 
@@ -176,7 +204,7 @@ A **menu-hidden message** is the line that names why rows of **this** layer are 
 |-------|--------|----------------------------|
 | Front | Termux, Git Bash, or Windows cmd omits **7** sudoers | `sudoers not available for termux` / `gitbash` / `windows-cmd` |
 
-On that class, row **7** is omitted and the number stays reserved. Picking **7** is an invalid choice. Self-management **81–86** and front **1** / **9** stay. **MUST NOT** wrap `sudo` to unhide **7**. **MUST NOT** renumber **8** into the hole.
+On that class, row **7** is omitted and the number stays reserved. Picking **7** is an invalid choice. Language **5**, self-management **81–86**, and front **1** / **9** stay. **MUST NOT** wrap `sudo` to unhide **7**. **MUST NOT** renumber **8** into the hole. **MUST NOT** hide **5**.
 
 The ship unit omits row **7** on that class and prints the reason line before the numbers.
 
@@ -189,28 +217,51 @@ The ship unit omits row **7** on that class and prints the reason line before th
 | **Case** | **3** (zero-arg REQ exists; online-installable; that REQ routes TTY empty argv **to this handler**) |
 | **Empty argv owner** | `requirement-shell-cli-zero-arguments` (TTY menu; off-TTY Type O) |
 | **Menu verbs** | `menu` (preferred); `main` alias; empty argv same handler |
-| **Handler** | `app_main_menu` (front loop, sudoers loop, self-management loop) |
-| **Ship unit** | `app_main` routes empty argv, `menu`, and `main` to `app_main_menu`. That function draws front **1 / 7 / 8 / 9**, sudoers **71–75**, self-management **81–86**, and **0** Back. |
-| **Category rows** | `sudoers`, `self-management` — menu-only; **not** dispatched |
+| **Handler** | `app_main_menu` (front loop, language loop, sudoers loop, self-management loop) |
+| **Ship unit** | `app_main` routes empty argv, `menu`, and `main` to `app_main_menu`. That function draws front **1 / 5 / 7 / 8 / 9**, language **51–63**, sudoers **71–75**, self-management **81–86**, and **0** Back. |
+| **Category rows** | `language`, `sudoers`, `self-management` — menu-only; **not** dispatched |
 | **Label source** | `reviews/cli-routed-verb-table.md` **human-readable** for command rows; category explain is this file |
 | **Look** | Default CLI main menu style — header `take-ownership(VERSION)` then the layer title; TTY italic + light-gray explain; `out_menu_choice` / `util_app_ident` |
 | **Choice read** | Current-shell `prompt_line` → `_prompt_line` (not `$()`) |
-| **Front** | **1** / **7** / **8** / **9** |
+| **Front** | **1** / **5** / **7** / **8** / **9** |
+| **Language** | **51–63**, **0** Back; **50** and **64–69** reserved |
 | **Sudoers** | **71–75**, **0** Back |
 | **Self-management** | **81–86**, **0** Back; **87** reserved |
 | **Exit** | **9** on the front board only |
 | **Back** | **0** on every submenu and data picker; not on the front board |
 | **Test-purpose (this product)** | `generate-sudoer-json` (off every numbered list; stays on `help` apart) |
-| **README capture** | Product README shows this front board and the two submenus. |
+| **README capture** | Product README shows this front board, the language board, and the two other submenus. |
 
 **Normative front draft** (plain glyphs; the live TTY uses SGR):
 
 ```text
 [INFO] take-ownership(VERSION) — Take Unix ownership of a named folder with a narrow global-only sudo grant
 1. action: Recursively take ownership of a named folder
+5. language: display language for this menu
 7. sudoers: Grant and drafts
 8. self-management: This CLI install, version, update, uninstall
 9. Exit
+Choice:
+```
+
+**Normative language draft:**
+
+```text
+[INFO] take-ownership(VERSION) — language
+51. English: use English for this menu
+52. 简体中文: use Simplified Chinese for this menu
+53. 繁體中文: use Traditional Chinese for this menu
+54. Español: use Spanish for this menu
+55. العربية: use Arabic for this menu
+56. Français: use French for this menu
+57. Português: use Portuguese for this menu
+58. Русский: use Russian for this menu
+59. Deutsch: use German for this menu
+60. 日本語: use Japanese for this menu
+61. 한국어: use Korean for this menu
+62. Nederlands: use Dutch for this menu
+63. Ελληνικά: use Greek for this menu
+0. Back
 Choice:
 ```
 
@@ -275,7 +326,7 @@ On a real terminal those four **MUST** show the front board (`--json` is ignored
 
 - **Caution:** Do not hang off-TTY. Do not steal Type O install-ensure. Do not `out_die` on a bad menu number.  
 - **Intentional:** Case 3. Empty argv and `menu`/`main` share one handler. Child numbers keep the parent prefix.  
-- **Anti-fragile:** Reserved holes stay reserved (**2–6**, **87**, hidden **7**). After a command, the front board returns.  
+- **Anti-fragile:** Reserved holes stay reserved (**2**, **3**, **4**, **6**, **50**, **64–69**, **87**, hidden **7**). After a command, the front board returns.  
 - **Over-protect:** **9** leaves only from the front board. **0** is Back. Lifecycle verbs stay off the front board and on **81–86**.
 
 ---
@@ -305,6 +356,9 @@ On a real terminal those four **MUST** show the front board (`--json` is ignored
 19. Stay on the submenu after a finished command.  
 20. Show row **7** on Termux, Git Bash, or Windows cmd without the menu-hidden message, once this tree is implemented.  
 21. Print the generic board title “numbered list of live work commands” instead of Config `SHORT_DESCRIPTION` / `APP_DESC` on the front board.
+22. Omit front **5**, print front **6** as language, or print **50** or **64** through **69**.
+23. Dispatch `language` as a live `app_main` command.
+24. Hide front **5** on Termux, Git Bash, or Windows cmd.
 
 **Violating this rule is a critical dispatcher / hang / honesty regression.**
 
@@ -316,7 +370,7 @@ On a real terminal those four **MUST** show the front board (`--json` is ignored
 |----|-----------|
 | AC-1 | TTY empty argv uses `app_main_menu`; off-TTY empty argv stays Type O on the zero-argument REQ |
 | AC-2 | Case 3 recorded; empty argv, `menu`, and `main` named and routed |
-| AC-3 | Interactive `menu` and interactive empty argv draw front **1** `action`, **7** `sudoers`, **8** `self-management`, **9** Exit |
+| AC-3 | Interactive `menu` and interactive empty argv draw front **1** `action`, **5** `language`, **7** `sudoers`, **8** `self-management`, **9** Exit |
 | AC-4 | Interactive `menu --json` still draws the front board |
 | AC-5 | Non-interactive `menu` is help; `menu --json` is JSON help |
 | AC-6 | Front board omits help, install, version, about, version-check, self-update, self-uninstall, where-is-me, setup, menu, main, list-folders, and `generate-sudoer-json` |
@@ -339,7 +393,8 @@ On a real terminal those four **MUST** show the front board (`--json` is ignored
 | Key | Relationship |
 |-----|--------------|
 | `requirement-shell-cli-zero-arguments` | Empty argv: TTY this handler; off-TTY Type O |
-| `requirement-shell-cli-interface` | Dual mention: empty argv + `menu` / `main`; five sudoers verbs and six self-management verbs routed |
+| `requirement-shell-cli-interface` | Dual mention: empty argv + `menu` / `main`; five sudoers verbs and six self-management verbs routed; `language` is not dispatched |
+| `requirement-shell-cli-language` | Codes, file, and copy; front **5** / **51–63** |
 | `requirement-shell-interactive-vs-noninteractive` | `TTY`; no hang |
 | `requirement-shell-output-requirements` | `out_*` / `util_app_ident` / `out_menu_choice`; reuse `app_help` |
 | `requirement-shell-self-management` | Handlers for **81–86** |
@@ -354,7 +409,8 @@ On a real terminal those four **MUST** show the front board (`--json` is ignored
 | TP family / ID | Suite | Status |
 |----------------|-------|--------|
 | **TP-CLI-07** | `tests/test_cli.sh` | **have** — off-TTY empty argv is not the numbered list (AC-1) |
-| **TP-CLI-13** | same | **have** — front **1 / 7 / 8 / 9** on `menu` and empty argv (AC-3) |
+| **TP-CLI-13** | same | **have** — front **1 / 5 / 7 / 8 / 9** on `menu` and empty argv (AC-3) |
+| **TP-CLI-32** | same | **have** — language **51–63**; front **6** does not open the board (AC-3) |
 | **TP-CLI-14** | same | **have** — interactive `menu --json` still prints the front board (AC-4) |
 | **TP-CLI-15** | same | **have** — non-interactive `menu` is help; `--json` JSON help (AC-5) |
 | **TP-CLI-16** | same | **have** — install/version/about stay off the front board and appear as **81–83** (AC-6, AC-13) |
@@ -374,7 +430,7 @@ On a real terminal those four **MUST** show the front board (`--json` is ignored
 
 When this program runs on Termux, Git Bash, or Windows Command Prompt, it **MUST** stay on **your own login**. Admin privilege and a dedicated system account are **unused**. This menu **MUST NOT** wrap `sudo` on that class.
 
-**This requirement:** front **7** sudoers is omitted and the menu-hidden message in §2.7 is printed before the front numbers. Front **1**, front **8**, front **9**, and self-management **81–86** stay. Those lifecycle rows are your own login.
+**This requirement:** front **7** sudoers is omitted and the menu-hidden message in §2.7 is printed before the front numbers. Front **1**, front **5**, front **8**, front **9**, and self-management **81–86** stay. Those lifecycle rows are your own login. Row **5** is not a hide cause.
 
 Detect (typical): Termux — `PREFIX` contains `com.termux`; Git Bash — `MSYSTEM` is `MINGW*` / `MSYS*`; Windows cmd — `OS=Windows_NT` after excluding Git Bash / WSL.
 
@@ -394,9 +450,10 @@ Detect (typical): Termux — `PREFIX` contains `com.termux`; Git Bash — `MSYST
 | 2026-09-30 | Active 3.0.0 | Sibling sshd-cli numbering: front **1** `action` / **7** sudoers / **8** self-management / **9** Exit; sudoers **71–75**; self-management **81–86**; **0** Back; **87** reserved. Ship unit still on the 2.4.0 tree at that writing. |
 | 2026-09-30 | Active 3.0.1 | Ship unit draws this tree. **TP-CLI-13**, **TP-CLI-16**, and **TP-CLI-21** through **TP-CLI-25** are **have**. |
 | 2026-09-30 | Active 3.0.2 | Allowed-folder picker and the multi-draft list print **0** Back. Back and an invalid token do not `out_die`. Front **0** stays an invalid choice. **TP-CLI-26** and **TP-TAKE-OWNERSHIP-45** are **have**. |
+| 2026-10-04 | Active 3.1.0 | Front **5** language. Block **50–69**, assigned **51–63**. Front **6** is not a row. Copy follows `requirement-shell-cli-language` **1.0.0**. **TP-CLI-32** is **have**. |
 
 ---
 
-**Last Updated**: 2026-09-30  
+**Last Updated**: 2026-10-04  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

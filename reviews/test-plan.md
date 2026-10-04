@@ -3,9 +3,9 @@
 Maps **TP-*** coverage to `tests/`.  
 **Suite entry:** `./tests/run.sh`  
 **Ship unit:** `src/take-ownership`  
-**Product VERSION:** 3.0.3  
-**Last plan update:** 2026-09-30  
-**Last suite run:** `./tests/run.sh` on 2026-09-30 — **PASS=411 FAIL=0 SKIP=1** (TP-CURL-09 optional online; 3.0.3 folder-list **0** Back)
+**Product VERSION:** 3.1.0  
+**Last plan update:** 2026-10-04  
+**Last suite run:** `./tests/run.sh` on 2026-10-04 — **PASS=479 FAIL=0 SKIP=1** (TP-CURL-09 optional online; menu language **TP-CLI-32**)
 
 Status: **have** = automated today · **todo** = needed · **optional** · **n/a** · **skip** (environment)
 
@@ -55,7 +55,7 @@ Status: **have** = automated today · **todo** = needed · **optional** · **n/a
 | TP-CLI-10 | online verbs rejected; backup/restore unknown | test_cli | requirement-bootstrap-chain | **have** |
 | TP-CLI-11 | env -u HOME version | test_cli | class / defensive | **have** |
 | TP-CLI-12 | preferred cache `/dev/shm/cache/cache-${APP_NAME}-${login}-$$` | test_cli | requirement-shell-cli-storage | **have** |
-| TP-CLI-13 | interactive `menu` and empty argv print front **1 / 7 / 8 / 9** | test_cli | shell-cli-default-interaction | **have** |
+| TP-CLI-13 | interactive `menu` and empty argv print front **1 / 5 / 7 / 8 / 9**; no **6** language row | test_cli | shell-cli-default-interaction · shell-cli-language | **have** |
 | TP-CLI-14 | interactive `menu --json` still prints the list | test_cli | shell-cli-default-interaction | **have** |
 | TP-CLI-15 | non-interactive `menu` is help | test_cli | shell-cli-default-interaction | **have** |
 | TP-CLI-16 | front board omits install/version/about; those rows are **81–83** | test_cli | shell-cli-default-interaction | **have** |
@@ -69,6 +69,7 @@ Status: **have** = automated today · **todo** = needed · **optional** · **n/a
 | TP-CLI-24 | after a leaf, front board returns; unknown token reprints this layer | test_cli | shell-cli-default-interaction | **have** |
 | TP-CLI-25 | Termux / Git Bash / Windows cmd omits front **7** and prints the reason first | test_cli | shell-cli-default-interaction | **have** |
 | TP-CLI-26 | Front **0** warns and reprints; the front board has no **0** Back row | test_cli | shell-cli-default-interaction | **have** |
+| TP-CLI-32 | Language board **51–63**, save, override, human help/about; `language` is not an argv verb | test_cli | shell-cli-language · shell-cli-storage · shell-cli-interface | **have** |
 | TP-CACHE-01 | about JSON and human cache labels | test_cli | requirement-shell-cli-storage | **have** |
 | TP-CACHE-02 | Linux / Git Bash / macOS chains, silent skip, mode 0700, one leaf per process | test_cli | requirement-shell-cli-storage | **have** |
 | TP-CACHE-03 | scratch file and directory stay in the cache leaf; absent `mktemp`; refuse `$$` names | test_cli | requirement-shell-cli-storage | **have** |

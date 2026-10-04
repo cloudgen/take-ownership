@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-shell-cli-interface.md  
-**Status**: Active (Version 3.1.0)  
+**Status**: Active (Version 3.2.0)  
 **Area**: shell  
 **Key**: `requirement-shell-cli-interface`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -78,7 +78,7 @@ Additional flags **MAY** be added only when documented here (or a superseding re
 
 `help` **MUST** list usage, every supported command, privilege category, global flags, and an honest note that `action` needs an admin-installed sudoers fragment **and** a global install.
 
-**Purpose split:** the test-purpose alias is **`generate-sudoer-json`**. Help **MUST** list it under a heading **apart** from operational work. The five sudoers grant/draft verbs are **operational** (menu **71–75**; still live CLI commands). The six self-management verbs are live CLI commands (menu **81–86**). **`sudoers` and `self-management` are not live commands.**
+**Purpose split:** the test-purpose alias is **`generate-sudoer-json`**. Help **MUST** list it under a heading **apart** from operational work. The five sudoers grant/draft verbs are **operational** (menu **71–75**; still live CLI commands). The six self-management verbs are live CLI commands (menu **81–86**). **`language`, `sudoers`, and `self-management` are not live commands.** `language` is menu row **5** only (`requirement-shell-cli-language`).
 
 | Purpose | Verbs |
 |---------|-------|
@@ -86,7 +86,7 @@ Additional flags **MAY** be added only when documented here (or a superseding re
 | **Self-managed** | `install`, `version-check`, `self-update`, `self-uninstall`, `uninstall` (alias), `where-is-me` |
 | **Diagnostics** | `version`, `about`, `help` |
 | **Test-purpose** | `generate-sudoer-json` |
-| **Menu-only category (not dispatched)** | `sudoers`, `self-management` |
+| **Menu-only category (not dispatched)** | `language`, `sudoers`, `self-management` |
 
 Help **MUST** state: JSON field `action` (add/update) is **not** the CLI verb `action`.
 
@@ -128,7 +128,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | `generate-sudoer-request` | You | `to_generate_sudoer_request` | **Operational.** Independent JSON; `--path` required; global-bin gate. Menu **71** |
 | `generate-sudoer-json` | You | `to_generate_sudoer_request` | **Test-purpose alias.** Same handler as `generate-sudoer-request`. Canonical JSON for tests (`--ownership` stays `user:group`). Off every numbered list |
 | `submit-sudoer-request` | You | `to_submit_sudoer_request` | **Operational.** Sibling inbound; global-bin gate. Menu **72** |
-| `menu` | You | `app_main_menu` | TTY tree: front **1** / **7** / **8** / **9** (`requirement-shell-cli-default-interaction`) |
+| `menu` | You | `app_main_menu` | TTY tree: front **1** / **5** / **7** / **8** / **9** (`requirement-shell-cli-default-interaction`) |
 | `main` | You | `app_main_menu` | Alias of `menu` |
 
 #### Dispatcher acceptance criteria
@@ -136,7 +136,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 1. Unknown token after flag parse → `out_die` with pointer to `take-ownership help`.  
 2. Zero-arg after flag parse → TTY menu / off-TTY Type O / `--json` JSON help.  
 3. Command routing table in `app_main` **must** include every **Implemented** row above.  
-4. Help text **must** stay aligned. Test-purpose `generate-sudoer-json` **MUST** appear under a heading **apart**. The five sudoers verbs and the six self-management verbs **MUST** stay routed (same handlers as menu **71–75** and **81–86**). **MUST NOT** route `sudoers` or `self-management`.  
+4. Help text **must** stay aligned. Test-purpose `generate-sudoer-json` **MUST** appear under a heading **apart**. The five sudoers verbs and the six self-management verbs **MUST** stay routed (same handlers as menu **71–75** and **81–86**). **MUST NOT** route `language`, `sudoers`, or `self-management`.  
 5. Domain catalog detail is owned by `requirement-domain-take-ownership.md`.
 
 #### Explicitly out of scope
@@ -178,7 +178,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 4. Bypass `out_*` for product user messages.  
 5. Run the entire CLI as root by default instead of narrow `action` elevation.  
 6. Put full chown semantics only here and omit the ops SSOT.  
-7. Mix test-purpose `generate-sudoer-json` into operational help grouping, put it on any numbered menu list, or wire `sudoers` or `self-management` as a live `app_main` command.  
+7. Mix test-purpose `generate-sudoer-json` into operational help grouping, put it on any numbered menu list, or wire `language`, `sudoers`, or `self-management` as a live `app_main` command.  
 8. Reintroduce `backup` / `restore` or `--allow-test-local`.  
 9. Route interactive empty argv to help while the claimed numbered list is Active.
 
@@ -199,7 +199,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | AC-7 | `generate-sudoer-request` / `generate-sudoer-json` are Type 0, independent of submit; dest readable; global-bin gate |
 | AC-8 | Empty argv, `menu`, and `main` are routed to `app_main_menu` |
 | AC-9 | Help lists test-purpose `generate-sudoer-json` **apart** from operational verbs |
-| AC-10 | Five sudoers grant/draft verbs and six self-management verbs are routed live commands; `sudoers` and `self-management` are unknown |
+| AC-10 | Five sudoers grant/draft verbs and six self-management verbs are routed live commands; `language`, `sudoers`, and `self-management` are unknown |
 
 ---
 
@@ -208,7 +208,8 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | Key | Relationship |
 |-----|--------------|
 | `requirement-shell-cli-zero-arguments` | Empty argv: TTY menu, off-TTY Type O |
-| `requirement-shell-cli-default-interaction` | TTY tree; sudoers **71–75**; self-management **81–86** |
+| `requirement-shell-cli-default-interaction` | TTY tree; language **5** / **51–63**; sudoers **71–75**; self-management **81–86** |
+| `requirement-shell-cli-language` | `language` is menu-only; human help and about follow the code |
 | `requirement-shell-self-management` | Handlers for install, version-check, self-update, self-uninstall |
 | `requirement-shell-output-requirements` | `out_*` catalog |
 | `requirement-domain-take-ownership` | Domain four pillars |
@@ -224,7 +225,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | TP family / ID | Suite | Status |
 |----------------|-------|--------|
 | **TP-CLI-01..12** | `tests/test_cli.sh` | **todo** — retarget from folder-backup names |
-| **TP-CLI-13..16**, **21..25** | same | **have** — front **1 / 7 / 8 / 9**; sudoers **71–75**; self-management **81–86**; `sudoers` and `self-management` unknown |
+| **TP-CLI-13..16**, **21..26**, **32** | same | **have** — front **1 / 5 / 7 / 8 / 9**; sudoers **71–75**; self-management **81–86**; `language`, `sudoers`, and `self-management` unknown |
 | **TP-CLI-17** | same | **have** — help lists test-purpose `generate-sudoer-json` apart |
 
 **Matrix:** `reviews/requirement-test-matrix.md`  
@@ -248,9 +249,10 @@ Detect (typical): Termux — `PREFIX` contains `com.termux`; Git Bash — `MSYST
 | 2026-08-30 | Active 2.2.1 | `about` Persistence storage `${HOME}/.local/${APP_NAME}` |
 | 2026-09-03 | Active 2.3.0 | Five sudoers verbs operational (submenu); `generate-sudoer-json` remains test-purpose; `sudoers` not dispatched |
 | 2026-09-30 | Active 3.1.0 | Menu pointers: sudoers **71–75**, self-management **81–86**; category names not dispatched; empty argv follows Type O |
+| 2026-10-04 | Active 3.2.0 | `language` is menu-only (front **5** / **51–63**), not an argv verb |
 
 ---
 
-**Last Updated**: 2026-09-30  
+**Last Updated**: 2026-10-04  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

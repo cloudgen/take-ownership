@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-shell-cli-storage.md  
-**Status**: Active (Version 2.1.1)  
+**Status**: Active (Version 2.2.0)  
 **Area**: shell  
 **Key**: `requirement-shell-cli-storage`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -168,6 +168,7 @@ tmp="${EFFECTIVE_STORAGE_DIR}/${APP_NAME}.$$"
 5. Persistence **MUST** be under the invoking login’s `$HOME` (per-user). **MUST** include `${APP_NAME}`. **MUST NOT** add a login suffix or `$$`.  
 6. **MUST NOT** export `TMPDIR` as the persistence path.  
 7. Config drafts (`sudoers.fragment-<user>`, `sudoer-request-<user>.json`) **MUST** remain under `${HOME}/.config/${APP_NAME}/` unless those peer requirements change.
+8. The menu-language leaf is `${HOME}/.local/${APP_NAME}/language` (one code, mode **0600**). **MUST NOT** put that leaf in the cache folder. The codes and the copy are `requirement-shell-cli-language`. This file owns the directory.
 
 ### 2.6 Wire and diagnostics
 
@@ -321,6 +322,7 @@ Detect: Termux — `uname` contains Android, or `PREFIX` / `TERMUX_VERSION` is s
 | **TP-CLI-06** | `tests/test_cli.sh` | **have** — about JSON cache + persistence fields + human labels; no Storage (effective) / Storage (fallback); no `CHECKSUM` |
 | **TP-CLI-12** | same | **have** — Linux preferred `/dev/shm/cache/cache-${APP_NAME}-${login}-$$`; live dir exists; not a ram-drive project shape |
 | **TP-CLI-18** | same | **have** — persistence `${HOME}/.local/${APP_NAME}` exists; not USER_BIN; not the live cache root |
+| **TP-CLI-32** | same | **have** — language leaf under that directory, mode **0600**; not the cache folder |
 | **TP-CACHE-01** | same | **have** — about JSON `cache_used` / `cache_preferred` / `cache_fallback` / `cache_fallback_2` / `persistence_storage` + human labels |
 | **TP-CACHE-02** | same | **have** — Linux, Git Bash, and Mac chains; silent skip of preferred; leaf mode 0700; each process its own leaf |
 | **TP-CACHE-03** | same | **have** — `util_mktemp` writes `mktemp` names under the cache leaf, refuses a `$$` file-name template, and when the temp maker is absent writes a mode-`0600` file and a mode-`0700` directory under that leaf |
@@ -339,9 +341,10 @@ The suite does not assign `HOME` to a scratch directory for the cache chain. Iso
 | 2026-08-30 | Active 1.1.0 | Preferred `/dev/shm/cache/cache-${APP_NAME}`; about Cache folder labels |
 | 2026-08-30 | Active 2.0.0 | Storage = cache folder **and** persistence `${HOME}/.local/${APP_NAME}/` |
 | 2026-09-30 | Active 2.1.1 | Per-login per-process cache leaves. Linux shm → tmp → `${HOME}/.cache`. Git Bash tmp → AppData Local Temp. Mac tmp → Library/Caches → `${HOME}/cache`. Silent tier miss. `about` prints used / preferred / 1st / 2nd. `mktemp` checked first; a missing maker writes a mode-`0600` file under the cache folder. A scratch directory is mode `0700` before use |
+| 2026-10-04 | Active 2.2.0 | Persistence leaf `language` (menu language). Not cache. |
 
 ---
 
-**Last Updated**: 2026-09-30  
+**Last Updated**: 2026-10-04  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

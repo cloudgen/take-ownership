@@ -4,8 +4,8 @@
 **Class:** software-development · domain SSOT present · online `curl | sh` install (live since 3.0.0).  
 **Always load first:** `reviews/lessons.md`
 
-**Last plan update:** 2026-09-30  
-**Ship unit VERSION:** 3.0.3  
+**Last plan update:** 2026-10-04  
+**Ship unit VERSION:** 3.1.0  
 **Suite baseline:** see `reviews/test-plan.md`
 
 ---
@@ -40,15 +40,16 @@
 | **JSON sudoer file** | `requirement-sudoer-json-file.md` | `action --path F --ownership user:group` plus `--json` twin; never `"*"` |
 | **Incorrect ownership** | `requirement-incorrect-ownership-parameter.md` | no `*`; no cwd listings |
 | **Operator-readable error** | `requirement-operator-readable-error.md` | Blocking `[ERROR]` what-happened + next step; granted-missing recreate |
-| CLI interface | `requirement-shell-cli-interface.md` | Commands, flags; five sudoers verbs live; `sudoers` unknown |
-| Default interaction | `requirement-shell-cli-default-interaction.md` | Front **1 / 7 / 8 / 9**; sudoers **71–75**; self-management **81–86**; **0** Back |
+| CLI interface | `requirement-shell-cli-interface.md` | Commands, flags; five sudoers verbs live; `language`, `sudoers`, and `self-management` unknown |
+| Default interaction | `requirement-shell-cli-default-interaction.md` | Front **1 / 5 / 7 / 8 / 9**; language **51–63**; sudoers **71–75**; self-management **81–86**; **0** Back |
+| Menu language | `requirement-shell-cli-language.md` | Thirteen codes; leaf `language` mode **0600**; `TAKE_OWNERSHIP_LANG` does not write; human help and about follow the code; JSON stays English |
 | Empty argv | `requirement-shell-cli-zero-arguments.md` | TTY menu; off-TTY Type O install-ensure |
 | Local self-management | `requirement-shell-local-self-management.md` | install/uninstall; **0755**; global preferred for elev |
 | Output | `requirement-shell-output-requirements.md` | `out_*`; JSON errors |
 | Modular design | `requirement-shell-modular-function-design.md` | `to_*` domain prefix |
 | Idempotency | `requirement-shell-idempotency.md` | Re-install; already-matching `action` |
 | Interactive modes | `requirement-shell-interactive-vs-noninteractive.md` | Uninstall / TTY `action` walk |
-| CLI storage | `requirement-shell-cli-storage.md` | Per-login per-process cache; silent tier miss; fixed persistence path |
+| CLI storage | `requirement-shell-cli-storage.md` | Per-login per-process cache; silent tier miss; fixed persistence path; `language` leaf is not cache |
 | Domain | `requirement-domain-take-ownership.md` | Four pillars; ops deferred |
 | Ops | `requirement-take-ownership-ops.md` | Recursive chown; TTY live pick; granted-missing |
 
@@ -67,6 +68,7 @@
 | `to_print_sudoers` | Broad sudoers; write `/etc`; local=production | L-SUDOERS-01/02 · TP-TAKE-OWNERSHIP-03/30/31 |
 | `to_action` TTY pick | Numbers a granted path that is not a directory | L-OPS-01 · TP-TAKE-OWNERSHIP-44 |
 | `util_resolve_storage` / `util_resolve_persistent_storage` | Shared leaf, silent-miss warning, or persist override | L-STOR-01 · TP-CLI-06 · TP-CLI-12 · TP-CLI-18 · TP-CACHE-01..03 |
+| `app_lang_load` / `app_lang_save` | Rewrite a bad file, write on env override, or call load again after a pick | TP-CLI-32 |
 | Config `HOME` under `set -u` | nounset crash | L-SETU-01 · TP-CLI-11 |
 
 ---

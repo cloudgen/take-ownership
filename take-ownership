@@ -21,6 +21,7 @@
 # - requirement-shell-cli-interface.md
 # - requirement-shell-cli-zero-arguments.md  (TTY menu / off-TTY Type O install-ensure)
 # - requirement-shell-cli-default-interaction.md  (menu / main numbered list)
+# - requirement-shell-cli-language.md  (menu language; not an argv verb)
 # - requirement-shell-self-management.md
 # - requirement-shell-automatic-checksum.md
 # - requirement-shell-cli-storage.md
@@ -38,7 +39,7 @@
 # Single file at repo root for curl | sh. Global bin still required before sudoers emit.
 #
 # APP NAME: hard-assign APP_NAME="take-ownership"
-# VERSION: hard-assign VERSION="3.0.3"
+# VERSION: hard-assign VERSION="3.1.0"
 #
 # =============================================================================
 
@@ -55,8 +56,8 @@ APP_NAME="take-ownership"
 : "${SHORT_DESCRIPTION:=${APP_DESC}}"
 : "${DESCRIPTION:=POSIX /bin/sh online-installable CLI: curl|sh install, version-check, self-update, self-uninstall, about, plus take-ownership action and grant/draft verbs.}"
 # Product version SSOT (semver). Extractors use: grep '^VERSION="'
-VERSION="3.0.3"
-: "${VERSION:=3.0.2}"
+VERSION="3.1.0"
+: "${VERSION:=3.1.0}"
 # Repository identity → install channel (inherited from selfmanaged).
 : "${REPO_USER:=cloudgen}"
 : "${REPO_NAME:=take-ownership}"
@@ -3271,8 +3272,8 @@ to_prompt_allowed_folder_choice() {
             _i=$((_i + 1))
             out_plain "${_i}. ${_p}"
         done <"${_live}"
-        out_menu_choice 0 Back
-        if ! prompt_line "Choice"; then
+        out_menu_choice 0 "$(app_menu_text label_back)"
+        if ! app_menu_read; then
             rm -f "${_live}"
             return 2
         fi
@@ -5036,10 +5037,10 @@ EOF
                 done <<EOF
 ${_draft_list}
 EOF
-                out_menu_choice 0 Back
+                out_menu_choice 0 "$(app_menu_text label_back)"
                 out_info "Pass an explicit path to remove one non-interactively, e.g.:"
                 out_plain "  ${APP_NAME} remove-project-sudoers --force <path>"
-                if ! prompt_line "Choice"; then
+                if ! app_menu_read; then
                     out_info "Remove cancelled"
                     return 0
                 fi
@@ -5143,7 +5144,7 @@ EOF
 # =============================================================================
 app_version() {
     : "${APP_NAME:=take-ownership}"
-    : "${VERSION:=3.0.2}"
+    : "${VERSION:=3.1.0}"
     : "${JSON:=0}"
     if [ "${JSON}" -eq 1 ]; then
         out_json "version" "" "app" "${APP_NAME}" "version" "${VERSION}"
@@ -5167,7 +5168,7 @@ app_about() {
     : "${JSON:=0}"
     : "${QUIET:=0}"
     : "${APP_NAME:=take-ownership}"
-    : "${VERSION:=3.0.2}"
+    : "${VERSION:=3.1.0}"
     : "${REPO_USER:=cloudgen}"
     : "${REPO_NAME:=take-ownership}"
     : "${SCRIPT_URL:=}"
@@ -5268,6 +5269,11 @@ app_about() {
     fi
 
     [ "${QUIET}" -eq 1 ] && return 0
+
+    if ! app_lang_is_en; then
+        app_about_i18n
+        return 0
+    fi
 
     out_info "$(util_app_ident) — About / Diagnostics"
     out_empty_line
@@ -5383,6 +5389,1532 @@ util_menu_host_class() {
     return 1
 }
 
+
+# =============================================================================
+# Menu language. Thirteen codes. Leaf ${PERSISTENT_STORAGE_DIR}/language
+# mode 0600. TAKE_OWNERSHIP_LANG wins at process start and does not write.
+# One load at the start of app_main. A later pick sets APP_LANG itself.
+# Leaf shorts stay the English verb. Category shorts follow APP_LANG.
+# app_menu_text is pure data: no read builtin.
+#
+# ALIGNMENT:
+# - requirement-shell-cli-language.md
+# - requirement-shell-cli-storage.md
+# - requirement-shell-cli-default-interaction.md
+#
+# Last updated: 2026-10-04
+# =============================================================================
+app_lang_is_en() {
+    case "${APP_LANG:-en}" in
+        en|"") return 0 ;;
+    esac
+    return 1
+}
+
+app_lang_load() {
+    APP_LANG=en
+    if [ -z "${PERSISTENT_STORAGE_DIR:-}" ]; then
+        PERSISTENT_STORAGE_DIR=$(util_resolve_persistent_storage)
+        export PERSISTENT_STORAGE_DIR
+    fi
+    _ll_path="${PERSISTENT_STORAGE_DIR}/language"
+    if [ -f "${_ll_path}" ]; then
+        _ll_line=$(head -n 1 "${_ll_path}" 2>/dev/null || true)
+        _ll_line=$(printf '%s' "${_ll_line}" | tr -d '\r')
+        case "${_ll_line}" in
+            en|zh-Hans|zh-Hant|es|ar|fr|pt|ru|de|ja|ko|nl|el) APP_LANG="${_ll_line}" ;;
+        esac
+    fi
+    case "${TAKE_OWNERSHIP_LANG-}" in
+        en|zh-Hans|zh-Hant|es|ar|fr|pt|ru|de|ja|ko|nl|el) APP_LANG="${TAKE_OWNERSHIP_LANG}" ;;
+    esac
+    export APP_LANG
+    unset _ll_path _ll_line
+}
+
+app_lang_save() {
+    _ls_code=${1-}
+    case "${_ls_code}" in
+        en|zh-Hans|zh-Hant|es|ar|fr|pt|ru|de|ja|ko|nl|el) ;;
+        *)
+            unset _ls_code
+            return 1
+            ;;
+    esac
+    if [ -z "${PERSISTENT_STORAGE_DIR:-}" ]; then
+        PERSISTENT_STORAGE_DIR=$(util_resolve_persistent_storage)
+        export PERSISTENT_STORAGE_DIR
+    fi
+    _ls_path="${PERSISTENT_STORAGE_DIR}/language"
+    if ! printf '%s\n' "${_ls_code}" > "${_ls_path}"; then
+        unset _ls_code _ls_path
+        return 1
+    fi
+    chmod 0600 "${_ls_path}" 2>/dev/null || true
+    APP_LANG="${_ls_code}"
+    export APP_LANG
+    unset _ls_code _ls_path
+    return 0
+}
+
+app_menu_text() {
+    _mt_key=${1-}
+    _mt_a=${2-}
+    _mt_lang=${APP_LANG:-en}
+    case "${_mt_lang}" in
+        zh-Hans|zh-Hant|es|ar|fr|pt|ru|de|ja|ko|nl|el) ;;
+        *) _mt_lang=en ;;
+    esac
+    _mt_out=""
+    case "${_mt_key}" in
+        short_desc)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="以窄的全局 sudo 授权，取得具名文件夹的 Unix 所有权" ;;
+                zh-Hant) _mt_out="以窄的全域 sudo 授權，取得具名資料夾的 Unix 擁有權" ;;
+                es) _mt_out="Tomar la propiedad Unix de una carpeta con una concesión sudo global estrecha" ;;
+                ar) _mt_out="أخذ ملكية يونكس لمجلد مسمى بمنحة sudo عامة ضيقة" ;;
+                fr) _mt_out="Prendre la propriété Unix d'un dossier avec une autorisation sudo globale étroite" ;;
+                pt) _mt_out="Tomar a propriedade Unix de uma pasta com uma concessão sudo global estreita" ;;
+                ru) _mt_out="Взять владение Unix именованной папки с узким глобальным разрешением sudo" ;;
+                de) _mt_out="Unix-Besitz eines Ordners mit einer engen globalen sudo-Freigabe übernehmen" ;;
+                ja) _mt_out="狭いグローバル sudo 許可で、名前付きフォルダの Unix 所有権を取得する" ;;
+                ko) _mt_out="좁은 전역 sudo 허가로 이름 있는 폴더의 Unix 소유권을 가져옵니다" ;;
+                nl) _mt_out="Unix-eigendom van een map nemen met een smalle globale sudo-toestemming" ;;
+                el) _mt_out="Λήψη ιδιοκτησίας Unix ενός φακέλου με στενή καθολική άδεια sudo" ;;
+                *) _mt_out="Take Unix ownership of a named folder with a narrow global-only sudo grant" ;;
+            esac
+            ;;
+        long_action)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="递归取得具名文件夹的所有权" ;;
+                zh-Hant) _mt_out="遞迴取得具名資料夾的擁有權" ;;
+                es) _mt_out="Tomar de forma recursiva la propiedad de una carpeta" ;;
+                ar) _mt_out="أخذ ملكية مجلد مسمى بشكل متكرر" ;;
+                fr) _mt_out="Prendre récursivement la propriété d'un dossier nommé" ;;
+                pt) _mt_out="Tomar recursivamente a propriedade de uma pasta" ;;
+                ru) _mt_out="Рекурсивно взять владение именованной папкой" ;;
+                de) _mt_out="Besitz eines genannten Ordners rekursiv übernehmen" ;;
+                ja) _mt_out="名前付きフォルダの所有権を再帰的に取得する" ;;
+                ko) _mt_out="이름 있는 폴더의 소유권을 재귀적으로 가져옵니다" ;;
+                nl) _mt_out="Recursief eigendom nemen van een genoemde map" ;;
+                el) _mt_out="Αναδρομική λήψη ιδιοκτησίας ενός ονομασμένου φακέλου" ;;
+                *) _mt_out="Recursively take ownership of a named folder" ;;
+            esac
+            ;;
+        cat_language)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="语言" ;;
+                zh-Hant) _mt_out="語言" ;;
+                es) _mt_out="idioma" ;;
+                ar) _mt_out="لغة" ;;
+                fr) _mt_out="langue" ;;
+                pt) _mt_out="idioma" ;;
+                ru) _mt_out="язык" ;;
+                de) _mt_out="Sprache" ;;
+                ja) _mt_out="言語" ;;
+                ko) _mt_out="언어" ;;
+                nl) _mt_out="taal" ;;
+                el) _mt_out="γλώσσα" ;;
+                *) _mt_out="language" ;;
+            esac
+            ;;
+        cat_language_long)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="这个菜单的显示语言" ;;
+                zh-Hant) _mt_out="這個選單的顯示語言" ;;
+                es) _mt_out="idioma de este menú" ;;
+                ar) _mt_out="لغة العرض لهذه القائمة" ;;
+                fr) _mt_out="langue d'affichage de ce menu" ;;
+                pt) _mt_out="idioma de exibição deste menu" ;;
+                ru) _mt_out="язык отображения этого меню" ;;
+                de) _mt_out="Anzeigesprache für dieses Menü" ;;
+                ja) _mt_out="このメニューの表示言語" ;;
+                ko) _mt_out="이 메뉴의 표시 언어" ;;
+                nl) _mt_out="weergavetaal van dit menu" ;;
+                el) _mt_out="γλώσσα εμφάνισης αυτού του μενού" ;;
+                *) _mt_out="display language for this menu" ;;
+            esac
+            ;;
+        cat_self)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="自我管理" ;;
+                zh-Hant) _mt_out="自我管理" ;;
+                es) _mt_out="autogestión" ;;
+                ar) _mt_out="إدارة-ذاتية" ;;
+                fr) _mt_out="autogestion" ;;
+                pt) _mt_out="autogestão" ;;
+                ru) _mt_out="самоуправление" ;;
+                de) _mt_out="Selbstverwaltung" ;;
+                ja) _mt_out="自己管理" ;;
+                ko) _mt_out="자기관리" ;;
+                nl) _mt_out="zelfbeheer" ;;
+                el) _mt_out="αυτοδιαχείριση" ;;
+                *) _mt_out="self-management" ;;
+            esac
+            ;;
+        cat_self_long)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="此程序的安装、版本、更新、移除" ;;
+                zh-Hant) _mt_out="此程式的安裝、版本、更新、移除" ;;
+                es) _mt_out="Instalación, versión, actualización y desinstalación de este CLI" ;;
+                ar) _mt_out="تثبيت هذا البرنامج وإصداره وتحديثه وإزالته" ;;
+                fr) _mt_out="Installation, version, mise à jour et retrait de ce CLI" ;;
+                pt) _mt_out="Instalação, versão, atualização e remoção deste CLI" ;;
+                ru) _mt_out="Установка, версия, обновление и удаление этой программы" ;;
+                de) _mt_out="Installation, Version, Aktualisierung und Entfernung dieses CLI" ;;
+                ja) _mt_out="この CLI の導入、版、更新、削除" ;;
+                ko) _mt_out="이 CLI의 설치, 버전, 업데이트, 제거" ;;
+                nl) _mt_out="Installatie, versie, bijwerken en verwijderen van deze CLI" ;;
+                el) _mt_out="Εγκατάσταση, έκδοση, ενημέρωση και αφαίρεση αυτού του CLI" ;;
+                *) _mt_out="This CLI install, version, update, uninstall" ;;
+            esac
+            ;;
+        cat_sudoers_long)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="授权与草稿" ;;
+                zh-Hant) _mt_out="授權與草稿" ;;
+                es) _mt_out="Concesión y borradores" ;;
+                ar) _mt_out="منح ومسودات" ;;
+                fr) _mt_out="Autorisation et brouillons" ;;
+                pt) _mt_out="Concessão e rascunhos" ;;
+                ru) _mt_out="Разрешение и черновики" ;;
+                de) _mt_out="Freigabe und Entwürfe" ;;
+                ja) _mt_out="認可と下書き" ;;
+                ko) _mt_out="허가와 초안" ;;
+                nl) _mt_out="Toestemming en concepten" ;;
+                el) _mt_out="Άδεια και πρόχειρα" ;;
+                *) _mt_out="Grant and drafts" ;;
+            esac
+            ;;
+        title_sudoers)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="sudoers（授权与草稿）" ;;
+                zh-Hant) _mt_out="sudoers（授權與草稿）" ;;
+                es) _mt_out="sudoers (concesión y borradores)" ;;
+                ar) _mt_out="sudoers (منح ومسودات)" ;;
+                fr) _mt_out="sudoers (autorisation et brouillons)" ;;
+                pt) _mt_out="sudoers (concessão e rascunhos)" ;;
+                ru) _mt_out="sudoers (разрешение и черновики)" ;;
+                de) _mt_out="sudoers (Freigabe und Entwürfe)" ;;
+                ja) _mt_out="sudoers（認可と下書き）" ;;
+                ko) _mt_out="sudoers(허가와 초안)" ;;
+                nl) _mt_out="sudoers (toestemming en concepten)" ;;
+                el) _mt_out="sudoers (άδεια και πρόχειρα)" ;;
+                *) _mt_out="sudoers (grant and drafts)" ;;
+            esac
+            ;;
+        title_self)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="自我管理（此程序）" ;;
+                zh-Hant) _mt_out="自我管理（此程式）" ;;
+                es) _mt_out="autogestión (este CLI)" ;;
+                ar) _mt_out="إدارة-ذاتية (هذا البرنامج)" ;;
+                fr) _mt_out="autogestion (ce CLI)" ;;
+                pt) _mt_out="autogestão (este CLI)" ;;
+                ru) _mt_out="самоуправление (эта программа)" ;;
+                de) _mt_out="Selbstverwaltung (dieses CLI)" ;;
+                ja) _mt_out="自己管理（この CLI）" ;;
+                ko) _mt_out="자기관리(이 CLI)" ;;
+                nl) _mt_out="zelfbeheer (deze CLI)" ;;
+                el) _mt_out="αυτοδιαχείριση (αυτό το CLI)" ;;
+                *) _mt_out="self-management (this CLI)" ;;
+            esac
+            ;;
+        long_gen)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="写出一份你能阅读的 JSON 授权" ;;
+                zh-Hant) _mt_out="寫出一份你能閱讀的 JSON 授權" ;;
+                es) _mt_out="Escribir una concesión JSON que puedes leer" ;;
+                ar) _mt_out="اكتب منحة JSON تستطيع قراءتها" ;;
+                fr) _mt_out="Écrire une autorisation JSON que vous pouvez lire" ;;
+                pt) _mt_out="Escrever uma concessão JSON que você pode ler" ;;
+                ru) _mt_out="Записать разрешение JSON, которое можно прочитать" ;;
+                de) _mt_out="Eine JSON-Freigabe schreiben, die Sie lesen können" ;;
+                ja) _mt_out="読める JSON 許可を書く" ;;
+                ko) _mt_out="읽을 수 있는 JSON 허가를 씁니다" ;;
+                nl) _mt_out="Een JSON-toestemming schrijven die u kunt lezen" ;;
+                el) _mt_out="Γράψτε μια άδεια JSON που μπορείτε να διαβάσετε" ;;
+                *) _mt_out="Write a JSON grant you can read" ;;
+            esac
+            ;;
+        long_submit)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="把 JSON 授权排进入站队列" ;;
+                zh-Hant) _mt_out="把 JSON 授權排進入站佇列" ;;
+                es) _mt_out="Poner la concesión JSON en la cola de entrada" ;;
+                ar) _mt_out="صف منحة JSON في الوارد" ;;
+                fr) _mt_out="Mettre l'autorisation JSON dans la file entrante" ;;
+                pt) _mt_out="Enfileirar a concessão JSON na entrada" ;;
+                ru) _mt_out="Поставить разрешение JSON во входящую очередь" ;;
+                de) _mt_out="Die JSON-Freigabe in die Eingangs-Warteschlange stellen" ;;
+                ja) _mt_out="JSON 許可を受信キューに入れる" ;;
+                ko) _mt_out="JSON 허가를 인바운드 대기열에 넣습니다" ;;
+                nl) _mt_out="De JSON-toestemming in de inkomende wachtrij zetten" ;;
+                el) _mt_out="Βάλτε την άδεια JSON στην εισερχόμενη ουρά" ;;
+                *) _mt_out="Queue the JSON grant inbound" ;;
+            esac
+            ;;
+        long_print)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="输出 sudoers 草稿" ;;
+                zh-Hant) _mt_out="輸出 sudoers 草稿" ;;
+                es) _mt_out="Emitir el borrador de sudoers" ;;
+                ar) _mt_out="أخرج مسودة sudoers" ;;
+                fr) _mt_out="Émettre le brouillon sudoers" ;;
+                pt) _mt_out="Emitir o rascunho sudoers" ;;
+                ru) _mt_out="Вывести черновик sudoers" ;;
+                de) _mt_out="sudoers-Entwurf ausgeben" ;;
+                ja) _mt_out="sudoers の下書きを出す" ;;
+                ko) _mt_out="sudoers 초안을 출력합니다" ;;
+                nl) _mt_out="sudoers-concept weergeven" ;;
+                el) _mt_out="Εμφάνιση πρόχειρου sudoers" ;;
+                *) _mt_out="Emit sudoers draft" ;;
+            esac
+            ;;
+        long_script)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="写出管理员安装脚本" ;;
+                zh-Hant) _mt_out="寫出管理員安裝腳本" ;;
+                es) _mt_out="Escribir el script de instalación del administrador" ;;
+                ar) _mt_out="اكتب سكربت التثبيت للمسؤول" ;;
+                fr) _mt_out="Écrire le script d'installation pour l'administrateur" ;;
+                pt) _mt_out="Escrever o script de instalação do administrador" ;;
+                ru) _mt_out="Записать скрипт установки для администратора" ;;
+                de) _mt_out="Admin-Installationsskript schreiben" ;;
+                ja) _mt_out="管理者用の導入スクリプトを書く" ;;
+                ko) _mt_out="관리자 설치 스크립트를 씁니다" ;;
+                nl) _mt_out="Beheerders-installatiescript schrijven" ;;
+                el) _mt_out="Γράψτε το σενάριο εγκατάστασης του διαχειριστή" ;;
+                *) _mt_out="Write admin install script" ;;
+            esac
+            ;;
+        long_remove)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="只移除 sudoers 草稿" ;;
+                zh-Hant) _mt_out="只移除 sudoers 草稿" ;;
+                es) _mt_out="Quitar solo el borrador de sudoers" ;;
+                ar) _mt_out="أزل مسودة sudoers فقط" ;;
+                fr) _mt_out="Retirer seulement le brouillon sudoers" ;;
+                pt) _mt_out="Remover só o rascunho sudoers" ;;
+                ru) _mt_out="Удалить только черновик sudoers" ;;
+                de) _mt_out="Nur den sudoers-Entwurf entfernen" ;;
+                ja) _mt_out="sudoers の下書きだけを削除する" ;;
+                ko) _mt_out="sudoers 초안만 제거합니다" ;;
+                nl) _mt_out="Alleen het sudoers-concept verwijderen" ;;
+                el) _mt_out="Αφαιρέστε μόνο το πρόχειρο sudoers" ;;
+                *) _mt_out="Remove sudoers draft only" ;;
+            esac
+            ;;
+        long_install)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="从通道确保此程序已安装" ;;
+                zh-Hant) _mt_out="從通道確保此程式已安裝" ;;
+                es) _mt_out="Asegurar este programa desde el canal" ;;
+                ar) _mt_out="تأكد من هذا البرنامج من القناة" ;;
+                fr) _mt_out="Assurer ce programme depuis le canal" ;;
+                pt) _mt_out="Garantir este programa a partir do canal" ;;
+                ru) _mt_out="Поставить эту программу из канала" ;;
+                de) _mt_out="Dieses Programm aus dem Kanal sicherstellen" ;;
+                ja) _mt_out="チャネルからこのプログラムを導入する" ;;
+                ko) _mt_out="채널에서 이 프로그램을 설치합니다" ;;
+                nl) _mt_out="Dit programma vanuit het kanaal zekerstellen" ;;
+                el) _mt_out="Εξασφαλίστε αυτό το πρόγραμμα από το κανάλι" ;;
+                *) _mt_out="Ensure this program from the channel" ;;
+            esac
+            ;;
+        long_version)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="显示本地版本" ;;
+                zh-Hant) _mt_out="顯示本機版本" ;;
+                es) _mt_out="Mostrar la versión local" ;;
+                ar) _mt_out="أظهر الإصدار المحلي" ;;
+                fr) _mt_out="Afficher la version locale" ;;
+                pt) _mt_out="Mostrar a versão local" ;;
+                ru) _mt_out="Показать локальную версию" ;;
+                de) _mt_out="Die lokale Version zeigen" ;;
+                ja) _mt_out="ローカルの版を表示する" ;;
+                ko) _mt_out="로컬 버전을 표시합니다" ;;
+                nl) _mt_out="De lokale versie tonen" ;;
+                el) _mt_out="Εμφάνιση της τοπικής έκδοσης" ;;
+                *) _mt_out="Show the local version" ;;
+            esac
+            ;;
+        long_about)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="显示诊断，包括全局程序是否存在" ;;
+                zh-Hant) _mt_out="顯示診斷，包括全域程式是否存在" ;;
+                es) _mt_out="Mostrar diagnósticos, incluida la presencia del binario global" ;;
+                ar) _mt_out="أظهر التشخيص بما في ذلك وجود البرنامج العام" ;;
+                fr) _mt_out="Afficher le diagnostic, y compris la présence du binaire global" ;;
+                pt) _mt_out="Mostrar diagnósticos, incluindo a presença do binário global" ;;
+                ru) _mt_out="Показать диагностику, включая наличие глобальной программы" ;;
+                de) _mt_out="Diagnose zeigen, einschließlich der globalen Programmdatei" ;;
+                ja) _mt_out="診断を表示する（グローバルのプログラムの有無を含む）" ;;
+                ko) _mt_out="전역 프로그램 유무를 포함한 진단을 표시합니다" ;;
+                nl) _mt_out="Diagnostiek tonen, inclusief of het globale programma er is" ;;
+                el) _mt_out="Εμφάνιση διαγνωστικών, μαζί με την παρουσία του καθολικού προγράμματος" ;;
+                *) _mt_out="Show diagnostics including global-bin presence" ;;
+            esac
+            ;;
+        long_vercheck)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="把本地版本和通道比较" ;;
+                zh-Hant) _mt_out="把本機版本和通道比較" ;;
+                es) _mt_out="Comparar la versión local con el canal" ;;
+                ar) _mt_out="قارن الإصدار المحلي بالقناة" ;;
+                fr) _mt_out="Comparer la version locale au canal" ;;
+                pt) _mt_out="Comparar a versão local com o canal" ;;
+                ru) _mt_out="Сравнить локальную версию с каналом" ;;
+                de) _mt_out="Lokale Version mit dem Kanal vergleichen" ;;
+                ja) _mt_out="ローカルの版をチャネルと比べる" ;;
+                ko) _mt_out="로컬 버전을 채널과 비교합니다" ;;
+                nl) _mt_out="Lokale versie met het kanaal vergelijken" ;;
+                el) _mt_out="Σύγκριση της τοπικής έκδοσης με το κανάλι" ;;
+                *) _mt_out="Compare local version to the channel" ;;
+            esac
+            ;;
+        long_update)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="当通道较新时更新此程序" ;;
+                zh-Hant) _mt_out="當通道較新時更新此程式" ;;
+                es) _mt_out="Actualizar este programa cuando el canal sea más nuevo" ;;
+                ar) _mt_out="حدّث هذا البرنامج عندما تكون القناة أحدث" ;;
+                fr) _mt_out="Mettre à jour ce programme quand le canal est plus récent" ;;
+                pt) _mt_out="Atualizar este programa quando o canal for mais novo" ;;
+                ru) _mt_out="Обновить эту программу, когда канал новее" ;;
+                de) _mt_out="Dieses Programm aktualisieren, wenn der Kanal neuer ist" ;;
+                ja) _mt_out="チャネルが新しいとき、このプログラムを更新する" ;;
+                ko) _mt_out="채널이 더 새로울 때 이 프로그램을 업데이트합니다" ;;
+                nl) _mt_out="Dit programma bijwerken wanneer het kanaal nieuwer is" ;;
+                el) _mt_out="Ενημερώστε αυτό το πρόγραμμα όταν το κανάλι είναι νεότερο" ;;
+                *) _mt_out="Update this program when the channel is newer" ;;
+            esac
+            ;;
+        long_uninstall)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="移除受管理的程序（不移除主机授权）" ;;
+                zh-Hant) _mt_out="移除受管理的程式（不移除主機授權）" ;;
+                es) _mt_out="Quitar el binario gestionado (no la concesión del host)" ;;
+                ar) _mt_out="أزل البرنامج المدار (وليس منحة المضيف)" ;;
+                fr) _mt_out="Retirer le binaire géré (pas l'autorisation de l'hôte)" ;;
+                pt) _mt_out="Remover o binário gerido (não a concessão do host)" ;;
+                ru) _mt_out="Удалить управляемую программу (не разрешение хоста)" ;;
+                de) _mt_out="Die verwaltete Programmdatei entfernen (nicht die Host-Freigabe)" ;;
+                ja) _mt_out="管理されたプログラムを削除する（ホストの許可は残す）" ;;
+                ko) _mt_out="관리되는 프로그램을 제거합니다 (호스트 허가는 남김)" ;;
+                nl) _mt_out="Het beheerde programma verwijderen (niet de hosttoestemming)" ;;
+                el) _mt_out="Αφαιρέστε το διαχειριζόμενο πρόγραμμα (όχι την άδεια του υπολογιστή)" ;;
+                *) _mt_out="Remove the managed binary (not the host grant)" ;;
+            esac
+            ;;
+        lang_en_long)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="这个菜单改用英文" ;;
+                zh-Hant) _mt_out="這個選單改用英文" ;;
+                es) _mt_out="usar inglés en este menú" ;;
+                ar) _mt_out="استخدم الإنجليزية لهذه القائمة" ;;
+                fr) _mt_out="utiliser l'anglais pour ce menu" ;;
+                pt) _mt_out="usar inglês neste menu" ;;
+                ru) _mt_out="использовать английский для этого меню" ;;
+                de) _mt_out="Englisch für dieses Menü verwenden" ;;
+                ja) _mt_out="このメニューを英語にする" ;;
+                ko) _mt_out="이 메뉴를 영어로" ;;
+                nl) _mt_out="Engels voor dit menu gebruiken" ;;
+                el) _mt_out="χρήση αγγλικών για αυτό το μενού" ;;
+                *) _mt_out="use English for this menu" ;;
+            esac
+            ;;
+        lang_zh_hans_long)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="这个菜单改用简体中文" ;;
+                zh-Hant) _mt_out="這個選單改用簡體中文" ;;
+                es) _mt_out="usar chino simplificado en este menú" ;;
+                ar) _mt_out="استخدم الصينية المبسطة لهذه القائمة" ;;
+                fr) _mt_out="utiliser le chinois simplifié pour ce menu" ;;
+                pt) _mt_out="usar chinês simplificado neste menu" ;;
+                ru) _mt_out="использовать упрощённый китайский для этого меню" ;;
+                de) _mt_out="Vereinfachtes Chinesisch für dieses Menü verwenden" ;;
+                ja) _mt_out="このメニューを簡体字中国語にする" ;;
+                ko) _mt_out="이 메뉴를 간체 중국어로" ;;
+                nl) _mt_out="Vereenvoudigd Chinees voor dit menu gebruiken" ;;
+                el) _mt_out="χρήση απλοποιημένων κινεζικών για αυτό το μενού" ;;
+                *) _mt_out="use Simplified Chinese for this menu" ;;
+            esac
+            ;;
+        lang_zh_long)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="这个菜单改用繁体中文" ;;
+                zh-Hant) _mt_out="這個選單改用繁體中文" ;;
+                es) _mt_out="usar chino tradicional en este menú" ;;
+                ar) _mt_out="استخدم الصينية التقليدية لهذه القائمة" ;;
+                fr) _mt_out="utiliser le chinois traditionnel pour ce menu" ;;
+                pt) _mt_out="usar chinês tradicional neste menu" ;;
+                ru) _mt_out="использовать традиционный китайский для этого меню" ;;
+                de) _mt_out="Traditionelles Chinesisch für dieses Menü verwenden" ;;
+                ja) _mt_out="このメニューを繁体字中国語にする" ;;
+                ko) _mt_out="이 메뉴를 번체 중국어로" ;;
+                nl) _mt_out="Traditioneel Chinees voor dit menu gebruiken" ;;
+                el) _mt_out="χρήση παραδοσιακών κινεζικών για αυτό το μενού" ;;
+                *) _mt_out="use Traditional Chinese for this menu" ;;
+            esac
+            ;;
+        lang_es_long)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="这个菜单改用西班牙文" ;;
+                zh-Hant) _mt_out="這個選單改用西班牙文" ;;
+                es) _mt_out="usar español en este menú" ;;
+                ar) _mt_out="استخدم الإسبانية لهذه القائمة" ;;
+                fr) _mt_out="utiliser l'espagnol pour ce menu" ;;
+                pt) _mt_out="usar espanhol neste menu" ;;
+                ru) _mt_out="использовать испанский для этого меню" ;;
+                de) _mt_out="Spanisch für dieses Menü verwenden" ;;
+                ja) _mt_out="このメニューをスペイン語にする" ;;
+                ko) _mt_out="이 메뉴를 스페인어로" ;;
+                nl) _mt_out="Spaans voor dit menu gebruiken" ;;
+                el) _mt_out="χρήση ισπανικών για αυτό το μενού" ;;
+                *) _mt_out="use Spanish for this menu" ;;
+            esac
+            ;;
+        lang_ar_long)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="这个菜单改用阿拉伯文" ;;
+                zh-Hant) _mt_out="這個選單改用阿拉伯文" ;;
+                es) _mt_out="usar árabe en este menú" ;;
+                ar) _mt_out="استخدم العربية لهذه القائمة" ;;
+                fr) _mt_out="utiliser l'arabe pour ce menu" ;;
+                pt) _mt_out="usar árabe neste menu" ;;
+                ru) _mt_out="использовать арабский для этого меню" ;;
+                de) _mt_out="Arabisch für dieses Menü verwenden" ;;
+                ja) _mt_out="このメニューをアラビア語にする" ;;
+                ko) _mt_out="이 메뉴를 아랍어로" ;;
+                nl) _mt_out="Arabisch voor dit menu gebruiken" ;;
+                el) _mt_out="χρήση αραβικών για αυτό το μενού" ;;
+                *) _mt_out="use Arabic for this menu" ;;
+            esac
+            ;;
+        lang_fr_long)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="这个菜单改用法文" ;;
+                zh-Hant) _mt_out="這個選單改用法文" ;;
+                es) _mt_out="usar francés en este menú" ;;
+                ar) _mt_out="استخدم الفرنسية لهذه القائمة" ;;
+                fr) _mt_out="utiliser le français pour ce menu" ;;
+                pt) _mt_out="usar francês neste menu" ;;
+                ru) _mt_out="использовать французский для этого меню" ;;
+                de) _mt_out="Französisch für dieses Menü verwenden" ;;
+                ja) _mt_out="このメニューをフランス語にする" ;;
+                ko) _mt_out="이 메뉴를 프랑스어로" ;;
+                nl) _mt_out="Frans voor dit menu gebruiken" ;;
+                el) _mt_out="χρήση γαλλικών για αυτό το μενού" ;;
+                *) _mt_out="use French for this menu" ;;
+            esac
+            ;;
+        lang_pt_long)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="这个菜单改用葡萄牙文" ;;
+                zh-Hant) _mt_out="這個選單改用葡萄牙文" ;;
+                es) _mt_out="usar portugués en este menú" ;;
+                ar) _mt_out="استخدم البرتغالية لهذه القائمة" ;;
+                fr) _mt_out="utiliser le portugais pour ce menu" ;;
+                pt) _mt_out="usar português neste menu" ;;
+                ru) _mt_out="использовать португальский для этого меню" ;;
+                de) _mt_out="Portugiesisch für dieses Menü verwenden" ;;
+                ja) _mt_out="このメニューをポルトガル語にする" ;;
+                ko) _mt_out="이 메뉴를 포르투갈어로" ;;
+                nl) _mt_out="Portugees voor dit menu gebruiken" ;;
+                el) _mt_out="χρήση πορτογαλικών για αυτό το μενού" ;;
+                *) _mt_out="use Portuguese for this menu" ;;
+            esac
+            ;;
+        lang_ru_long)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="这个菜单改用俄文" ;;
+                zh-Hant) _mt_out="這個選單改用俄文" ;;
+                es) _mt_out="usar ruso en este menú" ;;
+                ar) _mt_out="استخدم الروسية لهذه القائمة" ;;
+                fr) _mt_out="utiliser le russe pour ce menu" ;;
+                pt) _mt_out="usar russo neste menu" ;;
+                ru) _mt_out="использовать русский для этого меню" ;;
+                de) _mt_out="Russisch für dieses Menü verwenden" ;;
+                ja) _mt_out="このメニューをロシア語にする" ;;
+                ko) _mt_out="이 메뉴를 러시아어로" ;;
+                nl) _mt_out="Russisch voor dit menu gebruiken" ;;
+                el) _mt_out="χρήση ρωσικών για αυτό το μενού" ;;
+                *) _mt_out="use Russian for this menu" ;;
+            esac
+            ;;
+        lang_de_long)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="这个菜单改用德文" ;;
+                zh-Hant) _mt_out="這個選單改用德文" ;;
+                es) _mt_out="usar alemán en este menú" ;;
+                ar) _mt_out="استخدم الألمانية لهذه القائمة" ;;
+                fr) _mt_out="utiliser l'allemand pour ce menu" ;;
+                pt) _mt_out="usar alemão neste menu" ;;
+                ru) _mt_out="использовать немецкий для этого меню" ;;
+                de) _mt_out="Deutsch für dieses Menü verwenden" ;;
+                ja) _mt_out="このメニューをドイツ語にする" ;;
+                ko) _mt_out="이 메뉴를 독일어로" ;;
+                nl) _mt_out="Duits voor dit menu gebruiken" ;;
+                el) _mt_out="χρήση γερμανικών για αυτό το μενού" ;;
+                *) _mt_out="use German for this menu" ;;
+            esac
+            ;;
+        lang_ja_long)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="这个菜单改用日文" ;;
+                zh-Hant) _mt_out="這個選單改用日文" ;;
+                es) _mt_out="usar japonés en este menú" ;;
+                ar) _mt_out="استخدم اليابانية لهذه القائمة" ;;
+                fr) _mt_out="utiliser le japonais pour ce menu" ;;
+                pt) _mt_out="usar japonês neste menu" ;;
+                ru) _mt_out="использовать японский для этого меню" ;;
+                de) _mt_out="Japanisch für dieses Menü verwenden" ;;
+                ja) _mt_out="このメニューを日本語にする" ;;
+                ko) _mt_out="이 메뉴를 일본어로" ;;
+                nl) _mt_out="Japans voor dit menu gebruiken" ;;
+                el) _mt_out="χρήση ιαπωνικών για αυτό το μενού" ;;
+                *) _mt_out="use Japanese for this menu" ;;
+            esac
+            ;;
+        lang_ko_long)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="这个菜单改用韩文" ;;
+                zh-Hant) _mt_out="這個選單改用韓文" ;;
+                es) _mt_out="usar coreano en este menú" ;;
+                ar) _mt_out="استخدم الكورية لهذه القائمة" ;;
+                fr) _mt_out="utiliser le coréen pour ce menu" ;;
+                pt) _mt_out="usar coreano neste menu" ;;
+                ru) _mt_out="использовать корейский для этого меню" ;;
+                de) _mt_out="Koreanisch für dieses Menü verwenden" ;;
+                ja) _mt_out="このメニューを韓国語にする" ;;
+                ko) _mt_out="이 메뉴를 한국어로" ;;
+                nl) _mt_out="Koreaans voor dit menu gebruiken" ;;
+                el) _mt_out="χρήση κορεατικών για αυτό το μενού" ;;
+                *) _mt_out="use Korean for this menu" ;;
+            esac
+            ;;
+        lang_nl_long)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="这个菜单改用荷兰文" ;;
+                zh-Hant) _mt_out="這個選單改用荷蘭文" ;;
+                es) _mt_out="usar neerlandés en este menú" ;;
+                ar) _mt_out="استخدم الهولندية لهذه القائمة" ;;
+                fr) _mt_out="utiliser le néerlandais pour ce menu" ;;
+                pt) _mt_out="usar neerlandês neste menu" ;;
+                ru) _mt_out="использовать нидерландский для этого меню" ;;
+                de) _mt_out="Niederländisch für dieses Menü verwenden" ;;
+                ja) _mt_out="このメニューをオランダ語にする" ;;
+                ko) _mt_out="이 메뉴를 네덜란드어로" ;;
+                nl) _mt_out="Nederlands voor dit menu gebruiken" ;;
+                el) _mt_out="χρήση ολλανδικών για αυτό το μενού" ;;
+                *) _mt_out="use Dutch for this menu" ;;
+            esac
+            ;;
+        lang_el_long)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="这个菜单改用希腊文" ;;
+                zh-Hant) _mt_out="這個選單改用希臘文" ;;
+                es) _mt_out="usar griego en este menú" ;;
+                ar) _mt_out="استخدم اليونانية لهذه القائمة" ;;
+                fr) _mt_out="utiliser le grec pour ce menu" ;;
+                pt) _mt_out="usar grego neste menu" ;;
+                ru) _mt_out="использовать греческий для этого меню" ;;
+                de) _mt_out="Griechisch für dieses Menü verwenden" ;;
+                ja) _mt_out="このメニューをギリシャ語にする" ;;
+                ko) _mt_out="이 메뉴를 그리스어로" ;;
+                nl) _mt_out="Grieks voor dit menu gebruiken" ;;
+                el) _mt_out="χρήση ελληνικών για αυτό το μενού" ;;
+                *) _mt_out="use Greek for this menu" ;;
+            esac
+            ;;
+        label_back)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="返回" ;;
+                zh-Hant) _mt_out="返回" ;;
+                es) _mt_out="Atrás" ;;
+                ar) _mt_out="رجوع" ;;
+                fr) _mt_out="Retour" ;;
+                pt) _mt_out="Voltar" ;;
+                ru) _mt_out="Назад" ;;
+                de) _mt_out="Zurück" ;;
+                ja) _mt_out="戻る" ;;
+                ko) _mt_out="뒤로" ;;
+                nl) _mt_out="Terug" ;;
+                el) _mt_out="Πίσω" ;;
+                *) _mt_out="Back" ;;
+            esac
+            ;;
+        label_exit)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="离开" ;;
+                zh-Hant) _mt_out="離開" ;;
+                es) _mt_out="Salir" ;;
+                ar) _mt_out="خروج" ;;
+                fr) _mt_out="Quitter" ;;
+                pt) _mt_out="Sair" ;;
+                ru) _mt_out="Выход" ;;
+                de) _mt_out="Beenden" ;;
+                ja) _mt_out="終了" ;;
+                ko) _mt_out="종료" ;;
+                nl) _mt_out="Afsluiten" ;;
+                el) _mt_out="Έξοδος" ;;
+                *) _mt_out="Exit" ;;
+            esac
+            ;;
+        prompt)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="请选择： " ;;
+                zh-Hant) _mt_out="請選擇： " ;;
+                es) _mt_out="Elección: " ;;
+                ar) _mt_out="الاختيار: " ;;
+                fr) _mt_out="Choix : " ;;
+                pt) _mt_out="Escolha: " ;;
+                ru) _mt_out="Выбор: " ;;
+                de) _mt_out="Auswahl: " ;;
+                ja) _mt_out="選択: " ;;
+                ko) _mt_out="선택: " ;;
+                nl) _mt_out="Keuze: " ;;
+                el) _mt_out="Επιλογή: " ;;
+                *) _mt_out="Choice: " ;;
+            esac
+            ;;
+        unknown)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="不是菜单选项：'${_mt_a}'。请选择列出的号码或命令名称。" ;;
+                zh-Hant) _mt_out="不是選單選項：'${_mt_a}'。請選擇列出的號碼或指令名稱。" ;;
+                es) _mt_out="No es una opción del menú: '${_mt_a}'. Elija un número o un nombre de comando de la lista." ;;
+                ar) _mt_out="ليس خيار قائمة: '${_mt_a}'. اختر رقماً أو اسم أمر من القائمة." ;;
+                fr) _mt_out="Pas un choix de menu : '${_mt_a}'. Choisissez un numéro ou un nom de commande de la liste." ;;
+                pt) _mt_out="Não é uma opção do menu: '${_mt_a}'. Escolha um número ou um nome de comando da lista." ;;
+                ru) _mt_out="Не пункт меню: '${_mt_a}'. Выберите номер или имя команды из списка." ;;
+                de) _mt_out="Keine Menüauswahl: '${_mt_a}'. Wählen Sie eine aufgeführte Nummer oder einen Befehlsnamen." ;;
+                ja) _mt_out="メニューの選択ではありません: '${_mt_a}'。一覧の番号またはコマンド名を選んでください。" ;;
+                ko) _mt_out="메뉴 선택이 아닙니다: '${_mt_a}'. 목록의 번호나 명령 이름을 고르세요." ;;
+                nl) _mt_out="Geen menukeuze: '${_mt_a}'. Kies een genoemd nummer of een opdrachtnaam." ;;
+                el) _mt_out="Δεν είναι επιλογή μενού: '${_mt_a}'. Επιλέξτε έναν αριθμό ή ένα όνομα εντολής από τη λίστα." ;;
+                *) _mt_out="Not a menu choice: '${_mt_a}'. Choose a listed number or command name." ;;
+            esac
+            ;;
+        lang_saved)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="菜单语言是简体中文" ;;
+                zh-Hant) _mt_out="選單語言是繁體中文" ;;
+                es) _mt_out="El idioma del menú es español" ;;
+                ar) _mt_out="لغة القائمة هي العربية" ;;
+                fr) _mt_out="La langue du menu est le français" ;;
+                pt) _mt_out="O idioma do menu é português" ;;
+                ru) _mt_out="Язык меню — русский" ;;
+                de) _mt_out="Die Menüsprache ist Deutsch" ;;
+                ja) _mt_out="メニューの言語は日本語" ;;
+                ko) _mt_out="메뉴 언어는 한국어" ;;
+                nl) _mt_out="Menutaal is Nederlands" ;;
+                el) _mt_out="Η γλώσσα του μενού είναι ελληνικά" ;;
+                *) _mt_out="Menu language is English" ;;
+            esac
+            ;;
+        lang_save_fail)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="无法保存菜单语言" ;;
+                zh-Hant) _mt_out="無法儲存選單語言" ;;
+                es) _mt_out="No se pudo guardar el idioma del menú" ;;
+                ar) _mt_out="تعذر حفظ لغة القائمة" ;;
+                fr) _mt_out="Impossible d'enregistrer la langue du menu" ;;
+                pt) _mt_out="Não foi possível guardar o idioma do menu" ;;
+                ru) _mt_out="Не удалось сохранить язык меню" ;;
+                de) _mt_out="Die Menüsprache konnte nicht gespeichert werden" ;;
+                ja) _mt_out="メニューの言語を保存できませんでした" ;;
+                ko) _mt_out="메뉴 언어를 저장하지 못했습니다" ;;
+                nl) _mt_out="De menutaal kon niet worden opgeslagen" ;;
+                el) _mt_out="Δεν ήταν δυνατή η αποθήκευση της γλώσσας του μενού" ;;
+                *) _mt_out="Could not save the menu language" ;;
+            esac
+            ;;
+        hidden_sudoers)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="sudoers 不适用于 ${_mt_a}" ;;
+                zh-Hant) _mt_out="sudoers 不適用於 ${_mt_a}" ;;
+                es) _mt_out="sudoers no está disponible para ${_mt_a}" ;;
+                ar) _mt_out="sudoers غير متاح في ${_mt_a}" ;;
+                fr) _mt_out="sudoers n'est pas disponible pour ${_mt_a}" ;;
+                pt) _mt_out="sudoers não está disponível para ${_mt_a}" ;;
+                ru) _mt_out="sudoers недоступен для ${_mt_a}" ;;
+                de) _mt_out="sudoers ist für ${_mt_a} nicht verfügbar" ;;
+                ja) _mt_out="sudoers は ${_mt_a} では使えません" ;;
+                ko) _mt_out="sudoers 는 ${_mt_a} 에서 사용할 수 없습니다" ;;
+                nl) _mt_out="sudoers is niet beschikbaar voor ${_mt_a}" ;;
+                el) _mt_out="το sudoers δεν είναι διαθέσιμο για ${_mt_a}" ;;
+                *) _mt_out="sudoers not available for ${_mt_a}" ;;
+            esac
+            ;;
+        help_desc)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="POSIX /bin/sh 在线可安装命令：curl|sh 安装、version-check、self-update、self-uninstall、about，以及 take-ownership 的 action 与授权草稿命令。" ;;
+                zh-Hant) _mt_out="POSIX /bin/sh 線上可安裝命令：curl|sh 安裝、version-check、self-update、self-uninstall、about，以及 take-ownership 的 action 與授權草稿命令。" ;;
+                es) _mt_out="CLI POSIX /bin/sh instalable en línea: curl|sh, version-check, self-update, self-uninstall, about, más action y los verbos de concesión." ;;
+                ar) _mt_out="أمر POSIX /bin/sh قابل للتثبيت عبر الشبكة: curl|sh وversion-check وself-update وself-uninstall وabout، مع action وأفعال المنح." ;;
+                fr) _mt_out="CLI POSIX /bin/sh installable en ligne : curl|sh, version-check, self-update, self-uninstall, about, plus action et les verbes de brouillon." ;;
+                pt) _mt_out="CLI POSIX /bin/sh instalável online: curl|sh, version-check, self-update, self-uninstall, about, mais action e os verbos de concessão." ;;
+                ru) _mt_out="Команда POSIX /bin/sh с сетевой установкой: curl|sh, version-check, self-update, self-uninstall, about, плюс action и команды черновика." ;;
+                de) _mt_out="POSIX /bin/sh CLI mit Online-Installation: curl|sh, version-check, self-update, self-uninstall, about, plus action und Entwurfsbefehle." ;;
+                ja) _mt_out="POSIX /bin/sh のオンライン導入 CLI。curl|sh、version-check、self-update、self-uninstall、about、それに action と許可の下書き。" ;;
+                ko) _mt_out="POSIX /bin/sh 온라인 설치 CLI: curl|sh, version-check, self-update, self-uninstall, about, 그리고 action 과 허가 초안." ;;
+                nl) _mt_out="POSIX /bin/sh CLI met online installatie: curl|sh, version-check, self-update, self-uninstall, about, plus action en conceptopdrachten." ;;
+                el) _mt_out="Εντολή POSIX /bin/sh με online εγκατάσταση: curl|sh, version-check, self-update, self-uninstall, about, και action με τις εντολές άδειας." ;;
+                *) _mt_out="POSIX /bin/sh online-installable CLI: curl|sh install, version-check, self-update, self-uninstall, about, plus take-ownership action and grant/draft verbs." ;;
+            esac
+            ;;
+        help_h_usage)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="用法：" ;;
+                zh-Hant) _mt_out="用法：" ;;
+                es) _mt_out="Uso:" ;;
+                ar) _mt_out="الاستخدام:" ;;
+                fr) _mt_out="Utilisation :" ;;
+                pt) _mt_out="Utilização:" ;;
+                ru) _mt_out="Использование:" ;;
+                de) _mt_out="Verwendung:" ;;
+                ja) _mt_out="使い方:" ;;
+                ko) _mt_out="사용법:" ;;
+                nl) _mt_out="Gebruik:" ;;
+                el) _mt_out="Χρήση:" ;;
+                *) _mt_out="Usage:" ;;
+            esac
+            ;;
+        help_h_life)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="生命周期（在线自行管理）：" ;;
+                zh-Hant) _mt_out="生命週期（線上自行管理）：" ;;
+                es) _mt_out="Ciclo de vida (autogestionado en línea):" ;;
+                ar) _mt_out="دورة الحياة (إدارة ذاتية عبر الشبكة):" ;;
+                fr) _mt_out="Cycle de vie (autogéré en ligne) :" ;;
+                pt) _mt_out="Ciclo de vida (autogerido online):" ;;
+                ru) _mt_out="Жизненный цикл (сетевое самоуправление):" ;;
+                de) _mt_out="Lebenszyklus (online selbstverwaltet):" ;;
+                ja) _mt_out="ライフサイクル（オンライン自己管理）:" ;;
+                ko) _mt_out="수명 주기 (온라인 자체 관리):" ;;
+                nl) _mt_out="Levenscyclus (online zelfbeheerd):" ;;
+                el) _mt_out="Κύκλος ζωής (online αυτοδιαχείριση):" ;;
+                *) _mt_out="Lifecycle (online self-managed):" ;;
+            esac
+            ;;
+        help_h_work)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="工作（操作）：" ;;
+                zh-Hant) _mt_out="工作（操作）：" ;;
+                es) _mt_out="Trabajo (operativo):" ;;
+                ar) _mt_out="العمل (تشغيلي):" ;;
+                fr) _mt_out="Travail (opérationnel) :" ;;
+                pt) _mt_out="Trabalho (operacional):" ;;
+                ru) _mt_out="Работа (операции):" ;;
+                de) _mt_out="Arbeit (operativ):" ;;
+                ja) _mt_out="作業（操作）:" ;;
+                ko) _mt_out="작업 (운영):" ;;
+                nl) _mt_out="Werk (operationeel):" ;;
+                el) _mt_out="Εργασία (λειτουργική):" ;;
+                *) _mt_out="Work (operational):" ;;
+            esac
+            ;;
+        help_h_test)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="授权测试（测试用途 — 不在主菜单或 sudoers 子菜单上）：" ;;
+                zh-Hant) _mt_out="授權測試（測試用途 — 不在主選單或 sudoers 子選單上）：" ;;
+                es) _mt_out="Pruebas de concesión (prueba — no están en el menú ni en el submenú sudoers):" ;;
+                ar) _mt_out="اختبارات المنح (لغرض الاختبار — ليست في القائمة ولا في قائمة sudoers):" ;;
+                fr) _mt_out="Tests de brouillon (test — pas sur le menu ni sur le sous-menu sudoers) :" ;;
+                pt) _mt_out="Testes de concessão (teste — não estão no menu nem no submenu sudoers):" ;;
+                ru) _mt_out="Проверки разрешения (для тестов — не в меню и не в подменю sudoers):" ;;
+                de) _mt_out="Freigabe-Tester (Testzweck — nicht im Hauptmenü oder sudoers-Untermenü):" ;;
+                ja) _mt_out="許可のテスト（テスト用 — メインメニューにも sudoers サブメニューにも出さない）:" ;;
+                ko) _mt_out="허가 테스트 (테스트 목적 — 주 메뉴와 sudoers 하위 메뉴에 없음):" ;;
+                nl) _mt_out="Toestemmingstests (testdoel — niet in het hoofdmenu of het sudoers-submenu):" ;;
+                el) _mt_out="Δοκιμές άδειας (για δοκιμή — όχι στο κύριο μενού ούτε στο υπομενού sudoers):" ;;
+                *) _mt_out="Grant testers (test-purpose — not on the main menu or sudoers submenu):" ;;
+            esac
+            ;;
+        help_h_opts)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="全局选项：" ;;
+                zh-Hant) _mt_out="全域選項：" ;;
+                es) _mt_out="Opciones globales:" ;;
+                ar) _mt_out="خيارات عامة:" ;;
+                fr) _mt_out="Options globales :" ;;
+                pt) _mt_out="Opções globais:" ;;
+                ru) _mt_out="Общие параметры:" ;;
+                de) _mt_out="Globale Optionen:" ;;
+                ja) _mt_out="共通オプション:" ;;
+                ko) _mt_out="전역 옵션:" ;;
+                nl) _mt_out="Globale opties:" ;;
+                el) _mt_out="Καθολικές επιλογές:" ;;
+                *) _mt_out="Global Options:" ;;
+            esac
+            ;;
+        help_h_env)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="环境：" ;;
+                zh-Hant) _mt_out="環境：" ;;
+                es) _mt_out="Entorno:" ;;
+                ar) _mt_out="البيئة:" ;;
+                fr) _mt_out="Environnement :" ;;
+                pt) _mt_out="Ambiente:" ;;
+                ru) _mt_out="Окружение:" ;;
+                de) _mt_out="Umgebung:" ;;
+                ja) _mt_out="環境変数:" ;;
+                ko) _mt_out="환경:" ;;
+                nl) _mt_out="Omgeving:" ;;
+                el) _mt_out="Περιβάλλον:" ;;
+                *) _mt_out="Environment:" ;;
+            esac
+            ;;
+        help_h_examples)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="示例：" ;;
+                zh-Hant) _mt_out="範例：" ;;
+                es) _mt_out="Ejemplos:" ;;
+                ar) _mt_out="أمثلة:" ;;
+                fr) _mt_out="Exemples :" ;;
+                pt) _mt_out="Exemplos:" ;;
+                ru) _mt_out="Примеры:" ;;
+                de) _mt_out="Beispiele:" ;;
+                ja) _mt_out="例:" ;;
+                ko) _mt_out="예:" ;;
+                nl) _mt_out="Voorbeelden:" ;;
+                el) _mt_out="Παραδείγματα:" ;;
+                *) _mt_out="Examples:" ;;
+            esac
+            ;;
+        help_lang_env)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="只影响这一次运行的菜单语言；不写入文件" ;;
+                zh-Hant) _mt_out="只影響這一次執行的選單語言；不寫入檔案" ;;
+                es) _mt_out="Idioma del menú solo para esta ejecución; no escribe el archivo" ;;
+                ar) _mt_out="لغة القائمة لهذا التشغيل فقط؛ لا يكتب الملف" ;;
+                fr) _mt_out="Langue du menu pour cette exécution seulement ; n'écrit pas le fichier" ;;
+                pt) _mt_out="Idioma do menu só nesta execução; não escreve o ficheiro" ;;
+                ru) _mt_out="Язык меню только для этого запуска; файл не пишется" ;;
+                de) _mt_out="Menüsprache nur für diesen Lauf; schreibt die Datei nicht" ;;
+                ja) _mt_out="この実行だけのメニュー言語。ファイルには書かない" ;;
+                ko) _mt_out="이번 실행의 메뉴 언어만. 파일에는 쓰지 않음" ;;
+                nl) _mt_out="Menutaal alleen voor deze run; schrijft het bestand niet" ;;
+                el) _mt_out="Γλώσσα μενού μόνο για αυτή την εκτέλεση· δεν γράφει το αρχείο" ;;
+                *) _mt_out="Menu language for this run only; does not write the file" ;;
+            esac
+            ;;
+        help_menu)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="终端上是编号列表；非终端是帮助。第 5 行设定语言。" ;;
+                zh-Hant) _mt_out="終端機上是編號列表；非終端機是說明。第 5 列設定語言。" ;;
+                es) _mt_out="Lista numerada en un terminal; ayuda fuera de un terminal. La fila 5 fija el idioma." ;;
+                ar) _mt_out="قائمة مرقمة على طرفية؛ مساعدة خارج الطرفية. الصف 5 يضبط اللغة." ;;
+                fr) _mt_out="Liste numérotée sur un terminal ; aide hors terminal. La ligne 5 fixe la langue." ;;
+                pt) _mt_out="Lista numerada num terminal; ajuda fora de um terminal. A linha 5 define o idioma." ;;
+                ru) _mt_out="Нумерованный список на терминале; справка вне терминала. Строка 5 задаёт язык." ;;
+                de) _mt_out="Nummerierte Liste auf einem Terminal; Hilfe ohne Terminal. Zeile 5 setzt die Sprache." ;;
+                ja) _mt_out="端末では番号リスト。端末でなければヘルプ。行 5 が言語を決める。" ;;
+                ko) _mt_out="터미널에서는 번호 목록. 터미널이 아니면 도움말. 5번이 언어를 정합니다." ;;
+                nl) _mt_out="Genummerde lijst op een terminal; hulp zonder terminal. Rij 5 zet de taal." ;;
+                el) _mt_out="Αριθμημένη λίστα σε τερματικό· βοήθεια εκτός τερματικού. Η γραμμή 5 ορίζει τη γλώσσα." ;;
+                *) _mt_out="Numbered list on a terminal; help off a terminal. Row 5 sets the language." ;;
+            esac
+            ;;
+        help_close_tty)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="在真实终端上，没有参数会显示编号列表。非终端没有参数则从通道确保已安装（curl|sh）。" ;;
+                zh-Hant) _mt_out="在真實終端機上，沒有參數會顯示編號列表。非終端機沒有參數則從通道確保已安裝（curl|sh）。" ;;
+                es) _mt_out="Sin argumentos en un terminal real se muestra la lista numerada. Fuera de un terminal, sin argumentos, se asegura la instalación desde el canal (curl|sh)." ;;
+                ar) _mt_out="من غير وسيطات على طرفية حقيقية تظهر القائمة المرقمة. خارج الطرفية، من غير وسيطات، يتم التأكد من التثبيت من القناة (curl|sh)." ;;
+                fr) _mt_out="Sans argument sur un vrai terminal : la liste numérotée. Hors terminal, sans argument : installation depuis le canal (curl|sh)." ;;
+                pt) _mt_out="Sem argumentos num terminal real mostra a lista numerada. Fora de um terminal, sem argumentos, garante a instalação pelo canal (curl|sh)." ;;
+                ru) _mt_out="Без аргументов на настоящем терминале — нумерованный список. Вне терминала без аргументов — установка из канала (curl|sh)." ;;
+                de) _mt_out="Ohne Argumente auf einem echten Terminal erscheint die nummerierte Liste. Ohne Terminal ist das die Kanal-Installation (curl|sh)." ;;
+                ja) _mt_out="本物の端末で引数なしは番号リスト。端末でなければチャネルから導入を確保する（curl|sh）。" ;;
+                ko) _mt_out="실제 터미널에서 인자 없음은 번호 목록입니다. 터미널이 아니면 채널 설치를 확인합니다 (curl|sh)." ;;
+                nl) _mt_out="Zonder argumenten op een echte terminal: de genummerde lijst. Zonder terminal: installatie vanuit het kanaal (curl|sh)." ;;
+                el) _mt_out="Χωρίς ορίσματα σε πραγματικό τερματικό φαίνεται η αριθμημένη λίστα. Εκτός τερματικού είναι εγκατάσταση από το κανάλι (curl|sh)." ;;
+                *) _mt_out="Empty argv on a real terminal shows the numbered list. Off-TTY empty argv is channel install-ensure (curl|sh)." ;;
+            esac
+            ;;
+        help_close_json)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="--json 且没有命令时是 JSON 帮助（即使在终端上）。" ;;
+                zh-Hant) _mt_out="--json 且沒有命令時是 JSON 說明（即使在終端機上）。" ;;
+                es) _mt_out="--json sin comando es ayuda JSON (incluso en un TTY)." ;;
+                ar) _mt_out="--json بلا أمر هو مساعدة JSON (حتى على TTY)." ;;
+                fr) _mt_out="--json sans commande est l'aide JSON (même sur un TTY)." ;;
+                pt) _mt_out="--json sem comando é ajuda JSON (mesmo num TTY)." ;;
+                ru) _mt_out="--json без команды — это справка JSON (даже на TTY)." ;;
+                de) _mt_out="--json ohne Befehl ist die JSON-Hilfe (auch auf einem TTY)." ;;
+                ja) _mt_out="コマンドなしの --json は JSON のヘルプです（端末上でも）。" ;;
+                ko) _mt_out="명령 없는 --json 은 JSON 도움말입니다 (TTY 에서도)." ;;
+                nl) _mt_out="--json zonder opdracht is JSON-hulp (ook op een TTY)." ;;
+                el) _mt_out="Το --json χωρίς εντολή είναι βοήθεια JSON (ακόμη και σε TTY)." ;;
+                *) _mt_out="--json with no command is JSON help (even on a TTY)." ;;
+            esac
+            ;;
+        help_close_global)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="只有 ${_mt_a} 可以出现在 sudoers 中（不是 ~/.local/bin）。" ;;
+                zh-Hant) _mt_out="只有 ${_mt_a} 可以出現在 sudoers 中（不是 ~/.local/bin）。" ;;
+                es) _mt_out="Solo ${_mt_a} puede aparecer en sudoers (no ~/.local/bin)." ;;
+                ar) _mt_out="فقط ${_mt_a} قد يظهر في sudoers (وليس ~/.local/bin)." ;;
+                fr) _mt_out="Seul ${_mt_a} peut apparaître dans sudoers (pas ~/.local/bin)." ;;
+                pt) _mt_out="Só ${_mt_a} pode aparecer no sudoers (não ~/.local/bin)." ;;
+                ru) _mt_out="Только ${_mt_a} может быть в sudoers (не ~/.local/bin)." ;;
+                de) _mt_out="Nur ${_mt_a} darf in sudoers stehen (nicht ~/.local/bin)." ;;
+                ja) _mt_out="sudoers に書いてよいのは ${_mt_a} だけです（~/.local/bin ではない）。" ;;
+                ko) _mt_out="sudoers 에 쓸 수 있는 것은 ${_mt_a} 뿐입니다 (~/.local/bin 이 아님)." ;;
+                nl) _mt_out="Alleen ${_mt_a} mag in sudoers staan (niet ~/.local/bin)." ;;
+                el) _mt_out="Μόνο το ${_mt_a} μπορεί να εμφανίζεται στο sudoers (όχι το ~/.local/bin)." ;;
+                *) _mt_out="Only ${_mt_a} may appear in sudoers (not ~/.local/bin)." ;;
+            esac
+            ;;
+        about_title)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="关于 / 诊断" ;;
+                zh-Hant) _mt_out="關於 / 診斷" ;;
+                es) _mt_out="Acerca de / Diagnóstico" ;;
+                ar) _mt_out="نبذة / تشخيص" ;;
+                fr) _mt_out="À propos / Diagnostic" ;;
+                pt) _mt_out="Sobre / Diagnóstico" ;;
+                ru) _mt_out="О программе / Диагностика" ;;
+                de) _mt_out="Über / Diagnose" ;;
+                ja) _mt_out="概要 / 診断" ;;
+                ko) _mt_out="개요 / 진단" ;;
+                nl) _mt_out="Over / Diagnose" ;;
+                el) _mt_out="Σχετικά / Διαγνωστικά" ;;
+                *) _mt_out="About / Diagnostics" ;;
+            esac
+            ;;
+        about_installed)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="已正确安装。" ;;
+                zh-Hant) _mt_out="已正確安裝。" ;;
+                es) _mt_out="está instalado correctamente." ;;
+                ar) _mt_out="مثبت بشكل صحيح." ;;
+                fr) _mt_out="est correctement installé." ;;
+                pt) _mt_out="está corretamente instalado." ;;
+                ru) _mt_out="установлен правильно." ;;
+                de) _mt_out="ist ordnungsgemäß installiert." ;;
+                ja) _mt_out="は正しく導入されています。" ;;
+                ko) _mt_out="가 올바르게 설치되어 있습니다." ;;
+                nl) _mt_out="is correct geïnstalleerd." ;;
+                el) _mt_out="είναι σωστά εγκατεστημένο." ;;
+                *) _mt_out="is properly installed." ;;
+            esac
+            ;;
+        about_missing)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="没有安装在受管理的 bin 路径。" ;;
+                zh-Hant) _mt_out="沒有安裝在受管理的 bin 路徑。" ;;
+                es) _mt_out="NO está instalado en una ruta bin gestionada." ;;
+                ar) _mt_out="غير مثبت في مسار bin مُدار." ;;
+                fr) _mt_out="N'est PAS installé dans un chemin bin géré." ;;
+                pt) _mt_out="NÃO está instalado num caminho bin gerido." ;;
+                ru) _mt_out="НЕ установлен в управляемом пути bin." ;;
+                de) _mt_out="ist NICHT in einem verwalteten Bin-Pfad installiert." ;;
+                ja) _mt_out="は管理された bin パスに導入されていません。" ;;
+                ko) _mt_out="는 관리되는 bin 경로에 설치되어 있지 않습니다." ;;
+                nl) _mt_out="is NIET geïnstalleerd in een beheerd bin-pad." ;;
+                el) _mt_out="ΔΕΝ είναι εγκατεστημένο σε διαχειριζόμενη διαδρομή bin." ;;
+                *) _mt_out="is NOT installed in a managed bin path." ;;
+            esac
+            ;;
+        about_recommend)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="建议：" ;;
+                zh-Hant) _mt_out="建議：" ;;
+                es) _mt_out="Recomendado:" ;;
+                ar) _mt_out="موصى به:" ;;
+                fr) _mt_out="Recommandé :" ;;
+                pt) _mt_out="Recomendado:" ;;
+                ru) _mt_out="Рекомендуется:" ;;
+                de) _mt_out="Empfohlen:" ;;
+                ja) _mt_out="推奨:" ;;
+                ko) _mt_out="권장:" ;;
+                nl) _mt_out="Aanbevolen:" ;;
+                el) _mt_out="Συνιστάται:" ;;
+                *) _mt_out="Recommended:" ;;
+            esac
+            ;;
+        about_global)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="全局安装" ;;
+                zh-Hant) _mt_out="全域安裝" ;;
+                es) _mt_out="Instalación global" ;;
+                ar) _mt_out="تثبيت عام" ;;
+                fr) _mt_out="Installation globale" ;;
+                pt) _mt_out="Instalação global" ;;
+                ru) _mt_out="Общая установка" ;;
+                de) _mt_out="Globale Installation" ;;
+                ja) _mt_out="グローバル導入" ;;
+                ko) _mt_out="전역 설치" ;;
+                nl) _mt_out="Globale installatie" ;;
+                el) _mt_out="Καθολική εγκατάσταση" ;;
+                *) _mt_out="Global install" ;;
+            esac
+            ;;
+        about_local)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="本机安装" ;;
+                zh-Hant) _mt_out="本機安裝" ;;
+                es) _mt_out="Instalación local" ;;
+                ar) _mt_out="تثبيت محلي" ;;
+                fr) _mt_out="Installation locale" ;;
+                pt) _mt_out="Instalação local" ;;
+                ru) _mt_out="Локальная установка" ;;
+                de) _mt_out="Lokale Installation" ;;
+                ja) _mt_out="ローカル導入" ;;
+                ko) _mt_out="로컬 설치" ;;
+                nl) _mt_out="Lokale installatie" ;;
+                el) _mt_out="Τοπική εγκατάσταση" ;;
+                *) _mt_out="Local install" ;;
+            esac
+            ;;
+        about_repo)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="存储库：" ;;
+                zh-Hant) _mt_out="儲存庫：" ;;
+                es) _mt_out="Repositorio:" ;;
+                ar) _mt_out="المستودع:" ;;
+                fr) _mt_out="Dépôt :" ;;
+                pt) _mt_out="Repositório:" ;;
+                ru) _mt_out="Репозиторий:" ;;
+                de) _mt_out="Repository:" ;;
+                ja) _mt_out="リポジトリ:" ;;
+                ko) _mt_out="저장소:" ;;
+                nl) _mt_out="Repository:" ;;
+                el) _mt_out="Αποθετήριο:" ;;
+                *) _mt_out="Repository:" ;;
+            esac
+            ;;
+        about_channel)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="安装频道：" ;;
+                zh-Hant) _mt_out="安裝頻道：" ;;
+                es) _mt_out="Canal de instalación:" ;;
+                ar) _mt_out="قناة التثبيت:" ;;
+                fr) _mt_out="Canal d'installation :" ;;
+                pt) _mt_out="Canal de instalação:" ;;
+                ru) _mt_out="Канал установки:" ;;
+                de) _mt_out="Installationskanal:" ;;
+                ja) _mt_out="導入チャンネル:" ;;
+                ko) _mt_out="설치 채널:" ;;
+                nl) _mt_out="Installatiekanaal:" ;;
+                el) _mt_out="Κανάλι εγκατάστασης:" ;;
+                *) _mt_out="Install channel:" ;;
+            esac
+            ;;
+        about_user)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="当前用户：" ;;
+                zh-Hant) _mt_out="目前使用者：" ;;
+                es) _mt_out="Usuario actual:" ;;
+                ar) _mt_out="المستخدم الحالي:" ;;
+                fr) _mt_out="Utilisateur actuel :" ;;
+                pt) _mt_out="Utilizador atual:" ;;
+                ru) _mt_out="Текущий пользователь:" ;;
+                de) _mt_out="Aktueller Benutzer:" ;;
+                ja) _mt_out="現在のユーザー:" ;;
+                ko) _mt_out="현재 사용자:" ;;
+                nl) _mt_out="Huidige gebruiker:" ;;
+                el) _mt_out="Τρέχων χρήστης:" ;;
+                *) _mt_out="Current user:" ;;
+            esac
+            ;;
+        about_root)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="执行身份：root" ;;
+                zh-Hant) _mt_out="執行身分：root" ;;
+                es) _mt_out="Contexto de ejecución: root" ;;
+                ar) _mt_out="سياق التنفيذ: root" ;;
+                fr) _mt_out="Contexte d'exécution : root" ;;
+                pt) _mt_out="Contexto de execução: root" ;;
+                ru) _mt_out="Контекст выполнения: root" ;;
+                de) _mt_out="Ausführungskontext: root" ;;
+                ja) _mt_out="実行コンテキスト: root" ;;
+                ko) _mt_out="실행 컨텍스트: root" ;;
+                nl) _mt_out="Uitvoercontext: root" ;;
+                el) _mt_out="Πλαίσιο εκτέλεσης: root" ;;
+                *) _mt_out="Execution context: root" ;;
+            esac
+            ;;
+        about_userctx)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="执行身份：普通用户（Type 0 + 窄的 Type 1 存放）" ;;
+                zh-Hant) _mt_out="執行身分：一般使用者（Type 0 + 窄的 Type 1 存放）" ;;
+                es) _mt_out="Contexto: usuario normal (Type 0 + depósito Type 1 estrecho)" ;;
+                ar) _mt_out="سياق التنفيذ: مستخدم عادي (Type 0 + إيداع Type 1 ضيق)" ;;
+                fr) _mt_out="Contexte : utilisateur normal (Type 0 + dépôt Type 1 étroit)" ;;
+                pt) _mt_out="Contexto de execução: utilizador normal (Type 0 + depósito Type 1 estreito)" ;;
+                ru) _mt_out="Контекст выполнения: обычный пользователь (Type 0 + узкое хранилище Type 1)" ;;
+                de) _mt_out="Kontext: normaler Benutzer (Type 0 + schmale Type-1-Ablage)" ;;
+                ja) _mt_out="実行コンテキスト: 一般ユーザー（Type 0 + 狭い Type 1 の保管）" ;;
+                ko) _mt_out="실행 컨텍스트: 일반 사용자 (Type 0 + 좁은 Type 1 보관)" ;;
+                nl) _mt_out="Uitvoercontext: normale gebruiker (Type 0 + smalle Type 1-opslag)" ;;
+                el) _mt_out="Πλαίσιο εκτέλεσης: κανονικός χρήστης (Type 0 + στενή αποθήκη Type 1)" ;;
+                *) _mt_out="Execution context: normal user (Type 0 + narrow Type 1 deposit)" ;;
+            esac
+            ;;
+        about_shell)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="当前 shell：" ;;
+                zh-Hant) _mt_out="目前 shell：" ;;
+                es) _mt_out="Shell actual:" ;;
+                ar) _mt_out="الصدفة الحالية:" ;;
+                fr) _mt_out="Shell actuel :" ;;
+                pt) _mt_out="Shell atual:" ;;
+                ru) _mt_out="Текущая оболочка:" ;;
+                de) _mt_out="Aktuelle Shell:" ;;
+                ja) _mt_out="現在のシェル:" ;;
+                ko) _mt_out="현재 셸:" ;;
+                nl) _mt_out="Huidige shell:" ;;
+                el) _mt_out="Τρέχον κέλυφος:" ;;
+                *) _mt_out="Current shell:" ;;
+            esac
+            ;;
+        about_tty_yes)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="TTY / 交互：是" ;;
+                zh-Hant) _mt_out="TTY / 互動：是" ;;
+                es) _mt_out="TTY / interactivo: sí" ;;
+                ar) _mt_out="TTY / تفاعلي: نعم" ;;
+                fr) _mt_out="TTY / interactif : oui" ;;
+                pt) _mt_out="TTY / Interativo: sim" ;;
+                ru) _mt_out="TTY / интерактивно: да" ;;
+                de) _mt_out="TTY / interaktiv: ja" ;;
+                ja) _mt_out="TTY / 対話: はい" ;;
+                ko) _mt_out="TTY / 대화형: 예" ;;
+                nl) _mt_out="TTY / Interactief: ja" ;;
+                el) _mt_out="TTY / Διαδραστικό: ναι" ;;
+                *) _mt_out="TTY / Interactive: yes" ;;
+            esac
+            ;;
+        about_tty_no)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="TTY / 交互：否" ;;
+                zh-Hant) _mt_out="TTY / 互動：否" ;;
+                es) _mt_out="TTY / interactivo: no" ;;
+                ar) _mt_out="TTY / تفاعلي: لا" ;;
+                fr) _mt_out="TTY / interactif : non" ;;
+                pt) _mt_out="TTY / Interativo: não" ;;
+                ru) _mt_out="TTY / интерактивно: нет" ;;
+                de) _mt_out="TTY / interaktiv: nein" ;;
+                ja) _mt_out="TTY / 対話: いいえ" ;;
+                ko) _mt_out="TTY / 대화형: 아니오" ;;
+                nl) _mt_out="TTY / Interactief: nee" ;;
+                el) _mt_out="TTY / Διαδραστικό: όχι" ;;
+                *) _mt_out="TTY / Interactive: no" ;;
+            esac
+            ;;
+        about_cache)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="使用的缓存文件夹：" ;;
+                zh-Hant) _mt_out="使用的快取資料夾：" ;;
+                es) _mt_out="Carpeta de caché en uso:" ;;
+                ar) _mt_out="مجلد الذاكرة المؤقتة المستخدم:" ;;
+                fr) _mt_out="Dossier de cache utilisé :" ;;
+                pt) _mt_out="Pasta de cache em uso:" ;;
+                ru) _mt_out="Используемая папка кэша:" ;;
+                de) _mt_out="Verwendeter Cache-Ordner:" ;;
+                ja) _mt_out="使用中のキャッシュフォルダ:" ;;
+                ko) _mt_out="사용 중인 캐시 폴더:" ;;
+                nl) _mt_out="Gebruikte cachemap:" ;;
+                el) _mt_out="Φάκελος cache σε χρήση:" ;;
+                *) _mt_out="Cache folder used:" ;;
+            esac
+            ;;
+        about_pref)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="缓存文件夹（首选）：" ;;
+                zh-Hant) _mt_out="快取資料夾（偏好）：" ;;
+                es) _mt_out="Carpeta de caché (preferida):" ;;
+                ar) _mt_out="مجلد الذاكرة المؤقتة (المفضل):" ;;
+                fr) _mt_out="Dossier de cache (préféré) :" ;;
+                pt) _mt_out="Pasta de cache (preferida):" ;;
+                ru) _mt_out="Папка кэша (предпочтительная):" ;;
+                de) _mt_out="Cache-Ordner (bevorzugt):" ;;
+                ja) _mt_out="キャッシュフォルダ（優先）:" ;;
+                ko) _mt_out="캐시 폴더 (선호):" ;;
+                nl) _mt_out="Cachemap (voorkeur):" ;;
+                el) _mt_out="Φάκελος cache (προτιμώμενος):" ;;
+                *) _mt_out="Cache folder (preferred):" ;;
+            esac
+            ;;
+        about_fb1)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="缓存文件夹（第 1 后备）：" ;;
+                zh-Hant) _mt_out="快取資料夾（第 1 備援）：" ;;
+                es) _mt_out="Carpeta de caché (1.er respaldo):" ;;
+                ar) _mt_out="مجلد الذاكرة المؤقتة (البديل الأول):" ;;
+                fr) _mt_out="Dossier de cache (1er repli) :" ;;
+                pt) _mt_out="Pasta de cache (1.º recurso):" ;;
+                ru) _mt_out="Папка кэша (1-й запасной):" ;;
+                de) _mt_out="Cache-Ordner (1. Ausweich):" ;;
+                ja) _mt_out="キャッシュフォルダ（第1候補）:" ;;
+                ko) _mt_out="캐시 폴더 (1차 대체):" ;;
+                nl) _mt_out="Cachemap (1e terugval):" ;;
+                el) _mt_out="Φάκελος cache (1η εφεδρική):" ;;
+                *) _mt_out="Cache folder (1st fallback):" ;;
+            esac
+            ;;
+        about_fb2)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="缓存文件夹（第 2 后备）：" ;;
+                zh-Hant) _mt_out="快取資料夾（第 2 備援）：" ;;
+                es) _mt_out="Carpeta de caché (2.º respaldo):" ;;
+                ar) _mt_out="مجلد الذاكرة المؤقتة (البديل الثاني):" ;;
+                fr) _mt_out="Dossier de cache (2e repli) :" ;;
+                pt) _mt_out="Pasta de cache (2.º recurso):" ;;
+                ru) _mt_out="Папка кэша (2-й запасной):" ;;
+                de) _mt_out="Cache-Ordner (2. Ausweich):" ;;
+                ja) _mt_out="キャッシュフォルダ（第2候補）:" ;;
+                ko) _mt_out="캐시 폴더 (2차 대체):" ;;
+                nl) _mt_out="Cachemap (2e terugval):" ;;
+                el) _mt_out="Φάκελος cache (2η εφεδρική):" ;;
+                *) _mt_out="Cache folder (2nd fallback):" ;;
+            esac
+            ;;
+        about_persist)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="持久存储：" ;;
+                zh-Hant) _mt_out="持久儲存：" ;;
+                es) _mt_out="Almacenamiento persistente:" ;;
+                ar) _mt_out="تخزين دائم:" ;;
+                fr) _mt_out="Stockage persistant :" ;;
+                pt) _mt_out="Armazenamento persistente:" ;;
+                ru) _mt_out="Постоянное хранилище:" ;;
+                de) _mt_out="Dauerhafter Speicher:" ;;
+                ja) _mt_out="永続ストレージ:" ;;
+                ko) _mt_out="영구 저장소:" ;;
+                nl) _mt_out="Blijvende opslag:" ;;
+                el) _mt_out="Μόνιμη αποθήκευση:" ;;
+                *) _mt_out="Persistence storage:" ;;
+            esac
+            ;;
+        about_useful)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="实用命令：" ;;
+                zh-Hant) _mt_out="實用指令：" ;;
+                es) _mt_out="Comandos útiles:" ;;
+                ar) _mt_out="أوامر مفيدة:" ;;
+                fr) _mt_out="Commandes utiles :" ;;
+                pt) _mt_out="Comandos úteis:" ;;
+                ru) _mt_out="Полезные команды:" ;;
+                de) _mt_out="Nützliche Befehle:" ;;
+                ja) _mt_out="便利なコマンド:" ;;
+                ko) _mt_out="유용한 명령:" ;;
+                nl) _mt_out="Nuttige opdrachten:" ;;
+                el) _mt_out="Χρήσιμες εντολές:" ;;
+                *) _mt_out="Useful commands:" ;;
+            esac
+            ;;
+        *)
+            _mt_out="${_mt_key}"
+            ;;
+    esac
+    printf '%s' "${_mt_out}"
+    unset _mt_key _mt_a _mt_lang _mt_out
+}
+
+# Current-shell menu prompt. English prints "Choice: " with the trailing space.
+# MUST NOT be called inside $() — the body contains read.
+app_menu_read() {
+    : "${JSON:=0}"
+    : "${QUIET:=0}"
+    : "${TTY:=0}"
+    _prompt_line=""
+    if [ "${JSON}" -eq 1 ] || [ "${QUIET}" -eq 1 ] || [ "${TTY}" -ne 1 ]; then
+        return 0
+    fi
+    out_msg_n "$(app_menu_text prompt)"
+    if ! read -r _prompt_line; then
+        _prompt_line=""
+        return 1
+    fi
+    return 0
+}
+
+app_menu_language_code() {
+    case "${1-}" in
+        51|en|english|English) printf '%s' "en" ;;
+        52|zh-Hans|zh-hans|simplified-chinese|简体中文) printf '%s' "zh-Hans" ;;
+        53|zh-Hant|zh-hant|traditional-chinese|繁體中文) printf '%s' "zh-Hant" ;;
+        54|es|spanish|Español|español) printf '%s' "es" ;;
+        55|ar|arabic|العربية|عربي) printf '%s' "ar" ;;
+        56|fr|french|Français|français) printf '%s' "fr" ;;
+        57|pt|portuguese|Português|português|portugues) printf '%s' "pt" ;;
+        58|ru|russian|Русский|русский) printf '%s' "ru" ;;
+        59|de|german|Deutsch|deutsch) printf '%s' "de" ;;
+        60|ja|japanese|日本語) printf '%s' "ja" ;;
+        61|ko|korean|한국어) printf '%s' "ko" ;;
+        62|nl|dutch|Nederlands|nederlands) printf '%s' "nl" ;;
+        63|el|greek|Ελληνικά|ελληνικά) printf '%s' "el" ;;
+        *) return 1 ;;
+    esac
+}
+
+app_main_menu_print_language() {
+    : "${APP_NAME:=take-ownership}"
+    : "${JSON:=0}"
+    : "${QUIET:=0}"
+    out_info "$(util_app_ident) — $(app_menu_text cat_language)"
+    out_menu_choice 51 English "$(app_menu_text lang_en_long)"
+    out_menu_choice 52 "简体中文" "$(app_menu_text lang_zh_hans_long)"
+    out_menu_choice 53 "繁體中文" "$(app_menu_text lang_zh_long)"
+    out_menu_choice 54 "Español" "$(app_menu_text lang_es_long)"
+    out_menu_choice 55 "العربية" "$(app_menu_text lang_ar_long)"
+    out_menu_choice 56 "Français" "$(app_menu_text lang_fr_long)"
+    out_menu_choice 57 "Português" "$(app_menu_text lang_pt_long)"
+    out_menu_choice 58 "Русский" "$(app_menu_text lang_ru_long)"
+    out_menu_choice 59 "Deutsch" "$(app_menu_text lang_de_long)"
+    out_menu_choice 60 "日本語" "$(app_menu_text lang_ja_long)"
+    out_menu_choice 61 "한국어" "$(app_menu_text lang_ko_long)"
+    out_menu_choice 62 "Nederlands" "$(app_menu_text lang_nl_long)"
+    out_menu_choice 63 "Ελληνικά" "$(app_menu_text lang_el_long)"
+    out_menu_choice 0 "$(app_menu_text label_back)"
+}
+
+app_main_menu_language_loop() {
+    : "${APP_NAME:=take-ownership}"
+    while true; do
+        JSON=0
+        QUIET=0
+        export JSON QUIET
+        app_main_menu_print_language
+        if ! app_menu_read; then
+            return 0
+        fi
+        _pick="${_prompt_line}"
+        if [ -z "${_pick}" ]; then
+            return 0
+        fi
+        case "${_pick}" in
+            0|back|Back|BACK|q|Q)
+                return 0
+                ;;
+        esac
+        _code=$(app_menu_language_code "${_pick}" || true)
+        if [ -n "${_code}" ]; then
+            if app_lang_save "${_code}"; then
+                out_info "$(app_menu_text lang_saved)"
+            else
+                out_warn "$(app_menu_text lang_save_fail)"
+            fi
+            unset _code
+            return 0
+        fi
+        unset _code
+        app_main_menu_warn_bad "${_pick}"
+    done
+}
+
+app_help_i18n() {
+    : "${APP_NAME:=take-ownership}"
+    : "${GLOBAL_BIN:=/usr/local/bin}"
+    out_info "${APP_NAME} — $(app_menu_text short_desc)"
+    out_plain "$(app_menu_text help_desc)"
+    out_empty_line
+    out_info "$(app_menu_text help_h_usage)"
+    out_plain "  ${APP_NAME} [command] [options]"
+    out_empty_line
+    out_info "$(app_menu_text help_h_life)"
+    out_plain "  install              $(app_menu_text long_install)"
+    out_plain "  version-check        $(app_menu_text long_vercheck)"
+    out_plain "  self-update          $(app_menu_text long_update)"
+    out_plain "  self-uninstall       $(app_menu_text long_uninstall)"
+    out_plain "  uninstall            self-uninstall"
+    out_plain "  version              $(app_menu_text long_version)"
+    out_plain "  about                $(app_menu_text long_about)"
+    out_plain "  help"
+    out_plain "  menu                 $(app_menu_text help_menu)"
+    out_plain "  main                 menu"
+    out_empty_line
+    out_info "$(app_menu_text help_h_work)"
+    out_plain "  list-folders"
+    out_plain "  action --path <folder> --ownership <user:group>"
+    out_plain "                       $(app_menu_text long_action)"
+    out_plain "  generate-sudoer-request --path <folder> --ownership <user:group>"
+    out_plain "                       $(app_menu_text long_gen)"
+    out_plain "  submit-sudoer-request"
+    out_plain "                       $(app_menu_text long_submit)"
+    out_plain "  print-sudoers"
+    out_plain "                       $(app_menu_text long_print)"
+    out_plain "  print-sudoers-install-script"
+    out_plain "                       $(app_menu_text long_script)"
+    out_plain "  remove-project-sudoers"
+    out_plain "                       $(app_menu_text long_remove)"
+    out_empty_line
+    out_info "$(app_menu_text help_h_test)"
+    out_plain "  generate-sudoer-json --path <folder> --ownership <user:group>"
+    out_empty_line
+    out_info "$(app_menu_text help_h_opts)"
+    out_plain "  --quiet, -q"
+    out_plain "  --json"
+    out_plain "  --force"
+    out_plain "  --global"
+    out_plain "  --path PATH"
+    out_plain "  --ownership user:group"
+    out_plain "  --debug"
+    out_empty_line
+    out_info "$(app_menu_text help_h_env)"
+    out_plain "  SCRIPT_URL"
+    out_plain "  TAKE_OWNERSHIP_LANG  $(app_menu_text help_lang_env)"
+    out_plain "                       en zh-Hans zh-Hant es ar fr pt ru de ja ko nl el"
+    out_empty_line
+    out_info "$(app_menu_text help_h_examples)"
+    out_plain "  ${APP_NAME}"
+    out_plain "  ${APP_NAME} menu"
+    out_plain "  ${APP_NAME} action --path /var/www/html --ownership www-data:www-data"
+    out_empty_line
+    out_info "$(app_menu_text help_close_tty)"
+    out_info "${APP_NAME} $(app_menu_text help_close_json)"
+    out_info "$(app_menu_text help_close_global "${GLOBAL_BIN}/${APP_NAME}")"
+}
+
+app_about_i18n() {
+    : "${APP_NAME:=take-ownership}"
+    out_info "$(util_app_ident) — $(app_menu_text about_title)"
+    out_empty_line
+    if [ "${_installed}" = "true" ]; then
+        out_success "${APP_NAME} $(app_menu_text about_installed)"
+    else
+        out_warn "${APP_NAME} $(app_menu_text about_missing)"
+        out_info "   $(app_menu_text about_recommend) curl -fsSL ${SCRIPT_URL} | ${SH}"
+    fi
+    out_empty_line
+    out_info "$(app_menu_text about_global) (${GLOBAL_BIN}/${APP_NAME}):   ${_global_ver}"
+    out_info "$(app_menu_text about_local) (${USER_BIN}/${APP_NAME}):    ${_local_ver}"
+    out_empty_line
+    out_info "$(app_menu_text about_repo) ${REPO_USER}/${REPO_NAME}"
+    out_info "$(app_menu_text about_channel) ${SCRIPT_URL}"
+    out_empty_line
+    out_info "$(app_menu_text about_user) ${_user}"
+    if [ "$(id -u)" -eq 0 ]; then
+        out_success "$(app_menu_text about_root)"
+    else
+        out_info "$(app_menu_text about_userctx)"
+    fi
+    out_empty_line
+    out_info "$(app_menu_text about_shell) ${_shell}"
+    if [ "${TTY:-0}" -eq 1 ]; then
+        out_info "$(app_menu_text about_tty_yes)"
+    else
+        out_info "$(app_menu_text about_tty_no)"
+    fi
+    out_empty_line
+    out_info "$(app_menu_text about_cache) ${EFFECTIVE_STORAGE_DIR}"
+    out_info "$(app_menu_text about_pref) ${_cache_preferred}"
+    out_info "$(app_menu_text about_fb1) ${_cache_fallback}"
+    if [ -n "${_cache_fallback_2}" ]; then
+        out_info "$(app_menu_text about_fb2) ${_cache_fallback_2}"
+    fi
+    out_info "$(app_menu_text about_persist) ${_persist_dir}"
+    out_empty_line
+    out_info "$(app_menu_text about_useful)"
+    out_info "   ${APP_NAME} help"
+    out_info "   ${APP_NAME} menu"
+}
+
 app_main_menu_sudoers_hidden() {
     _menu_host_class=$(util_menu_host_class || true)
     [ -n "${_menu_host_class}" ]
@@ -5390,7 +6922,7 @@ app_main_menu_sudoers_hidden() {
 
 app_main_menu_warn_bad() {
     : "${APP_NAME:=take-ownership}"
-    out_warn "Not a menu choice: '${1-}'. Choose a listed number or command name."
+    out_warn "$(app_menu_text unknown "${1-}")"
 }
 
 # =============================================================================
@@ -5398,16 +6930,18 @@ app_main_menu_warn_bad() {
 # =============================================================================
 #
 # GENERAL PURPOSE:
-# Front board is 1 action, 7 sudoers, 8 self-management, 9 Exit.
-# Header is take-ownership(VERSION) and SHORT_DESCRIPTION. On a TTY, explain
+# Front board is 1 action, 5 language, 7 sudoers, 8 self-management, 9 Exit.
+# Header is take-ownership(VERSION) and the short description. On a TTY, explain
 # text is italic + light gray. Lifecycle verbs stay on the self-management
-# board. sudoers and self-management are menu-only (not dispatcher tokens).
+# board. language, sudoers, and self-management are menu-only (not dispatcher tokens).
+# Front 2, 3, 4, and 6 are not rows. Row 5 stays on every host.
 #
 # ALIGNMENT:
 # - requirement-shell-cli-default-interaction.md
+# - requirement-shell-cli-language.md
 # - requirement-shell-output-requirements.md
 #
-# Last updated: 2026-09-30
+# Last updated: 2026-10-04
 # =============================================================================
 app_main_menu_print() {
     : "${APP_NAME:=take-ownership}"
@@ -5415,16 +6949,17 @@ app_main_menu_print() {
     : "${QUIET:=0}"
     : "${SHORT_DESCRIPTION:=${APP_DESC:-Take Unix ownership of a named folder with a narrow global-only sudo grant}}"
 
-    out_info "$(util_app_ident) — ${SHORT_DESCRIPTION}"
+    out_info "$(util_app_ident) — $(app_menu_text short_desc)"
     if app_main_menu_sudoers_hidden; then
-        out_info "sudoers not available for ${_menu_host_class}"
+        out_info "$(app_menu_text hidden_sudoers "${_menu_host_class}")"
     fi
-    out_menu_choice 1 action "Recursively take ownership of a named folder"
+    out_menu_choice 1 action "$(app_menu_text long_action)"
+    out_menu_choice 5 "$(app_menu_text cat_language)" "$(app_menu_text cat_language_long)"
     if ! app_main_menu_sudoers_hidden; then
-        out_menu_choice 7 sudoers "Grant and drafts"
+        out_menu_choice 7 sudoers "$(app_menu_text cat_sudoers_long)"
     fi
-    out_menu_choice 8 self-management "This CLI install, version, update, uninstall"
-    out_menu_choice 9 Exit
+    out_menu_choice 8 "$(app_menu_text cat_self)" "$(app_menu_text cat_self_long)"
+    out_menu_choice 9 "$(app_menu_text label_exit)"
 }
 
 # =============================================================================
@@ -5436,21 +6971,22 @@ app_main_menu_print() {
 #
 # ALIGNMENT:
 # - requirement-shell-cli-default-interaction.md
+# - requirement-shell-cli-language.md
 #
-# Last updated: 2026-09-30
+# Last updated: 2026-10-04
 # =============================================================================
 app_main_menu_print_sudoers() {
     : "${APP_NAME:=take-ownership}"
     : "${JSON:=0}"
     : "${QUIET:=0}"
 
-    out_info "$(util_app_ident) — sudoers (grant and drafts)"
-    out_menu_choice 71 generate-sudoer-request "Write a JSON grant you can read"
-    out_menu_choice 72 submit-sudoer-request "Queue the JSON grant inbound"
-    out_menu_choice 73 print-sudoers "Emit sudoers draft"
-    out_menu_choice 74 print-sudoers-install-script "Write admin install script"
-    out_menu_choice 75 remove-project-sudoers "Remove sudoers draft only"
-    out_menu_choice 0 Back
+    out_info "$(util_app_ident) — $(app_menu_text title_sudoers)"
+    out_menu_choice 71 generate-sudoer-request "$(app_menu_text long_gen)"
+    out_menu_choice 72 submit-sudoer-request "$(app_menu_text long_submit)"
+    out_menu_choice 73 print-sudoers "$(app_menu_text long_print)"
+    out_menu_choice 74 print-sudoers-install-script "$(app_menu_text long_script)"
+    out_menu_choice 75 remove-project-sudoers "$(app_menu_text long_remove)"
+    out_menu_choice 0 "$(app_menu_text label_back)"
 }
 
 # =============================================================================
@@ -5462,23 +6998,24 @@ app_main_menu_print_sudoers() {
 #
 # ALIGNMENT:
 # - requirement-shell-cli-default-interaction.md
+# - requirement-shell-cli-language.md
 # - requirement-shell-self-management.md
 #
-# Last updated: 2026-09-30
+# Last updated: 2026-10-04
 # =============================================================================
 app_main_menu_print_self() {
     : "${APP_NAME:=take-ownership}"
     : "${JSON:=0}"
     : "${QUIET:=0}"
 
-    out_info "$(util_app_ident) — self-management (this CLI)"
-    out_menu_choice 81 install "Ensure this program from the channel"
-    out_menu_choice 82 version "Show the local version"
-    out_menu_choice 83 about "Show diagnostics including global-bin presence"
-    out_menu_choice 84 version-check "Compare local version to the channel"
-    out_menu_choice 85 self-update "Update this program when the channel is newer"
-    out_menu_choice 86 self-uninstall "Remove the managed binary (not the host grant)"
-    out_menu_choice 0 Back
+    out_info "$(util_app_ident) — $(app_menu_text title_self)"
+    out_menu_choice 81 install "$(app_menu_text long_install)"
+    out_menu_choice 82 version "$(app_menu_text long_version)"
+    out_menu_choice 83 about "$(app_menu_text long_about)"
+    out_menu_choice 84 version-check "$(app_menu_text long_vercheck)"
+    out_menu_choice 85 self-update "$(app_menu_text long_update)"
+    out_menu_choice 86 self-uninstall "$(app_menu_text long_uninstall)"
+    out_menu_choice 0 "$(app_menu_text label_back)"
 }
 
 # =============================================================================
@@ -5708,7 +7245,7 @@ app_main_menu_layer_loop() {
             self) app_main_menu_print_self ;;
             *) return 0 ;;
         esac
-        if ! prompt_line "Choice"; then
+        if ! app_menu_read; then
             return 0
         fi
         _pick="${_prompt_line}"
@@ -5755,7 +7292,7 @@ app_main_menu_layer_loop() {
 # - requirement-shell-interactive-vs-noninteractive.md
 # - requirement-shell-cli-zero-arguments.md
 #
-# Last updated: 2026-09-30
+# Last updated: 2026-10-04
 # =============================================================================
 app_main_menu() {
     : "${TTY:=0}"
@@ -5791,7 +7328,7 @@ app_main_menu() {
             _pick="${_argv_pick}"
             _argv_pick=""
         else
-            if ! prompt_line "Choice"; then
+            if ! app_menu_read; then
                 JSON="${_menu_json}"
                 QUIET="${_menu_quiet}"
                 export JSON QUIET
@@ -5812,6 +7349,12 @@ app_main_menu() {
                 export JSON QUIET
                 return 0
                 ;;
+            5|language|語言|语言|idioma|langue|Sprache|sprache|言語|언어|لغة|язык|taal|γλώσσα)
+                app_main_menu_language_loop
+                _argv_a=""
+                _argv_b=""
+                continue
+                ;;
             7|sudoers)
                 if app_main_menu_sudoers_hidden; then
                     app_main_menu_warn_bad "${_pick}"
@@ -5824,7 +7367,7 @@ app_main_menu() {
                 _argv_b=""
                 continue
                 ;;
-            8|self-management)
+            8|self-management|自我管理|autogestión|autogestion|Selbstverwaltung|selbstverwaltung|自己管理|자기관리|إدارة-ذاتية|autogestão|самоуправление|zelfbeheer|αυτοδιαχείριση)
                 app_main_menu_layer_loop self "${_argv_a}"
                 _argv_a=""
                 _argv_b=""
@@ -5865,6 +7408,10 @@ app_help() {
         return 0
     fi
     if [ "${QUIET}" -eq 1 ]; then
+        return 0
+    fi
+    if ! app_lang_is_en; then
+        app_help_i18n
         return 0
     fi
 
@@ -5937,6 +7484,8 @@ app_help() {
     out_plain "  SUDOER_QUEUE_INBOUND    override inbound approval dir"
     out_plain "  SUDOER_PUBLIC_ROOT      public queue root (default /var/sudoer-cli)"
     out_plain "  SUDOERS_D_DIR           host sudoers.d dir (default /etc/sudoers.d; tests)"
+    out_plain "  TAKE_OWNERSHIP_LANG     Menu language for this run only; does not write the file"
+    out_plain "                          en zh-Hans zh-Hant es ar fr pt ru de ja ko nl el"
     out_empty_line
     out_info "Examples:"
     out_plain "  curl -fsSL ${SCRIPT_URL} | sh"
@@ -5953,6 +7502,7 @@ app_help() {
     out_info "Empty argv on a real terminal shows the numbered list. Off-TTY empty argv is channel install-ensure (curl|sh)."
     out_info "${APP_NAME} --json with no command is JSON help (even on a TTY)."
     out_info "Only ${GLOBAL_BIN}/${APP_NAME} may appear in sudoers (not ~/.local/bin)."
+    out_info "Menu row 5 sets the display language (51 English through 63 Greek)."
 }
 
 # =============================================================================
@@ -5968,10 +7518,11 @@ app_help() {
 # - requirement-shell-cli-zero-arguments.md
 # - requirement-shell-cli-default-interaction.md
 # - requirement-take-ownership-ops.md
+# - requirement-shell-cli-language.md
 #
 # !!! DO NOT MODIFY OR SIMPLIFY THIS FUNCTION !!!
 #
-# Last updated: 2026-08-30
+# Last updated: 2026-10-04
 # =============================================================================
 app_main() {
     COMMAND=""
@@ -6001,6 +7552,10 @@ app_main() {
     PERSISTENT_STORAGE_DIR=$(util_resolve_persistent_storage)
     export EFFECTIVE_STORAGE_DIR STORAGE_DIR PERSISTENT_STORAGE_DIR
     export TMPDIR="${EFFECTIVE_STORAGE_DIR}"
+
+    # Menu language once, after persistence and before argv dispatch.
+    # A later menu pick sets APP_LANG itself. Do not call app_lang_load again.
+    app_lang_load
 
     # Empty argv = no command token after flag parse.
     # TTY → menu. Off-TTY → Type O ensure. --json no-command → JSON help.

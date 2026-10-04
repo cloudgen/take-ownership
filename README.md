@@ -1,6 +1,6 @@
 # take-ownership - Take Unix ownership of a named folder with a narrow sudo grant
 
-![Version](https://img.shields.io/badge/Version-3.0.3-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.1.0-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 [![CIAO](https://img.shields.io/badge/Philosophy-CIAO%20(Caution%20%E2%80%A2%20Intentional%20%E2%80%A2%20Anti--fragile%20%E2%80%A2%20Over--engineered)-purple.svg)](https://github.com/cloudgen/ciao)
 [![Stars](https://img.shields.io/github/stars/cloudgen/take-ownership?style=flat-square)](https://github.com/cloudgen/take-ownership)
@@ -15,7 +15,7 @@ You can install it with one `curl | sh` line. Then write a grant for one folder 
 
 ## Features
 
-- **Online self-management**: `curl | sh` install, `version-check`, `self-update`, `self-uninstall`, `about`, plus `menu` / `main` (TTY numbered work list: action, then family **sudoers** with a grant/draft submenu; empty argv on a terminal is the same list; in a pipe it installs)
+- **Online self-management**: `curl | sh` install, `version-check`, `self-update`, `self-uninstall`, `about`, plus `menu` / `main` (TTY numbered work list: action, **language** (row **5**), then family **sudoers** with a grant/draft submenu; empty argv on a terminal is the same list; in a pipe it installs)
 - **Automatic SHA-256 companion** on install and self-update (the program fetches `${SCRIPT_URL}.sha256`)
 - **Take ownership**: `action --path <folder> --ownership <user:group>` — recursive chown, no symlink follow, refuse system roots. On a real terminal, `action` (or menu `1`) lists **existing** granted folders by number and uses this login’s `user:group` with no extra prompt. A granted path that is not a directory is listed by `list-folders` as missing; it is not a live pick. Recreate the folder, then run `action` — do not generate a new grant.
 - **Narrow sudoers**: exact `--path`, exact `--ownership user:group`, **global binary only**
@@ -87,11 +87,33 @@ sudo sh /dev/shm/take-ownership-<user>-sudoers-admin.sh uninstall
 After install, on a terminal (`take-ownership` or `take-ownership menu`) the front board looks like:
 
 ```text
-[INFO] **take-ownership**(*3.0.3*) — Take Unix ownership of a named folder with a narrow global-only sudo grant
+[INFO] **take-ownership**(*3.1.0*) — Take Unix ownership of a named folder with a narrow global-only sudo grant
 1. action: Recursively take ownership of a named folder
+5. language: display language for this menu
 7. sudoers: Grant and drafts
 8. self-management: This CLI install, version, update, uninstall
 9. Exit
+Choice:
+```
+
+**5** opens the language board. **51** through **63** save one language for the next run. **0** returns to the front board and does not write the file. **9** on that board is not Exit.
+
+```text
+[INFO] **take-ownership**(*3.1.0*) — language
+51. English: use English for this menu
+52. 简体中文: use Simplified Chinese for this menu
+53. 繁體中文: use Traditional Chinese for this menu
+54. Español: use Spanish for this menu
+55. العربية: use Arabic for this menu
+56. Français: use French for this menu
+57. Português: use Portuguese for this menu
+58. Русский: use Russian for this menu
+59. Deutsch: use German for this menu
+60. 日本語: use Japanese for this menu
+61. 한국어: use Korean for this menu
+62. Nederlands: use Dutch for this menu
+63. Ελληνικά: use Greek for this menu
+0. Back
 Choice:
 ```
 
@@ -107,7 +129,7 @@ Choice:
 **7** opens grant and drafts. **0** returns to the front board. **9** on that board is not Exit.
 
 ```text
-[INFO] **take-ownership**(*3.0.3*) — sudoers (grant and drafts)
+[INFO] **take-ownership**(*3.1.0*) — sudoers (grant and drafts)
 71. generate-sudoer-request: Write a JSON grant you can read
 72. submit-sudoer-request: Queue the JSON grant inbound
 73. print-sudoers: Emit sudoers draft
@@ -120,7 +142,7 @@ Choice:
 **8** opens install, version, update, and remove. **0** returns. `self-install` is not a row.
 
 ```text
-[INFO] **take-ownership**(*3.0.3*) — self-management (this CLI)
+[INFO] **take-ownership**(*3.1.0*) — self-management (this CLI)
 81. install: Ensure this program from the channel
 82. version: Show the local version
 83. about: Show diagnostics including global-bin presence
@@ -205,4 +227,4 @@ MIT License — see [`LICENSE.md`](./LICENSE.md).
 
 ## Last Update
 
-2026-09-30 — version **3.0.3** (folder list and other layers except the front board: **0** Back; a bad choice stays on that list). See [`CHANGELOG.md`](./CHANGELOG.md) for earlier releases.
+2026-10-04 — version **3.1.0** (menu row **5** language, thirteen codes **51–63**, saved under `~/.local/take-ownership/language`). See [`CHANGELOG.md`](./CHANGELOG.md) for earlier releases.

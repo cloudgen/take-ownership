@@ -5,6 +5,13 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [3.1.0] - 2026-10-04
+
+### Added
+
+- **Menu language.** On a real terminal the front board is **1** `action`, **5** language, **7** sudoers, **8** self-management, **9** Exit. Row **5** opens **51** English through **63** Ελληνικά. The choice is one line in `${HOME}/.local/take-ownership/language` (mode **0600**). The next run opens in that language. `TAKE_OWNERSHIP_LANG` wins for one process and does not write the file. Human `help` and human `about` follow the same code. JSON, argv `version`, and command output stay English. `language` is not a command. **9** still leaves only from the front board. On the language board, **9** warns and the board stays. Law: `requirement-shell-cli-language` **1.0.0**, `requirement-shell-cli-default-interaction` **3.1.0**, `requirement-shell-cli-interface` **3.2.0**, `requirement-shell-cli-storage` **2.2.0**. Suite **TP-CLI-32** and **TP-CLI-13**.
+- Product version **3.1.0**.
+
 ## [3.0.3] - 2026-09-30
 
 ### Fixed
