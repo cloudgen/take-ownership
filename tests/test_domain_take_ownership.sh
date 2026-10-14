@@ -352,5 +352,132 @@ run_test_domain_take_ownership() {
         t_skip "TP-TAKE-OWNERSHIP-46 TTY draft 0 Back (no python3 for PTY)"
     fi
 
+    # TP-TAKE-OWNERSHIP-47..52 saved original owner and return-original-owner.
+    # The record directory is a trusted test hook. These cases stay on the
+    # current owner so return does not call sudo.
+    if ! command -v sha256sum >/dev/null 2>&1; then
+        t_skip "TP-TAKE-OWNERSHIP-47..52 saved original owner (no sha256sum)"
+    else
+        _recdir="${CI_HOME}/original-owner"
+        mkdir -p "${_recdir}"
+        chmod 0755 "${_recdir}"
+        _owned="${CI_HOME}/owned2"
+        _hash=$(printf '%s' "${_owned}" | sha256sum | awk 'NF { print $1; exit }')
+        _rec="${_recdir}/${_hash}"
+        rm -f "${_rec}"
+
+        _out=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" TO_ORIGINAL_OWNER_DIR="${_recdir}" \
+            sh "${SCRIPT}" action --path "${_owned}" --ownership "${_og}" 2>&1)
+        _ec=$?
+        assert_eq "TP-TAKE-OWNERSHIP-47 first action writes the saved line exit 0" 0 "$_ec"
+        assert_file_exists "TP-TAKE-OWNERSHIP-47 record file exists" "${_rec}"
+        _body=$(cat "${_rec}")
+        assert_eq "TP-TAKE-OWNERSHIP-47 record is current user:group" "${_og}" "${_body}"
+        _mode=$(stat -c '%a' "${_rec}" 2>/dev/null || echo missing)
+        assert_eq "TP-TAKE-OWNERSHIP-47 record mode 0644" "644" "${_mode}"
+
+        printf '%s\n' "root:root" >"${_rec}"
+        chmod 0644 "${_rec}"
+        _out=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" TO_ORIGINAL_OWNER_DIR="${_recdir}" \
+            sh "${SCRIPT}" action --path "${_owned}" --ownership "${_og}" 2>&1)
+        _ec=$?
+        assert_eq "TP-TAKE-OWNERSHIP-48 second action leaves a trusted record exit 0" 0 "$_ec"
+        _body=$(cat "${_rec}")
+        assert_eq "TP-TAKE-OWNERSHIP-48 trusted record is not replaced" "root:root" "${_body}"
+
+        rm -f "${_rec}"
+        _err=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" TO_ORIGINAL_OWNER_DIR="${_recdir}" \
+            sh "${SCRIPT}" return-original-owner --path "${_owned}" 2>&1 >/dev/null)
+        _ec=$?
+        assert_eq "TP-TAKE-OWNERSHIP-49 missing record exit 1" 1 "$_ec"
+        assert_contains "TP-TAKE-OWNERSHIP-49 names no saved original owner" "${_err}" "No saved original owner"
+
+        printf '%s\n' "${_og}" >"${_rec}"
+        chmod 0644 "${_rec}"
+        _out=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" TO_ORIGINAL_OWNER_DIR="${_recdir}" \
+            sh "${SCRIPT}" return-original-owner --path "${_owned}" 2>&1)
+        _ec=$?
+        assert_eq "TP-TAKE-OWNERSHIP-50 return already matching exit 0" 0 "$_ec"
+        assert_contains "TP-TAKE-OWNERSHIP-50 return already matching text" "${_out}" "Already ${_og}"
+        _jout=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" TO_ORIGINAL_OWNER_DIR="${_recdir}" \
+            sh "${SCRIPT}" --json return-original-owner --path "${_owned}" 2>/dev/null)
+        _ec=$?
+        assert_eq "TP-TAKE-OWNERSHIP-50 JSON return exit 0" 0 "$_ec"
+        assert_contains "TP-TAKE-OWNERSHIP-50 JSON verb" "${_jout}" "return-original-owner"
+        assert_contains "TP-TAKE-OWNERSHIP-50 JSON already matching" "${_jout}" "already matching"
+        _err=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" TO_ORIGINAL_OWNER_DIR="${_recdir}" \
+            sh "${SCRIPT}" return-original-owner --path "${_owned}" --ownership "${_og}" 2>&1 >/dev/null)
+        _ec=$?
+        assert_eq "TP-TAKE-OWNERSHIP-50 return --ownership exit 1" 1 "$_ec"
+        assert_contains "TP-TAKE-OWNERSHIP-50 return does not take --ownership" "${_err}" "does not take --ownership"
+
+        _one="${CI_HOME}/return-one.json"
+        _out=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" USER_BIN="${CI_USER_BIN}" \
+            sh "${SCRIPT}" generate-sudoer-json --add --path /var/www/html --ownership "${_og}" "${_one}" 2>&1)
+        _ec=$?
+        assert_eq "TP-TAKE-OWNERSHIP-51 generate return lines exit 0" 0 "$_ec"
+        _onebody=$(cat "${_one}")
+        assert_contains "TP-TAKE-OWNERSHIP-51 return args" "${_onebody}" "\"args\":[\"return-original-owner\",\"--path\",\"/var/www/html\"]"
+        assert_contains "TP-TAKE-OWNERSHIP-51 return json twin" "${_onebody}" "\"args\":[\"--json\",\"return-original-owner\",\"--path\",\"/var/www/html\"]"
+        _bad=$(printf '%s\n' "${_onebody}" | grep -o '"return-original-owner"[^]]*"--ownership"' || true)
+        assert_eq "TP-TAKE-OWNERSHIP-51 return JSON has no --ownership" "" "${_bad}"
+        _out=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" \
+            sh "${SCRIPT}" print-sudoers --path /var/www/html --ownership "${_og}" 2>&1)
+        _ec=$?
+        assert_eq "TP-TAKE-OWNERSHIP-51 print-sudoers exit 0" 0 "$_ec"
+        assert_contains "TP-TAKE-OWNERSHIP-51 text return line" "${_out}" "return-original-owner --path /var/www/html"
+        assert_contains "TP-TAKE-OWNERSHIP-51 text return json twin" "${_out}" "--json return-original-owner --path /var/www/html"
+        _rettext=$(printf '%s\n' "${_out}" | grep 'return-original-owner' || true)
+        assert_not_contains "TP-TAKE-OWNERSHIP-51 return text has no --ownership" "${_rettext}" "--ownership"
+        if command -v visudo >/dev/null 2>&1; then
+            _vf="${CI_HOME}/visudo-return-fragment"
+            printf '%s\n' "${_out}" | grep -E '^# Purpose:|[[:space:]]NOPASSWD:' >"${_vf}"
+            visudo -cf "${_vf}" >/dev/null 2>&1
+            _vc=$?
+            assert_eq "TP-TAKE-OWNERSHIP-51 visudo parses return lines" 0 "${_vc}"
+        fi
+        _old="${CI_HOME}/old-two-command-grant.json"
+        printf '%s\n' "{\"schema_version\":1,\"purpose\":\"old grant\",\"username\":\"${_me}\",\"service\":\"${APP_NAME}\",\"action\":\"add\",\"commands\":[{\"runas\":\"root\",\"tags\":[\"NOPASSWD\"],\"path\":\"${CI_GLOBAL_BIN}/${APP_NAME}\",\"args\":[\"action\",\"--path\",\"/var/www/html\",\"--ownership\",\"${_og}\"]},{\"runas\":\"root\",\"tags\":[\"NOPASSWD\"],\"path\":\"${CI_GLOBAL_BIN}/${APP_NAME}\",\"args\":[\"--json\",\"action\",\"--path\",\"/var/www/html\",\"--ownership\",\"${_og}\"]}]}" >"${_old}"
+        _err=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" \
+            sh "${SCRIPT}" submit-sudoer-request "${_old}" 2>&1 >/dev/null)
+        _ec=$?
+        assert_eq "TP-TAKE-OWNERSHIP-51 old grant without return exit 1" 1 "$_ec"
+        assert_contains "TP-TAKE-OWNERSHIP-51 old grant names return-original-owner" "${_err}" "return-original-owner"
+
+        rm -f "${_rec}"
+        ln -s "${CI_HOME}/not-a-record" "${_rec}"
+        _err=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" TO_ORIGINAL_OWNER_DIR="${_recdir}" \
+            sh "${SCRIPT}" action --path "${_owned}" --ownership "${_og}" 2>&1 >/dev/null)
+        _ec=$?
+        assert_eq "TP-TAKE-OWNERSHIP-52 symlink record exit 1" 1 "$_ec"
+        if [ -L "${_rec}" ]; then
+            t_pass "TP-TAKE-OWNERSHIP-52 symlink record stays"
+        else
+            t_fail "TP-TAKE-OWNERSHIP-52 symlink record was replaced"
+        fi
+        rm -f "${_rec}"
+        printf '%s\n' "keep-me" >"${_rec}"
+        chmod 0666 "${_rec}"
+        _err=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" TO_ORIGINAL_OWNER_DIR="${_recdir}" \
+            sh "${SCRIPT}" action --path "${_owned}" --ownership "${_og}" 2>&1 >/dev/null)
+        _ec=$?
+        assert_eq "TP-TAKE-OWNERSHIP-52 mode 0666 exit 1" 1 "$_ec"
+        _body=$(cat "${_rec}")
+        assert_eq "TP-TAKE-OWNERSHIP-52 mode 0666 content stays" "keep-me" "${_body}"
+        printf '%s\n' "${_og}" "extra" >"${_rec}"
+        chmod 0644 "${_rec}"
+        _out=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" TO_ORIGINAL_OWNER_DIR="${_recdir}" \
+            sh "${SCRIPT}" action --path "${_owned}" --ownership "${_og}" 2>&1)
+        _ec=$?
+        assert_eq "TP-TAKE-OWNERSHIP-52 trusted multi-line left by action exit 0" 0 "$_ec"
+        _nlines=$(wc -l <"${_rec}" | tr -d ' ')
+        assert_eq "TP-TAKE-OWNERSHIP-52 multi-line file stays two lines" "2" "${_nlines}"
+        _err=$(HOME="${CI_HOME}" GLOBAL_BIN="${CI_GLOBAL_BIN}" TO_ORIGINAL_OWNER_DIR="${_recdir}" \
+            sh "${SCRIPT}" return-original-owner --path "${_owned}" 2>&1 >/dev/null)
+        _ec=$?
+        assert_eq "TP-TAKE-OWNERSHIP-52 multi-line return exit 1" 1 "$_ec"
+        assert_contains "TP-TAKE-OWNERSHIP-52 multi-line return names one line" "${_err}" "one line"
+    fi
+
     ci_cleanup_env
 }

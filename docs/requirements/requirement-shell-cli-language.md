@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-shell-cli-language.md
-**Status**: Active (Version 1.0.0)
+**Status**: Active (Version 1.1.0)
 **Area**: shell
 **Key**: `requirement-shell-cli-language`
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -99,15 +99,15 @@ The language board also accepts:
 | **62** | `dutch`, `nl`, `Nederlands`, `nederlands` |
 | **63** | `greek`, `el`, `Ελληνικά`, `ελληνικά` |
 
-The front board also accepts the displayed category short for self-management: `self-management`, `自我管理`, `autogestión`, `autogestion`, `Selbstverwaltung`, `selbstverwaltung`, `自己管理`, `자기관리`, `إدارة-ذاتية`, `autogestão`, `самоуправление`, `zelfbeheer`, `αυτοδιαχείριση`. The sudoers short stays `sudoers` in every language. The leaf short `action` stays `action` in every language.
+The front board also accepts the displayed category short for self-management: `self-management`, `自我管理`, `autogestión`, `autogestion`, `Selbstverwaltung`, `selbstverwaltung`, `自己管理`, `자기관리`, `إدارة-ذاتية`, `autogestão`, `самоуправление`, `zelfbeheer`, `αυτοδιαχείριση`. The sudoers short stays `sudoers` in every language. The leaf shorts `action` and `return-original-owner` stay those English verbs in every language.
 
 ### 2.4 What follows the saved language
 
 **MUST** follow `APP_LANG` on these boards: front, language, self-management, and sudoers. That covers the layer title, the category shorts, every long description, Back, Exit, the choose-prompt, the unknown-choice line, and the menu-hidden sentence. The allowed-folder picker and the multi-draft list use the same Back word and the same choose-prompt. Their item paths stay as paths.
 
-**MUST** keep each leaf short as the English verb in every language (`action`, `install`, `generate-sudoer-request`, and the other leaf tokens). The sudoers category short stays `sudoers` in every language.
+**MUST** keep each leaf short as the English verb in every language (`action`, `return-original-owner`, `install`, `generate-sudoer-request`, and the other leaf tokens). The sudoers category short stays `sudoers` in every language.
 
-English (`APP_LANG=en`, or unset) **MUST** keep these literals so the existing menu tests still match: `Choice: ` (trailing space), `Not a menu choice:`, `Choose a listed number or command name.`, `9. Exit`, `0. Back`, `1. action: Recursively take ownership of a named folder`, `5. language: display language for this menu`, `7. sudoers: Grant and drafts`, `8. self-management: This CLI install, version, update, uninstall`, `sudoers not available for `, and the front title `Take Unix ownership of a named folder with a narrow global-only sudo grant`.
+English (`APP_LANG=en`, or unset) **MUST** keep these literals so the existing menu tests still match: `Choice: ` (trailing space), `Not a menu choice:`, `Choose a listed number or command name.`, `9. Exit`, `0. Back`, `1. action: Recursively take ownership of a named folder`, `2. return-original-owner: Put the folder back to the saved original owner`, `5. language: display language for this menu`, `7. sudoers: Grant and drafts`, `8. self-management: This CLI install, version, update, uninstall`, `sudoers not available for `, and the front title `Take Unix ownership of a named folder with a narrow global-only sudo grant`.
 
 Category shorts:
 
@@ -117,6 +117,7 @@ Category shorts:
 | self-management | self-management | 自我管理 | 自我管理 | autogestión | إدارة-ذاتية | autogestion | autogestão |
 | sudoers | sudoers | sudoers | sudoers | sudoers | sudoers | sudoers | sudoers |
 | action | action | action | action | action | action | action | action |
+| return-original-owner | return-original-owner | return-original-owner | return-original-owner | return-original-owner | return-original-owner | return-original-owner | return-original-owner |
 
 | Token | ru | de | ja | ko | nl | el |
 |-------|----|----|----|----|----|-----|
@@ -124,8 +125,9 @@ Category shorts:
 | self-management | самоуправление | Selbstverwaltung | 自己管理 | 자기관리 | zelfbeheer | αυτοδιαχείριση |
 | sudoers | sudoers | sudoers | sudoers | sudoers | sudoers | sudoers |
 | action | action | action | action | action | action | action |
+| return-original-owner | return-original-owner | return-original-owner | return-original-owner | return-original-owner | return-original-owner | return-original-owner |
 
-English front longs: action `Recursively take ownership of a named folder`; language `display language for this menu`; sudoers `Grant and drafts`; self-management `This CLI install, version, update, uninstall`. The other twelve languages use the same meaning through `app_menu_text`.
+English front longs: action `Recursively take ownership of a named folder`; return-original-owner `Put the folder back to the saved original owner`; language `display language for this menu`; sudoers `Grant and drafts`; self-management `This CLI install, version, update, uninstall`. The other twelve languages use the same meaning through `app_menu_text`.
 
 Language-board longs (English): `use English for this menu`, `use Simplified Chinese for this menu`, `use Traditional Chinese for this menu`, `use Spanish for this menu`, `use Arabic for this menu`, `use French for this menu`, `use Portuguese for this menu`, `use Russian for this menu`, `use German for this menu`, `use Japanese for this menu`, `use Korean for this menu`, `use Dutch for this menu`, `use Greek for this menu`.
 
@@ -228,6 +230,6 @@ When this program runs on Termux, Git Bash, or Windows Command Prompt, it **MUST
 
 ---
 
-**Last Updated**: 2026-10-04
+**Last Updated**: 2026-10-14
 **Owner**: product
 **Alignment**: `requirement-shell-cli-default-interaction` · `requirement-shell-cli-storage` · `requirement-shell-cli-interface` · CIAO / CIAO-Lite

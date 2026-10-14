@@ -4,7 +4,8 @@
 
 | Version | Supported |
 |---------|-----------|
-| 3.1.0 (current) | Yes |
+| 3.2.0 (current) | Yes |
+| 3.1.0 | Yes |
 | 3.0.3 | Yes |
 | 3.0.2 | Yes |
 | 3.0.1 | Yes |
@@ -48,7 +49,7 @@ This project follows **[CIAO](https://github.com/cloudgen/ciao)** / **[CIAO-Lite
 | Letter | Principle | Security application |
 |--------|-----------|----------------------|
 | **C** | **Caution** | Stop without the global binary and a matching grant; refuse system roots and symlink `--path`. |
-| **I** | **Intentional** | You generate/submit; `action` elevates only `/usr/local/bin/take-ownership`; `print-sudoers` never writes `/etc`. |
+| **I** | **Intentional** | You generate/submit; `action` and `return-original-owner` elevate only `/usr/local/bin/take-ownership`; `print-sudoers` never writes `/etc`. |
 | **A** | **Anti-fragile** | Already-matching owner is success; clear next-step errors when the grant is missing or the folder is gone. |
 | **O** | **Over-protect** | `~/.local/bin` is never in sudoers; no `/bin/chown`; no `NOPASSWD: ALL`; no `--allow-test-local`. |
 
@@ -58,7 +59,8 @@ This section is **design posture**, not a third-party certification claim.
 
 ## Scope notes
 
-- Elevation is limited to the **global** program `action --path <one-folder> --ownership <user:group>` (plus the `--json` twin) under product law.  
+- Elevation is limited to the **global** program `action --path <one-folder> --ownership <user:group>` and `return-original-owner --path <one-folder>` (plus the `--json` twins) under product law. The return line has no `--ownership`.
+- The saved original owner lives under `/var/take-ownership/original-owner/<sha256>`. Root creates that directory (mode **0755**, `root:root`). The record is a regular file, mode **0644**, `root:root`, not a symlink, and not group- or world-writable. The first elevated `action` writes it. A later take does not replace a trusted file. A missing or hostile file fails closed and is not overwritten. Type 0 does not create `/var/take-ownership`. The saved line is one directory `user:group` applied to the whole tree. It is not a byte backup.  
 - Operators must admin-install sudoers fragments after review (`visudo -c`, mode `0440`).  
 - **Install trust for elevation:**
   - **Production:** global managed binary (`/usr/local/bin/take-ownership`, typically root-owned). Prefer `sudo curl … | sudo sh` (or `sudo take-ownership install`) before durable sudoers. Online install verifies `${SCRIPT_URL}.sha256` when the sidecar is present.  

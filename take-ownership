@@ -54,10 +54,10 @@ APP_NAME="take-ownership"
 : "${APP_NAME:=take-ownership}"
 : "${APP_DESC:=Take Unix ownership of a named folder with a narrow global-only sudo grant}"
 : "${SHORT_DESCRIPTION:=${APP_DESC}}"
-: "${DESCRIPTION:=POSIX /bin/sh online-installable CLI: curl|sh install, version-check, self-update, self-uninstall, about, plus take-ownership action and grant/draft verbs.}"
+: "${DESCRIPTION:=POSIX /bin/sh online-installable CLI: curl|sh install, version-check, self-update, self-uninstall, about, plus take-ownership action, return-original-owner, and grant/draft verbs.}"
 # Product version SSOT (semver). Extractors use: grep '^VERSION="'
-VERSION="3.1.0"
-: "${VERSION:=3.1.0}"
+VERSION="3.2.0"
+: "${VERSION:=3.2.0}"
 # Repository identity → install channel (inherited from selfmanaged).
 : "${REPO_USER:=cloudgen}"
 : "${REPO_NAME:=take-ownership}"
@@ -78,6 +78,12 @@ VERSION="3.1.0"
 : "${TO_FLAG_ORDER_OK:=1}"
 : "${TO_SEEN_PATH:=0}"
 : "${TO_SEEN_OWNERSHIP:=0}"
+# Saved original owner for return-original-owner. Tests may point this at a
+# directory this login owns. Root action/return use this path and require it
+# root-owned. sudo env_reset drops a caller override on the elevated re-exec.
+: "${TO_ORIGINAL_OWNER_DIR:=/var/take-ownership/original-owner}"
+: "${TO_ORIGINAL_OWNER_ERR:=}"
+: "${TO_ORIGINAL_OWNER_PAIR:=}"
 
 # ----------------------------- Safe Variable Defaults ------------------------
 : "${GLOBAL_BIN:=/usr/local/bin}"
@@ -3553,22 +3559,355 @@ to_list_folders() {
 }
 
 # =============================================================================
+# to_original_owner_mode_private() - Reject group/other write on a mode
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# A saved original-owner directory or file must not be writable by group or
+# other. $1 is a numeric mode from stat (for example 755 or 644).
+#
+# ALIGNMENT:
+# - requirement-take-ownership-ops.md
+#
+# Last updated: 2026-10-14
+# =============================================================================
+to_original_owner_mode_private() {
+    _m="${1-}"
+    if [ "${#_m}" -lt 3 ]; then
+        return 1
+    fi
+    _m=$(printf '%s' "${_m}" | awk '{ print substr($0, length($0)-2) }')
+    _g=$(printf '%s' "${_m}" | cut -c2)
+    _o=$(printf '%s' "${_m}" | cut -c3)
+    case "${_g}" in
+        2|3|6|7) return 1 ;;
+    esac
+    case "${_o}" in
+        2|3|6|7) return 1 ;;
+    esac
+    return 0
+}
+
+# =============================================================================
+# to_original_owner_dir_ok() - Record directory is safe to read or write
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# Root may create /var/take-ownership/original-owner (0755, root-owned).
+# A non-root process may use TO_ORIGINAL_OWNER_DIR only when it is not the
+# default path, already exists, is owned by this login, and is not a symlink
+# or group/world-writable. That is the test hook. The elevated re-exec does
+# not receive the caller environment.
+#
+# ALIGNMENT:
+# - requirement-take-ownership-ops.md
+#
+# Last updated: 2026-10-14
+# =============================================================================
+to_original_owner_dir_ok() {
+    : "${TO_ORIGINAL_OWNER_DIR:=/var/take-ownership/original-owner}"
+    _dir="${TO_ORIGINAL_OWNER_DIR}"
+    _default="/var/take-ownership/original-owner"
+    case "${_dir}" in
+        /*) ;;
+        *) return 1 ;;
+    esac
+    if [ -L "${_dir}" ]; then
+        return 1
+    fi
+    _parent=$(dirname "${_dir}")
+    if [ -L "${_parent}" ]; then
+        return 1
+    fi
+    _uid=$(id -u 2>/dev/null || echo 1)
+    if [ "${_uid}" -eq 0 ]; then
+        if [ ! -d "${_dir}" ]; then
+            if [ "${_parent}" = "/var/take-ownership" ]; then
+                if [ ! -d "${_parent}" ]; then
+                    mkdir "${_parent}" || return 1
+                fi
+                chown root:root "${_parent}" || return 1
+                chmod 0755 "${_parent}" || return 1
+            fi
+            mkdir "${_dir}" || return 1
+            chown root:root "${_dir}" || return 1
+            chmod 0755 "${_dir}" || return 1
+        fi
+    else
+        if [ "${_dir}" = "${_default}" ]; then
+            return 1
+        fi
+        if [ ! -d "${_dir}" ]; then
+            return 1
+        fi
+    fi
+    if [ ! -d "${_dir}" ] || [ -L "${_dir}" ]; then
+        return 1
+    fi
+    if [ ! -O "${_dir}" ]; then
+        return 1
+    fi
+    _mode=$(stat -c '%a' "${_dir}" 2>/dev/null || true)
+    to_original_owner_mode_private "${_mode}" || return 1
+    if [ "${_uid}" -eq 0 ]; then
+        _ou=$(stat -c '%u' "${_dir}" 2>/dev/null || echo 1)
+        if [ "${_ou}" != "0" ]; then
+            return 1
+        fi
+    fi
+    return 0
+}
+
+# =============================================================================
+# to_original_owner_hash() - SHA-256 hex of the normalized path
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# Hash the exact normalized absolute path bytes. No extra newline is hashed.
+#
+# ALIGNMENT:
+# - requirement-take-ownership-ops.md
+#
+# Last updated: 2026-10-14
+# =============================================================================
+to_original_owner_hash() {
+    _p="${1-}"
+    _hex=""
+    if [ -z "${_p}" ]; then
+        return 1
+    fi
+    if ! command -v sha256sum >/dev/null 2>&1; then
+        return 1
+    fi
+    _hex=$(printf '%s' "${_p}" | sha256sum 2>/dev/null | awk 'NF { print $1; exit }')
+    case "${_hex}" in
+        *[!0-9a-f]*) return 1 ;;
+    esac
+    if [ "${#_hex}" -ne 64 ]; then
+        return 1
+    fi
+    printf '%s' "${_hex}"
+    return 0
+}
+
+# =============================================================================
+# to_original_owner_record_file() - Path of the saved user:group line
+# =============================================================================
+#
+# ALIGNMENT:
+# - requirement-take-ownership-ops.md
+#
+# Last updated: 2026-10-14
+# =============================================================================
+to_original_owner_record_file() {
+    : "${TO_ORIGINAL_OWNER_DIR:=/var/take-ownership/original-owner}"
+    _p="${1-}"
+    _hex=$(to_original_owner_hash "${_p}") || return 1
+    printf '%s/%s' "${TO_ORIGINAL_OWNER_DIR}" "${_hex}"
+    return 0
+}
+
+# =============================================================================
+# to_original_owner_file_trusted() - Saved line is a safe regular file
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# Root trusts only a root-owned regular file. A non-root test directory trusts
+# only a regular file owned by this login. Symlinks and group/world-writable
+# files are not a saved owner.
+#
+# ALIGNMENT:
+# - requirement-take-ownership-ops.md
+#
+# Last updated: 2026-10-14
+# =============================================================================
+to_original_owner_file_trusted() {
+    _f="${1-}"
+    if [ -z "${_f}" ] || [ -L "${_f}" ] || [ ! -f "${_f}" ]; then
+        return 1
+    fi
+    if [ ! -O "${_f}" ]; then
+        return 1
+    fi
+    _uid=$(id -u 2>/dev/null || echo 1)
+    if [ "${_uid}" -eq 0 ]; then
+        _ou=$(stat -c '%u' "${_f}" 2>/dev/null || echo 1)
+        if [ "${_ou}" != "0" ]; then
+            return 1
+        fi
+    fi
+    _mode=$(stat -c '%a' "${_f}" 2>/dev/null || true)
+    to_original_owner_mode_private "${_mode}" || return 1
+    return 0
+}
+
+# =============================================================================
+# to_original_owner_read() - Load the saved user:group into TO_ORIGINAL_OWNER_PAIR
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# Missing file sets TO_ORIGINAL_OWNER_ERR and returns 2. A hostile file returns
+# 1 and does not replace the file. A valid one-line user:group returns 0.
+#
+# ALIGNMENT:
+# - requirement-take-ownership-ops.md
+#
+# Last updated: 2026-10-14
+# =============================================================================
+to_original_owner_read() {
+    : "${APP_NAME:=take-ownership}"
+    : "${TO_ORIGINAL_OWNER_ERR:=}"
+    : "${TO_ORIGINAL_OWNER_PAIR:=}"
+    _p="${1-}"
+    _f=$(to_original_owner_record_file "${_p}")
+    if [ "$?" -ne 0 ]; then
+        TO_ORIGINAL_OWNER_ERR="Could not name the saved original-owner file for ${_p}. sha256sum is required. Next: install sha256sum and run ${APP_NAME} return-original-owner --path ${_p}"
+        return 1
+    fi
+    if [ ! -e "${_f}" ] && [ ! -L "${_f}" ]; then
+        TO_ORIGINAL_OWNER_ERR="No saved original owner for ${_p}. Next: ${APP_NAME} action --path ${_p} --ownership user:group once the grant is installed. That first elevated action writes the saved line and does not replace it later."
+        return 2
+    fi
+    if ! to_original_owner_file_trusted "${_f}"; then
+        TO_ORIGINAL_OWNER_ERR="The saved original-owner file ${_f} is not a regular file owned by the recording account, or others can write it. Not using it and not replacing it. Next: remove ${_f} and run ${APP_NAME} action --path ${_p} --ownership user:group so the first take can write it."
+        return 1
+    fi
+    _line=$(awk 'NR==1 { gsub(/\r/, ""); line=$0; c=1 } NR>1 { bad=1 } END { if (bad) exit 2; if (!c) exit 3; print line }' "${_f}" 2>/dev/null)
+    if [ "$?" -ne 0 ]; then
+        TO_ORIGINAL_OWNER_ERR="The saved original-owner file ${_f} must be one line user:group. Not using it and not replacing it. Next: remove ${_f} and run ${APP_NAME} action --path ${_p} --ownership user:group"
+        return 1
+    fi
+    case "${_line}" in
+        *[[:space:]]*|*"*"*)
+            TO_ORIGINAL_OWNER_ERR="The saved original-owner file ${_f} must be one line user:group. Not using it and not replacing it. Next: remove ${_f} and run ${APP_NAME} action --path ${_p} --ownership user:group"
+            return 1
+            ;;
+    esac
+    if ! to_validate_ownership "${_line}"; then
+        TO_ORIGINAL_OWNER_ERR="The saved original owner ${_line} is not an existing user:group. Not using it and not replacing it. File: ${_f}"
+        return 1
+    fi
+    TO_ORIGINAL_OWNER_PAIR="${_line}"
+    return 0
+}
+
+# =============================================================================
+# to_original_owner_record_if_missing() - Write directory owner:group once
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# Before action changes the tree, store the directory inode's user:group.
+# If a trusted file is already there, leave it. Never follow a symlink name.
+#
+# ALIGNMENT:
+# - requirement-take-ownership-ops.md
+#
+# Last updated: 2026-10-14
+# =============================================================================
+to_original_owner_record_if_missing() {
+    : "${APP_NAME:=take-ownership}"
+    : "${TO_ORIGINAL_OWNER_DIR:=/var/take-ownership/original-owner}"
+    : "${TO_ORIGINAL_OWNER_ERR:=}"
+    _p="${1-}"
+    _f=$(to_original_owner_record_file "${_p}")
+    if [ "$?" -ne 0 ]; then
+        TO_ORIGINAL_OWNER_ERR="Could not name the saved original-owner file for ${_p}. sha256sum is required. Next: install sha256sum, then run ${APP_NAME} action --path ${_p} --ownership user:group"
+        return 1
+    fi
+    if [ -e "${_f}" ] || [ -L "${_f}" ]; then
+        if to_original_owner_file_trusted "${_f}"; then
+            return 0
+        fi
+        TO_ORIGINAL_OWNER_ERR="The saved original-owner file ${_f} is not a regular file owned by the recording account, or others can write it. Not using it and not replacing it. Next: remove ${_f} and run ${APP_NAME} action --path ${_p} --ownership user:group"
+        return 1
+    fi
+    _pair=$(stat -c '%U:%G' "${_p}" 2>/dev/null || true)
+    if ! to_validate_ownership "${_pair}"; then
+        TO_ORIGINAL_OWNER_ERR="Could not read the current owner of ${_p} as user:group. Next: check that the folder exists, then run ${APP_NAME} action --path ${_p} --ownership user:group"
+        return 1
+    fi
+    _tmp=$(mktemp "${TO_ORIGINAL_OWNER_DIR}/.own.XXXXXX")
+    if [ "$?" -ne 0 ]; then
+        TO_ORIGINAL_OWNER_ERR="Could not write the saved original owner under ${TO_ORIGINAL_OWNER_DIR}. Next: check that directory, then run ${APP_NAME} action --path ${_p} --ownership user:group"
+        return 1
+    fi
+    if ! printf '%s\n' "${_pair}" >"${_tmp}"; then
+        rm -f "${_tmp}"
+        TO_ORIGINAL_OWNER_ERR="Could not write the saved original owner under ${TO_ORIGINAL_OWNER_DIR}. Next: check that directory, then run ${APP_NAME} action --path ${_p} --ownership user:group"
+        return 1
+    fi
+    if ! chmod 0644 "${_tmp}"; then
+        rm -f "${_tmp}"
+        TO_ORIGINAL_OWNER_ERR="Could not set mode 0644 on the saved original owner for ${_p}."
+        return 1
+    fi
+    if [ "$(id -u 2>/dev/null || echo 1)" -eq 0 ]; then
+        if ! chown root:root "${_tmp}"; then
+            rm -f "${_tmp}"
+            TO_ORIGINAL_OWNER_ERR="Could not give the saved original owner for ${_p} to root."
+            return 1
+        fi
+    fi
+    # Link, do not mv: an existing name (including one that appears now) stays.
+    if ln "${_tmp}" "${_f}" 2>/dev/null; then
+        rm -f "${_tmp}"
+        return 0
+    fi
+    rm -f "${_tmp}"
+    if to_original_owner_file_trusted "${_f}"; then
+        return 0
+    fi
+    TO_ORIGINAL_OWNER_ERR="Could not place the saved original owner at ${_f}. An existing file there was left unchanged."
+    return 1
+}
+
+# =============================================================================
+# to_original_owner_capture() - Record before action when the directory is safe
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# Root must record before chown. A non-root process records only in a trusted
+# test directory. Otherwise the elevated re-exec records on the default path.
+#
+# ALIGNMENT:
+# - requirement-take-ownership-ops.md
+#
+# Last updated: 2026-10-14
+# =============================================================================
+to_original_owner_capture() {
+    : "${APP_NAME:=take-ownership}"
+    : "${TO_ORIGINAL_OWNER_DIR:=/var/take-ownership/original-owner}"
+    : "${TO_ORIGINAL_OWNER_ERR:=}"
+    _p="${1-}"
+    if to_original_owner_dir_ok; then
+        to_original_owner_record_if_missing "${_p}"
+        return $?
+    fi
+    if [ "$(id -u 2>/dev/null || echo 1)" -eq 0 ]; then
+        TO_ORIGINAL_OWNER_ERR="Could not prepare the original-owner directory ${TO_ORIGINAL_OWNER_DIR}. It must be a root-owned directory that others cannot write, and not a symbolic link. Next: fix that directory, then run ${APP_NAME} action --path ${_p} --ownership user:group"
+        return 1
+    fi
+    return 0
+}
+
+# =============================================================================
 # to_action() - Recursively take ownership of a named folder
 # =============================================================================
 #
 # GENERAL PURPOSE:
 # Validate --path and --ownership, confirm --path is in list-folders, then
-# chown -R without following symlinks. Interactive: numbered allowed-folder
-# pick (0 Back returns to the caller without chown); ownership defaults to
-# current user:group (no prompt). Non-root re-execs the global binary via
-# sudo -n. Already-root chowns directly.
+# chown -R without following symlinks. Before that, save the directory's
+# current user:group once when the original-owner directory is safe.
+# Interactive: numbered allowed-folder pick (0 Back returns to the caller
+# without chown); ownership defaults to current user:group (no prompt).
+# Non-root re-execs the global binary via sudo -n. Already-root chowns directly.
 #
 # ALIGNMENT:
 # - requirement-take-ownership-ops.md
 # - requirement-shell-sudo-command.md
 # - requirement-three-layer-privilege-model.md
 #
-# Last updated: 2026-09-30
+# Last updated: 2026-10-14
 # =============================================================================
 to_action() {
     : "${APP_NAME:=take-ownership}"
@@ -3611,6 +3950,10 @@ to_action() {
     fi
     to_fence_ownership_operand "${TO_OWNERSHIP}" "action"
     to_require_allowed_folder "${TO_PATH}"
+
+    if ! to_original_owner_capture "${TO_PATH}"; then
+        out_die "${TO_ORIGINAL_OWNER_ERR}"
+    fi
 
     if to_tree_already_owned "${TO_PATH}" "${TO_OWNERSHIP}"; then
         if [ "${JSON}" -eq 1 ]; then
@@ -3655,6 +3998,137 @@ to_action() {
         fi
     fi
     out_die "Could not take ownership of ${TO_PATH} (no matching passwordless grant, or sudo failed). Next: ${APP_NAME} generate-sudoer-request --path ${TO_PATH}   then   ${APP_NAME} submit-sudoer-request"
+}
+
+# =============================================================================
+# to_return_original_owner() - Chown the tree back to the saved user:group
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# Read /var/take-ownership/original-owner/<sha256> (or the trusted test
+# directory) and chown the folder to that one line. No --ownership flag.
+# Same path checks as action. Non-root re-execs the global binary via sudo -n.
+#
+# ALIGNMENT:
+# - requirement-take-ownership-ops.md
+# - requirement-shell-sudo-command.md
+# - requirement-three-layer-privilege-model.md
+#
+# Last updated: 2026-10-14
+# =============================================================================
+to_return_original_owner() {
+    : "${APP_NAME:=take-ownership}"
+    : "${GLOBAL_BIN:=/usr/local/bin}"
+    : "${JSON:=0}"
+    : "${TTY:=0}"
+    : "${TO_PATH:=}"
+    : "${TO_OWNERSHIP:=}"
+    : "${TO_SEEN_OWNERSHIP:=0}"
+    : "${TO_ORIGINAL_OWNER_ERR:=}"
+    : "${TO_ORIGINAL_OWNER_PAIR:=}"
+
+    if [ "${TO_SEEN_OWNERSHIP}" -eq 1 ]; then
+        out_die "return-original-owner does not take --ownership. The saved line names the owner. Next: ${APP_NAME} return-original-owner --path /var/www/html"
+    fi
+    TO_OWNERSHIP=""
+    if [ -z "${TO_PATH}" ]; then
+        if [ "${TTY}" -eq 1 ] && [ "${JSON}" -ne 1 ]; then
+            to_prompt_allowed_folder_choice
+            if [ "$?" -eq 2 ]; then
+                return 0
+            fi
+        fi
+    fi
+    if [ -z "${TO_PATH}" ]; then
+        out_die "return-original-owner needs --path <folder>. Next: ${APP_NAME} --json return-original-owner --path /var/www/html"
+    fi
+    _path=$(to_require_absolute_path "${TO_PATH}") || out_die "--path must be an absolute directory (not relative, not *). You passed: ${TO_PATH}. Next: ${APP_NAME} return-original-owner --path /var/www/html"
+    TO_PATH="${_path}"
+    export TO_PATH
+    if to_refuse_system_path "${TO_PATH}"; then
+        out_die "Refusing to return ownership of system path ${TO_PATH}. Choose a project or data folder. Next: ${APP_NAME} return-original-owner --path /var/www/html"
+    fi
+    if command -v realpath >/dev/null 2>&1; then
+        _phys=$(realpath "${TO_PATH}" 2>/dev/null || true)
+        if [ -n "${_phys}" ] && to_refuse_system_path "${_phys}"; then
+            out_die "Refusing to return ownership of system path ${_phys} (resolved from ${TO_PATH})."
+        fi
+    fi
+    if [ -L "${TO_PATH}" ]; then
+        out_die "--path is a symbolic link. Refusing to return ownership through a link: ${TO_PATH}"
+    fi
+    if [ ! -d "${TO_PATH}" ]; then
+        if to_folder_is_allowed "${TO_PATH}"; then
+            out_die "Folder ${TO_PATH} is granted but is not an existing directory. Recreate that folder, then run ${APP_NAME} return-original-owner --path ${TO_PATH}."
+        fi
+        out_die "--path is not an existing directory: ${TO_PATH}"
+    fi
+    to_require_allowed_folder "${TO_PATH}"
+
+    _pair=""
+    if to_original_owner_dir_ok; then
+        to_original_owner_read "${TO_PATH}"
+        _rrc=$?
+        if [ "${_rrc}" -ne 0 ]; then
+            out_die "${TO_ORIGINAL_OWNER_ERR}"
+        fi
+        _pair="${TO_ORIGINAL_OWNER_PAIR}"
+    elif [ "$(id -u 2>/dev/null || echo 1)" -eq 0 ]; then
+        out_die "Could not prepare the original-owner directory ${TO_ORIGINAL_OWNER_DIR:-/var/take-ownership/original-owner}. It must be a root-owned directory that others cannot write, and not a symbolic link."
+    else
+        _gbin="${GLOBAL_BIN}/${APP_NAME}"
+        if [ ! -x "${_gbin}" ]; then
+            out_die "return-original-owner needs the global program at ${_gbin} (local install is not used for elevation — that would be a security leak). Next: sudo ${APP_NAME} install"
+        fi
+        if [ "${JSON}" -eq 1 ]; then
+            if util_sudo -n "${_gbin}" --json return-original-owner --path "${TO_PATH}"; then
+                return 0
+            fi
+        else
+            if util_sudo -n "${_gbin}" return-original-owner --path "${TO_PATH}"; then
+                return 0
+            fi
+        fi
+        out_die "Could not return ownership of ${TO_PATH} (no saved original owner, no matching passwordless grant, or sudo failed). Next: ${APP_NAME} action --path ${TO_PATH} --ownership user:group   then   ${APP_NAME} return-original-owner --path ${TO_PATH}"
+    fi
+
+    if to_tree_already_owned "${TO_PATH}" "${_pair}"; then
+        if [ "${JSON}" -eq 1 ]; then
+            out_json "return-original-owner" "already matching" \
+                "path" "${TO_PATH}" \
+                "ownership" "${_pair}" \
+                "changed" "false"
+            return 0
+        fi
+        out_success "Already ${_pair}: ${TO_PATH}"
+        return 0
+    fi
+    if [ "$(id -u 2>/dev/null || echo 1)" -eq 0 ]; then
+        to_chown_recursive "${TO_PATH}" "${_pair}" || out_die "chown failed on ${TO_PATH}"
+        if [ "${JSON}" -eq 1 ]; then
+            out_json "return-original-owner" "ok" \
+                "path" "${TO_PATH}" \
+                "ownership" "${_pair}" \
+                "changed" "true"
+            return 0
+        fi
+        out_success "Returned ${_pair} on ${TO_PATH}"
+        return 0
+    fi
+    _gbin="${GLOBAL_BIN}/${APP_NAME}"
+    if [ ! -x "${_gbin}" ]; then
+        out_die "return-original-owner needs the global program at ${_gbin} (local install is not used for elevation — that would be a security leak). Next: sudo ${APP_NAME} install"
+    fi
+    if [ "${JSON}" -eq 1 ]; then
+        if util_sudo -n "${_gbin}" --json return-original-owner --path "${TO_PATH}"; then
+            return 0
+        fi
+    else
+        if util_sudo -n "${_gbin}" return-original-owner --path "${TO_PATH}"; then
+            return 0
+        fi
+    fi
+    out_die "Could not return ownership of ${TO_PATH} (no matching passwordless grant, or sudo failed). Next: ${APP_NAME} return-original-owner --path ${TO_PATH}"
 }
 
 # =============================================================================
@@ -3805,6 +4279,8 @@ to_sudoers_fragment_text() {
         [ -n "${_gp}" ] || continue
         printf '%s ALL=(root) NOPASSWD: %s action --path %s --ownership %s\n' "${_user}" "${_global_path}" "${_gp}" "${_own_esc}"
         printf '%s ALL=(root) NOPASSWD: %s --json action --path %s --ownership %s\n' "${_user}" "${_global_path}" "${_gp}" "${_own_esc}"
+        printf '%s ALL=(root) NOPASSWD: %s return-original-owner --path %s\n' "${_user}" "${_global_path}" "${_gp}"
+        printf '%s ALL=(root) NOPASSWD: %s --json return-original-owner --path %s\n' "${_user}" "${_global_path}" "${_gp}"
     done
 }
 
@@ -3831,6 +4307,30 @@ to_sudoers_json_command_object() {
         printf '%s' "{\"runas\":\"root\",\"tags\":[\"NOPASSWD\"],\"path\":\"${_global_path}\",\"args\":[\"--json\",\"action\",\"--path\",\"${_gp}\",\"--ownership\",\"${_own}\"]}"
     else
         printf '%s' "{\"runas\":\"root\",\"tags\":[\"NOPASSWD\"],\"path\":\"${_global_path}\",\"args\":[\"action\",\"--path\",\"${_gp}\",\"--ownership\",\"${_own}\"]}"
+    fi
+}
+
+# =============================================================================
+# to_sudoers_json_return_object() - return-original-owner commands[] object
+# =============================================================================
+#
+# GENERAL PURPOSE:
+# One commands[] object for return-original-owner. No --ownership operand.
+# The saved file names the user:group. $1 = folder. $2 = 1 for the --json twin.
+#
+# ALIGNMENT: requirement-sudoer-json-file.md
+# Last updated: 2026-10-14
+# =============================================================================
+to_sudoers_json_return_object() {
+    _gp="${1:-}"
+    _json_first="${2:-0}"
+    : "${APP_NAME:=take-ownership}"
+    : "${GLOBAL_BIN:=/usr/local/bin}"
+    _global_path="${GLOBAL_BIN}/${APP_NAME}"
+    if [ "${_json_first}" = "1" ]; then
+        printf '%s' "{\"runas\":\"root\",\"tags\":[\"NOPASSWD\"],\"path\":\"${_global_path}\",\"args\":[\"--json\",\"return-original-owner\",\"--path\",\"${_gp}\"]}"
+    else
+        printf '%s' "{\"runas\":\"root\",\"tags\":[\"NOPASSWD\"],\"path\":\"${_global_path}\",\"args\":[\"return-original-owner\",\"--path\",\"${_gp}\"]}"
     fi
 }
 
@@ -3868,7 +4368,9 @@ to_sudoers_json_text_compact() {
         [ -n "${_gp}" ] || continue
         _one="$(to_sudoers_json_command_object "${_gp}" 0)"
         _two="$(to_sudoers_json_command_object "${_gp}" 1)"
-        _cmds="${_cmds}${_sep}${_one},${_two}"
+        _three="$(to_sudoers_json_return_object "${_gp}" 0)"
+        _four="$(to_sudoers_json_return_object "${_gp}" 1)"
+        _cmds="${_cmds}${_sep}${_one},${_two},${_three},${_four}"
         _sep=","
     done <<EOF
 $(to_list_grant_paths "${1:-}")
@@ -3975,6 +4477,13 @@ EOF
     fi
     if [ "${_nuniq}" != "${_nact}" ]; then
         out_die "${_head}: each folder needs its own sudoers line (one --path per action object). Do not put files or extra folders on one line. ${_tail} ${_next}"
+    fi
+    _nret=$(printf '%s\n' "${_norm}" | grep -o '"args":\["return-original-owner"' 2>/dev/null | wc -l | tr -d ' ')
+    _nretj=$(printf '%s\n' "${_norm}" | grep -o '"args":\["--json","return-original-owner"' 2>/dev/null | wc -l | tr -d ' ')
+    _nclean=$(printf '%s\n' "${_norm}" | grep -o '"args":\["return-original-owner","--path","[^"]*"\]' 2>/dev/null | wc -l | tr -d ' ')
+    _ncleanj=$(printf '%s\n' "${_norm}" | grep -o '"args":\["--json","return-original-owner","--path","[^"]*"\]' 2>/dev/null | wc -l | tr -d ' ')
+    if [ "${_nret}" != "${_nuniq}" ] || [ "${_nretj}" != "${_nuniq}" ] || [ "${_nclean}" != "${_nuniq}" ] || [ "${_ncleanj}" != "${_nuniq}" ]; then
+        out_die "${_head}: each folder also needs return-original-owner --path <folder> and its --json twin (no --ownership on that line). ${_tail} ${_next}"
     fi
     return 0
 }
@@ -5501,6 +6010,23 @@ app_menu_text() {
                 *) _mt_out="Recursively take ownership of a named folder" ;;
             esac
             ;;
+        long_return)
+            case "${_mt_lang}" in
+                zh-Hans) _mt_out="把文件夹交还给已保存的原所有者" ;;
+                zh-Hant) _mt_out="把資料夾交還給已保存的原擁有者" ;;
+                es) _mt_out="Devolver la carpeta al propietario original guardado" ;;
+                ar) _mt_out="إعادة المجلد إلى المالك الأصلي المحفوظ" ;;
+                fr) _mt_out="Rendre le dossier au propriétaire d'origine enregistré" ;;
+                pt) _mt_out="Devolver a pasta ao proprietário original gravado" ;;
+                ru) _mt_out="Вернуть папку сохранённому исходному владельцу" ;;
+                de) _mt_out="Den Ordner an den gespeicherten ursprünglichen Besitzer zurückgeben" ;;
+                ja) _mt_out="フォルダを保存された元の所有者に戻す" ;;
+                ko) _mt_out="폴더를 저장된 원래 소유자에게 되돌립니다" ;;
+                nl) _mt_out="De map teruggeven aan de opgeslagen oorspronkelijke eigenaar" ;;
+                el) _mt_out="Επιστροφή του φακέλου στον αποθηκευμένο αρχικό κάτοχο" ;;
+                *) _mt_out="Put the folder back to the saved original owner" ;;
+            esac
+            ;;
         cat_language)
             case "${_mt_lang}" in
                 zh-Hans) _mt_out="语言" ;;
@@ -6833,6 +7359,8 @@ app_help_i18n() {
     out_plain "  list-folders"
     out_plain "  action --path <folder> --ownership <user:group>"
     out_plain "                       $(app_menu_text long_action)"
+    out_plain "  return-original-owner --path <folder>"
+    out_plain "                       $(app_menu_text long_return)"
     out_plain "  generate-sudoer-request --path <folder> --ownership <user:group>"
     out_plain "                       $(app_menu_text long_gen)"
     out_plain "  submit-sudoer-request"
@@ -6865,6 +7393,7 @@ app_help_i18n() {
     out_plain "  ${APP_NAME}"
     out_plain "  ${APP_NAME} menu"
     out_plain "  ${APP_NAME} action --path /var/www/html --ownership www-data:www-data"
+    out_plain "  ${APP_NAME} --json return-original-owner --path /var/www/html"
     out_empty_line
     out_info "$(app_menu_text help_close_tty)"
     out_info "${APP_NAME} $(app_menu_text help_close_json)"
@@ -6930,11 +7459,12 @@ app_main_menu_warn_bad() {
 # =============================================================================
 #
 # GENERAL PURPOSE:
-# Front board is 1 action, 5 language, 7 sudoers, 8 self-management, 9 Exit.
-# Header is take-ownership(VERSION) and the short description. On a TTY, explain
-# text is italic + light gray. Lifecycle verbs stay on the self-management
-# board. language, sudoers, and self-management are menu-only (not dispatcher tokens).
-# Front 2, 3, 4, and 6 are not rows. Row 5 stays on every host.
+# Front board is 1 action, 2 return-original-owner, 5 language, 7 sudoers,
+# 8 self-management, 9 Exit. Header is take-ownership(VERSION) and the short
+# description. On a TTY, explain text is italic + light gray. Lifecycle verbs
+# stay on the self-management board. language, sudoers, and self-management
+# are menu-only (not dispatcher tokens). Front 3, 4, and 6 are not rows.
+# Row 5 stays on every host.
 #
 # ALIGNMENT:
 # - requirement-shell-cli-default-interaction.md
@@ -6954,6 +7484,7 @@ app_main_menu_print() {
         out_info "$(app_menu_text hidden_sudoers "${_menu_host_class}")"
     fi
     out_menu_choice 1 action "$(app_menu_text long_action)"
+    out_menu_choice 2 return-original-owner "$(app_menu_text long_return)"
     out_menu_choice 5 "$(app_menu_text cat_language)" "$(app_menu_text cat_language_long)"
     if ! app_main_menu_sudoers_hidden; then
         out_menu_choice 7 sudoers "$(app_menu_text cat_sudoers_long)"
@@ -7044,6 +7575,11 @@ app_main_menu_run_named() {
             TO_OWNERSHIP="${_b}"
             export TO_PATH TO_OWNERSHIP
             to_action
+            ;;
+        return-original-owner)
+            TO_PATH="${_a}"
+            export TO_PATH
+            to_return_original_owner
             ;;
         generate-sudoer-request|generate-sudoer-json)
             COMMAND="${_verb}"
@@ -7206,6 +7742,11 @@ app_main_menu_run_front_pick() {
             TO_OWNERSHIP="${_b}"
             export TO_PATH TO_OWNERSHIP
             to_action
+            ;;
+        2|return-original-owner)
+            TO_PATH="${_a}"
+            export TO_PATH
+            to_return_original_owner
             ;;
         *)
             app_main_menu_run_named "${_pick}" "${_a}" "${_b}"
@@ -7404,7 +7945,7 @@ app_help() {
     if [ "${JSON}" -eq 1 ]; then
         out_json "success" "Help text available in human-readable mode. Run without --json." \
             "command" "help" \
-            "note" "Use --json with version, about, install, version-check, self-update, self-uninstall, where-is-me, list-folders, action. Off-TTY empty argv is install-ensure. TTY empty argv and menu/main use the numbered list."
+            "note" "Use --json with version, about, install, version-check, self-update, self-uninstall, where-is-me, list-folders, action, return-original-owner. Off-TTY empty argv is install-ensure. TTY empty argv and menu/main use the numbered list."
         return 0
     fi
     if [ "${QUIET}" -eq 1 ]; then
@@ -7443,6 +7984,12 @@ app_help() {
     out_plain "                       On a real terminal with no --path: numbered folder list (0 Back)."
     out_plain "                       Then uses this login's user:group (no ownership prompt)."
     out_plain "                       Needs a grant for that folder and the global binary."
+    out_plain "                       The first time, saves that folder's current user:group."
+    out_plain "                       A later take does not replace that saved line."
+    out_plain "  return-original-owner --path <folder>"
+    out_plain "                       Put the folder back to the saved user:group."
+    out_plain "                       No --ownership flag. Same folder list as action."
+    out_plain "                       On a real terminal with no --path: numbered folder list (0 Back)."
     out_plain "  generate-sudoer-request --path <folder> --ownership <user:group> [dest]"
     out_plain "                       Write a JSON grant you can read (no /etc; no inbound)."
     out_plain "                       JSON field action (add/update) is not the CLI verb action."
@@ -7461,7 +8008,8 @@ app_help() {
     out_plain "  generate-sudoer-json --path <folder> --ownership <user:group> [dest]"
     out_plain "                       Same dest as generate-sudoer-request. Canonical JSON"
     out_plain "                       for tests: args stay action --path <folder>"
-    out_plain "                       --ownership <user:group> plus --json twin."
+    out_plain "                       --ownership <user:group> plus --json twin, and"
+    out_plain "                       return-original-owner --path <folder> plus its --json twin."
     out_plain "                       Wildcard * is not allowed."
     out_empty_line
     out_info "Global Options:"
@@ -7469,8 +8017,8 @@ app_help() {
     out_plain "  --json               Machine-readable JSON (implies --quiet); before action for elev"
     out_plain "  --force              Force reinstall / skip uninstall confirm"
     out_plain "  --global             Install to GLOBAL_BIN (required before grant emit)"
-    out_plain "  --path PATH          Absolute folder (action and grant-emit)"
-    out_plain "  --ownership user:group  Unix owner (action and grant-emit; never *)"
+    out_plain "  --path PATH          Absolute folder (action, return-original-owner, and grant-emit)"
+    out_plain "  --ownership user:group  Unix owner (action and grant-emit; never *; not used by return-original-owner)"
     out_plain "  --update             Force submit/generate JSON action=update"
     out_plain "  --add                Force submit/generate JSON action=add"
     out_plain "  --debug              Debug diagnostics on stderr"
@@ -7484,6 +8032,7 @@ app_help() {
     out_plain "  SUDOER_QUEUE_INBOUND    override inbound approval dir"
     out_plain "  SUDOER_PUBLIC_ROOT      public queue root (default /var/sudoer-cli)"
     out_plain "  SUDOERS_D_DIR           host sudoers.d dir (default /etc/sudoers.d; tests)"
+    out_plain "  TO_ORIGINAL_OWNER_DIR   saved user:group directory (default /var/take-ownership/original-owner)"
     out_plain "  TAKE_OWNERSHIP_LANG     Menu language for this run only; does not write the file"
     out_plain "                          en zh-Hans zh-Hant es ar fr pt ru de ja ko nl el"
     out_empty_line
@@ -7498,6 +8047,7 @@ app_help() {
     out_plain "  ${APP_NAME} submit-sudoer-request --path /var/www/html --ownership www-data:www-data"
     out_plain "  ${APP_NAME} list-folders"
     out_plain "  ${APP_NAME} action --path /var/www/html --ownership www-data:www-data"
+    out_plain "  ${APP_NAME} --json return-original-owner --path /var/www/html"
     out_empty_line
     out_info "Empty argv on a real terminal shows the numbered list. Off-TTY empty argv is channel install-ensure (curl|sh)."
     out_info "${APP_NAME} --json with no command is JSON help (even on a TTY)."
@@ -7614,7 +8164,7 @@ app_main() {
                 SUBMIT_ACTION_EXPLICIT=1
                 export SUBMIT_ACTION SUBMIT_ACTION_EXPLICIT
                 ;;
-            version|about|help|install|uninstall|self-uninstall|self-update|version-check|where-is-me|list-folders|action|print-sudoers|print-sudoers-install-script|remove-project-sudoers|generate-sudoer-request|generate-sudoer-json|submit-sudoer-request|menu|main)
+            version|about|help|install|uninstall|self-uninstall|self-update|version-check|where-is-me|list-folders|action|return-original-owner|print-sudoers|print-sudoers-install-script|remove-project-sudoers|generate-sudoer-request|generate-sudoer-json|submit-sudoer-request|menu|main)
                 _saw_command=1
                 if [ "${COMMAND}" = "menu" ] || [ "${COMMAND}" = "main" ]; then
                     if [ -z "${_menu_pick}" ]; then
@@ -7686,6 +8236,7 @@ app_main() {
         where-is-me)  app_where_is_me ;;
         list-folders) to_list_folders ;;
         action)       to_action ;;
+        return-original-owner) to_return_original_owner ;;
         print-sudoers) to_print_sudoers "${_domain_arg}" ;;
         print-sudoers-install-script) to_print_sudoers_install_script "${_domain_arg}" ;;
         remove-project-sudoers) to_remove_project_sudoers "${_domain_arg}" ;;

@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-sudoer-json-file.md  
-**Status**: Active (Version 2.4.0)  
+**Status**: Active (Version 2.5.0)  
 **Area**: architecture  
 **Key**: `requirement-sudoer-json-file`  
 **Optional RQ-ID**: `RQ-SUDOER-JSON-FILE`  
@@ -100,7 +100,7 @@ or the `--json` twin:
 7. **MUST NOT** grant the binary with **no** verb.  
 8. **MUST NOT** emit short flags (`-p`, `-o`) or swapped `--ownership` before `--path`.  
 9. **One line, one folder.** **MUST NOT** put two folders or any files on **one** `commands[].args` array / one sudoers Cmnd line.  
-10. **Next folder = next submission.** Generate **MUST** read the existing unique `--path` list first, **skip** a folder that is already present, then emit a **replacement** body: one action line (+ `--json` twin) per unique folder (1 folder → 1 line, 2 folders → 2 lines, …). JSON field `"action": "update"` marks that replacement. **MUST NOT** use `--path *` to “cover all folders.”
+10. **Next folder = next submission.** Generate **MUST** read the existing unique `--path` list first, **skip** a folder that is already present, then emit a **replacement** body. Each unique folder has four `commands[]` objects: `action --path <folder> --ownership <user:group>`, its `--json` twin, `return-original-owner --path <folder>`, and its `--json` twin. The return objects have **no** `--ownership`. JSON field `"action": "update"` marks that replacement. A body that has the action lines and omits the return lines **MUST** fail closed. **MUST NOT** use `--path *` to “cover all folders.”
 
 ### 2.4 Closed schema (normative)
 
@@ -137,13 +137,15 @@ Live emit uses `id -un` for `{{username}}`. Worked samples use `alice` (illustra
 ```json
 {
   "schema_version": 1,
-  "purpose": "Allow alice to take ownership of /var/www/html.",
+  "purpose": "Allow alice to take ownership of /var/www/html and return it to the saved original owner.",
   "username": "alice",
   "service": "take-ownership",
   "action": "add",
   "commands": [
     {"runas": "root", "tags": ["NOPASSWD"], "path": "/usr/local/bin/take-ownership", "args": ["action", "--path", "/var/www/html", "--ownership", "www-data:www-data"]},
-    {"runas": "root", "tags": ["NOPASSWD"], "path": "/usr/local/bin/take-ownership", "args": ["--json", "action", "--path", "/var/www/html", "--ownership", "www-data:www-data"]}
+    {"runas": "root", "tags": ["NOPASSWD"], "path": "/usr/local/bin/take-ownership", "args": ["--json", "action", "--path", "/var/www/html", "--ownership", "www-data:www-data"]},
+    {"runas": "root", "tags": ["NOPASSWD"], "path": "/usr/local/bin/take-ownership", "args": ["return-original-owner", "--path", "/var/www/html"]},
+    {"runas": "root", "tags": ["NOPASSWD"], "path": "/usr/local/bin/take-ownership", "args": ["--json", "return-original-owner", "--path", "/var/www/html"]}
   ]
 }
 ```
@@ -160,8 +162,12 @@ Live emit uses `id -un` for `{{username}}`. Worked samples use `alice` (illustra
   "commands": [
     {"runas": "root", "tags": ["NOPASSWD"], "path": "/usr/local/bin/take-ownership", "args": ["action", "--path", "/var/www/html", "--ownership", "www-data:www-data"]},
     {"runas": "root", "tags": ["NOPASSWD"], "path": "/usr/local/bin/take-ownership", "args": ["--json", "action", "--path", "/var/www/html", "--ownership", "www-data:www-data"]},
+    {"runas": "root", "tags": ["NOPASSWD"], "path": "/usr/local/bin/take-ownership", "args": ["return-original-owner", "--path", "/var/www/html"]},
+    {"runas": "root", "tags": ["NOPASSWD"], "path": "/usr/local/bin/take-ownership", "args": ["--json", "return-original-owner", "--path", "/var/www/html"]},
     {"runas": "root", "tags": ["NOPASSWD"], "path": "/usr/local/bin/take-ownership", "args": ["action", "--path", "/srv/data", "--ownership", "www-data:www-data"]},
-    {"runas": "root", "tags": ["NOPASSWD"], "path": "/usr/local/bin/take-ownership", "args": ["--json", "action", "--path", "/srv/data", "--ownership", "www-data:www-data"]}
+    {"runas": "root", "tags": ["NOPASSWD"], "path": "/usr/local/bin/take-ownership", "args": ["--json", "action", "--path", "/srv/data", "--ownership", "www-data:www-data"]},
+    {"runas": "root", "tags": ["NOPASSWD"], "path": "/usr/local/bin/take-ownership", "args": ["return-original-owner", "--path", "/srv/data"]},
+    {"runas": "root", "tags": ["NOPASSWD"], "path": "/usr/local/bin/take-ownership", "args": ["--json", "return-original-owner", "--path", "/srv/data"]}
   ]
 }
 ```
@@ -172,6 +178,8 @@ Equivalent **text dual** of the add grant (`:` in `user:group` **MUST** be `\:` 
 # Purpose: Allow alice to take ownership of /var/www/html.
 alice ALL=(root) NOPASSWD: /usr/local/bin/take-ownership action --path /var/www/html --ownership www-data\:www-data
 alice ALL=(root) NOPASSWD: /usr/local/bin/take-ownership --json action --path /var/www/html --ownership www-data\:www-data
+alice ALL=(root) NOPASSWD: /usr/local/bin/take-ownership return-original-owner --path /var/www/html
+alice ALL=(root) NOPASSWD: /usr/local/bin/take-ownership --json return-original-owner --path /var/www/html
 ```
 
 `--ownership` is an existing `user:group`. Wildcard `*` and cwd listings are **incorrect**. **MUST NOT** copy folder-backup `backup *` onto this product’s ownership operand.
@@ -207,7 +215,7 @@ alice ALL=(root) NOPASSWD: /usr/local/bin/take-ownership --json action --path /v
 | **`{{PRJ_NAME}}` / `APP_NAME`** | `take-ownership` |
 | **`{{GLOBAL_BIN}}`** | `/usr/local/bin` |
 | **Elevated path** | `/usr/local/bin/take-ownership` |
-| **Allowed args** | `["action","--path","<folder>","--ownership","<user:group>"]` and `--json` twin; **one folder per line** |
+| **Allowed args** | Per folder: `["action","--path","<folder>","--ownership","<user:group>"]` and `--json` twin, plus `["return-original-owner","--path","<folder>"]` and `--json` twin (no `--ownership` on the return line) |
 | **Forbidden paths (examples)** | `/usr/bin/chown`, `/bin/chown`, `/usr/bin/mkdir`, `${HOME}/.local/bin/take-ownership` |
 | **Ship unit** | `src/take-ownership` |
 | **Submit verb** | `submit-sudoer-request` → `to_submit_sudoer_request` |
@@ -251,7 +259,8 @@ alice ALL=(root) NOPASSWD: /usr/local/bin/take-ownership --json action --path /v
 7. Emit `--ownership *` or unquoted `*` so a shell glob freezes cwd names into the grant.  
 8. Store secrets in the JSON body.  
 9. Duplicate submit/install workflow law here.  
-10. Make submit, inbound, or a deleted temp the only way to obtain this JSON for tests or review.
+10. Make submit, inbound, or a deleted temp the only way to obtain this JSON for tests or review.  
+11. Omit `return-original-owner` from a folder that has an `action` line, or put `--ownership` on the return line.
 
 **Violating this rule is a critical privilege / complexity-as-insecurity regression.**
 
@@ -263,7 +272,7 @@ alice ALL=(root) NOPASSWD: /usr/local/bin/take-ownership --json action --path /v
 |----|-----------|
 | AC-1 | Every `commands[].path` is `/usr/local/bin/take-ownership` |
 | AC-2 | `service` equals `take-ownership` |
-| AC-3 | `args` are `action --path <abs> --ownership <user:group>` plus `--json` twin per folder |
+| AC-3 | Per folder, `args` are `action --path <abs> --ownership <user:group>` plus `--json` twin, and `return-original-owner --path <abs>` plus `--json` twin with no `--ownership` |
 | AC-4 | No `chown` / `mkdir` / `cp` / USER_BIN path |
 | AC-5 | No `--path *` |
 | AC-6 | Add sample is one folder (one line). Update **replacement** adds a **line** per extra unique folder; skip duplicates; never files on a line |
@@ -272,6 +281,7 @@ alice ALL=(root) NOPASSWD: /usr/local/bin/take-ownership --json action --path /v
 | AC-9 | Global binary missing → generate/submit fail closed |
 | AC-10 | `generate-sudoer-json` from a dirty cwd still emits `"--ownership","<user:group>"` (not `"*"`, not cwd names) |
 | AC-11 | Submit of a globbed `--ownership` listing fails closed and names `generate-sudoer-json` |
+| AC-12 | Return-object count equals the unique folder count. An older grant without those lines fails closed |
 
 ---
 
@@ -303,6 +313,7 @@ alice ALL=(root) NOPASSWD: /usr/local/bin/take-ownership --json action --path /v
 | **TP-TAKE-OWNERSHIP-27,27b** | same | **have** — `generate-sudoer-json` dirty cwd keeps `user:group`, not `"*"` (AC-10) |
 | **TP-TAKE-OWNERSHIP-28** | same | **have** — globbed submit fails closed (AC-11) |
 | **TP-TAKE-OWNERSHIP-33,33b,34** | same | **have** — replacement union; skip duplicate; `--path` file fails |
+| **TP-TAKE-OWNERSHIP-51** | same | **have** — return lines in JSON and text dual; old grant without them fails closed |
 
 **Matrix:** `reviews/requirement-test-matrix.md`  
 **Map:** `reviews/test-plan.md`
@@ -318,9 +329,10 @@ alice ALL=(root) NOPASSWD: /usr/local/bin/take-ownership --json action --path /v
 | 2026-08-26 | Active 2.2.0 | `--ownership` is `user:group`; `*` withdrawn; incorrect-ownership-parameter fence |
 | 2026-08-26 | Active 2.3.0 | One folder per line; replacement union on next submit; no files / no two folders on one line |
 | 2026-08-26 | Active 2.4.0 | Withdraw leftover live `*` gold (AC-10 / Anti-fragile). Canonical operand is `user:group`. Text dual escapes `:` as `\:`. |
+| 2026-10-14 | Active 2.5.0 | Each folder also grants `return-original-owner --path` and its `--json` twin. No `--ownership` on that line |
 
 ---
 
-**Last Updated**: 2026-08-26  
+**Last Updated**: 2026-10-14  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

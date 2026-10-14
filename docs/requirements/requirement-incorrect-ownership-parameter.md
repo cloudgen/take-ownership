@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-incorrect-ownership-parameter.md  
-**Status**: Active (Version 1.0.0)  
+**Status**: Active (Version 1.1.0)  
 **Area**: architecture  
 **Key**: `requirement-incorrect-ownership-parameter`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -43,6 +43,7 @@ JSON grant shape (paths, global binary) remains `requirement-sudoer-json-file`. 
 6. Operator copy **MUST** name the next command: `generate-sudoer-json --path <folder> --ownership <user:group>`.  
 7. **MUST NOT** treat JSON `"*"` as a sudoers operand wildcard for ownership.  
 8. JSON `args` keep the live argv `user:group`. The **text dual** (print-sudoers) **MUST** escape `:` as `\:` so visudo parses. That escape is encoding, not a different owner. Peer: `requirement-sudoer-json-file`.
+9. `return-original-owner` **MUST NOT** accept `--ownership`. The saved original-owner file is the only owner for that verb. A line in that file **MUST** still be one existing host `user:group` (one colon, both sides non-empty, user and group exist). `*`, extra words, and a missing or multi-line body fail closed and **MUST NOT** be replaced by `action`.
 
 Worked fail body (do not approve):
 
@@ -66,6 +67,7 @@ Worked pass body:
 2. Approve or submit a request whose `--ownership` args are cwd names.  
 3. Teach skills to use `--ownership *` in a grant.  
 4. Treat dest-approver dest Fence machinery as required for this product because this fence exists (no dest approve on this CLI).
+5. Add `--ownership` to `return-original-owner`, or treat a saved line that is not an existing `user:group` as a chown target.
 
 **Violating this rule is a privilege / glob-expansion regression.**
 
@@ -80,6 +82,7 @@ Worked pass body:
 | AC-3 | Gold JSON uses `"--ownership","<user:group>"` even from a dirty cwd (never `"*"`) |
 | AC-4 | Submit of globbed or `*` grant JSON fails closed and names generate-sudoer-json |
 | AC-5 | print-sudoers Cmnd lines escape `:` in `user:group` (`user\:group`); JSON args stay unescaped |
+| AC-6 | `return-original-owner --ownership` fails closed; a saved line that is not an existing `user:group` is not applied |
 
 ---
 
@@ -91,13 +94,15 @@ Worked pass body:
 | **TP-TAKE-OWNERSHIP-27,27b** | same | **have** — dirty cwd emits `user:group` not `"*"` and not cwd names |
 | **TP-TAKE-OWNERSHIP-31** | same | **have** — print-sudoers has escaped `user\:group`, no `--ownership *` |
 | **TP-TAKE-OWNERSHIP-28,28b** | same | **have** — globbed and `*` inbound JSON fail closed |
+| **TP-TAKE-OWNERSHIP-50,52** | same | **have** — return refuses `--ownership`; a bad saved line is not applied |
 
 ## 5. Status history
 
 | Date | Status | Note |
 |------|--------|------|
+| 2026-10-14 | Active 1.1.0 | `return-original-owner` has no `--ownership`; the saved line must still be an existing `user:group` |
 | 2026-08-26 | Active 1.0.0 | Ownership fence: no `*`; no glob listings; grant is `user:group` |
 
-**Last Updated**: 2026-08-26  
+**Last Updated**: 2026-10-14  
 **Owner**: project maintainers  
 **Alignment**: `requirement-sudoer-json-file` · `requirement-take-ownership-ops` · INC-20260823-002 (glob class; `*` is withdrawn as the ownership operand).

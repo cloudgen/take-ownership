@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-shell-idempotency.md  
-**Status**: Active (Version 1.0.0)  
+**Status**: Active (Version 1.1.0)  
 **Area**: shell  
 **Key**: `requirement-shell-idempotency`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -12,7 +12,7 @@ This requirement is the **project Single Source of Truth** for **idempotency (re
 
 ### 1.1 Human-facing
 
-**In one sentence:** Running install or `action` a second time when the job is already done is success, not an error.
+**In one sentence:** Running install, `action`, or `return-original-owner` a second time when the job is already done is success, not an error. A second `action` does not replace a trusted saved original-owner line.
 
 | Box | Meaning | Example |
 |-----|---------|---------|
@@ -22,7 +22,7 @@ This requirement is the **project Single Source of Truth** for **idempotency (re
 
 | Includes | Excludes |
 |----------|----------|
-| Second install / uninstall / already-matching `action` | Treating “already exists” as failure |
+| Second install / uninstall / already-matching `action` / already-matching `return-original-owner` / a trusted saved original-owner line left in place | Treating “already exists” as failure, or rewriting a trusted saved line |
 
 ---
 
@@ -62,11 +62,12 @@ Force policy (`--force` / `FORCE=1`) **MAY** re-apply ensure steps that would ot
 | `print-sudoers` | Emit fragment text | Safe re-print (same content for same user/host defaults) | Does not install into `/etc` |
 | `generate-sudoer-request` / `generate-sudoer-json` | Local verified JSON grant at dest path | Overwrite same dest (draft) | Does not write `/etc` or inbound |
 | `submit-sudoer-request` | Queue a **new** JSON request (sibling allocates next `n`) | Each success is a new `request_id`; not a no-op | Does not write `/etc`; does not `mkdir` inbound; missing inbound fails closed |
-| `action` | Named folder already has `--ownership` | Success no-op (idempotent chown) | `--force` does **not** bypass refuse-list or missing identity |
+| `action` | Named folder already has `--ownership` | Success no-op (idempotent chown) | `--force` does **not** bypass refuse-list or missing identity. A trusted saved original-owner file is left unchanged |
+| `return-original-owner` | Named folder already has the saved `user:group` | Success no-op | No `--ownership`. A missing or untrusted saved line fails closed |
 
 ### 2.5 Domain idempotency
 
-`action` **MUST** succeed without rewriting inodes when the tree already matches `--ownership` (`requirement-take-ownership-ops`). Sibling submit still allocates a **new** request `n` each success (not a no-op).
+`action` **MUST** succeed without rewriting inodes when the tree already matches `--ownership` (`requirement-take-ownership-ops`). `return-original-owner` **MUST** succeed the same way when the tree already matches the saved line. A second `action` **MUST NOT** replace a trusted saved original-owner file. Sibling submit still allocates a **new** request `n` each success (not a no-op).
 
 ### 2.6 Why This Requirement Exists (CIAO)
 
@@ -91,7 +92,9 @@ Force policy (`--force` / `FORCE=1`) **MAY** re-apply ensure steps that would ot
 1. Make `install` fail when already installed (force off).  
 2. Fail `action` solely because the folder is already the requested owner:group.  
 3. Treat idempotency as permission to ignore validation failures.  
-4. Remove atomic install/stage patterns for “speed.”
+4. Remove atomic install/stage patterns for “speed.”  
+5. Fail `return-original-owner` solely because the folder already has the saved owner.  
+6. Overwrite a trusted saved original-owner file on a later `action`.
 
 **Violating this rule is a critical re-run safety regression.**
 
@@ -104,6 +107,8 @@ Force policy (`--force` / `FORCE=1`) **MAY** re-apply ensure steps that would ot
 | AC-1 | Second `install` without force is success no-op |
 | AC-2 | Second `uninstall` when absent is success no-op |
 | AC-3 | Second `action` on an already-matching tree is success no-op |
+| AC-4 | `return-original-owner` on a tree that already has the saved owner is success no-op |
+| AC-5 | A second `action` leaves a trusted saved original-owner file unchanged |
 
 ---
 
@@ -124,6 +129,7 @@ Force policy (`--force` / `FORCE=1`) **MAY** re-apply ensure steps that would ot
 |----------------|-------|--------|
 | **TP-LC-03,07** | `tests/test_local_lifecycle.sh` | have |
 | **TP-TAKE-OWNERSHIP-13** | `tests/test_domain_take_ownership.sh` | **have** — already matching is success |
+| **TP-TAKE-OWNERSHIP-48,50** | same | **have** — trusted record stays; return already-matching is success |
 
 ## Under command line for normal user only
 
@@ -138,10 +144,11 @@ Detect (typical): Termux — `PREFIX` contains `com.termux`; Git Bash — `MSYST
 
 | Date | Status | Note |
 |------|--------|------|
+| 2026-10-14 | Active 1.1.0 | Return already-matching is success; a second action does not replace a trusted saved line |
 | 2026-08-03 | Active | Idempotency for local lifecycle + archive numbering |
 
 ---
 
-**Last Updated**: 2026-08-03  
+**Last Updated**: 2026-10-14  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

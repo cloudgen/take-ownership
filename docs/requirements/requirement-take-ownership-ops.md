@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-take-ownership-ops.md  
-**Status**: Active (Version 1.5.0)  
+**Status**: Active (Version 1.6.0)  
 **Area**: domain-ops  
 **Key**: `requirement-take-ownership-ops`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -12,7 +12,7 @@ It is **not** the domain four-pillar file (`requirement-domain-take-ownership`).
 
 ### 1.1 Human-facing
 
-**In one sentence:** You name a folder and a `user:group`; the program recursively gives that folder to that owner — it does not walk through symbolic links.
+**In one sentence:** You name a folder and a `user:group`; the program recursively gives that folder to that owner, and can later put it back to the saved original owner — it does not walk through symbolic links.
 
 | Box | Meaning | Example |
 |-----|---------|---------|
@@ -34,6 +34,7 @@ It is **not** the domain four-pillar file (`requirement-domain-take-ownership`).
 | You do… | What it means | What you type |
 |---------|---------------|---------------|
 | Take a web root | The tree becomes `www-data:www-data` | `take-ownership action --path /var/www/html --ownership www-data:www-data` |
+| Put it back | The tree becomes the saved `user:group` | `take-ownership --json return-original-owner --path /var/www/html` |
 | Miss `--path` on a real terminal | Numbered list of allowed folders plus **0** Back. A bad number stays on the list. **0** leaves the list without an error | `1`, or `0` |
 | Miss `--ownership` on a real terminal | Uses this login’s `user:group` (`id -un`:`id -gn`); **no prompt** | (none) |
 | Miss a switch in a pipe | Stop; no hang | `take-ownership action --path /var/www/html` → error |
@@ -126,7 +127,45 @@ Before any chown:
 | **Exact match** | Grant folder is exact (not a parent prefix). `/var/www` does **not** authorize `/var/www/html` |
 | **JSON** | `list-folders --json` reports `user`, `count`, `folders` (array) |
 
-This gate is **in addition to** sudoers exact-argv at re-exec. Type 0 lists from artifacts this login can read so the operator sees the same set `action` will accept.
+This gate is **in addition to** sudoers exact-argv at re-exec. Type 0 lists from artifacts this login can read so the operator sees the same set `action` and `return-original-owner` will accept.
+
+### 2.5b Saved original owner (`return-original-owner`)
+
+`return-original-owner` puts the folder back to **one** saved `user:group`. It is **not** backup or restore of file bytes, and it is **not** a per-inode journal. A mixed tree becomes that one pair.
+
+**Record path:** `/var/take-ownership/original-owner/<sha256>`. The digest is SHA-256 of the normalized absolute path bytes with **no** added newline. The file name is 64 lowercase hex characters. Missing `sha256sum` fails closed.
+
+**Record content:** one line `user:group` and a newline. The pair is the **directory inode** owner and group, observed **before** this `action` changes the tree. Return applies that pair with the same recursive walk as `action` (no `-L` / `-H`).
+
+**When `action` writes** (after the allowed-folder gate, before already-matching success and before chown):
+
+| Record file | What happens |
+|-------------|----------------|
+| Trusted regular file already there | Leave it. Do not replace it |
+| Missing | Write the directory's current `user:group` |
+| Present but not trusted (symlink, wrong owner, group or world writable, or not one valid `user:group` line when read) | Fail closed. Do not chown. Do not replace the file |
+
+**Directory trust:** Root may create `/var/take-ownership` and `original-owner` only, mode **0755**, owner root, not a symlink, not group or world writable. **MUST NOT** change the mode of any other parent. The record file is mode **0644**, a regular file, not a symlink, not group or world writable, and root-owned when the writer is root. A new file is linked into place so an existing name is not replaced.
+
+**Test directory:** `TO_ORIGINAL_OWNER_DIR` may name another absolute directory. A non-root process may use it only when it is not the default path, already exists, is owned by this login, is not a symlink, and is not group or world writable. Root requires that directory to be root-owned. In-tool `sudo` does not keep the caller's environment, so a production elevation uses `/var/take-ownership/original-owner`. An unprivileged `action` that cannot use the directory does not write it; the elevated re-exec records before it chowns.
+
+**Return argv:**
+
+```text
+take-ownership return-original-owner --path <folder>
+take-ownership --json return-original-owner --path <folder>
+```
+
+| Rule | Detail |
+|------|--------|
+| **No `--ownership`** | If the operator passed `--ownership`, fail closed. A leftover owner from an earlier menu `action` is not that flag |
+| **Path checks** | Same absolute path, refuse-list, symlink, directory, and `list-folders` gate as `action` |
+| **TTY** | Missing `--path` uses the same numbered folder list and **0** Back |
+| **Read** | A missing file fails closed and names `action` as the next step. A file that is not trusted fails closed and is not replaced |
+| **Already that owner** | Success no-op |
+| **Not root** | Re-exec `sudo -n ${GLOBAL_BIN}/take-ownership return-original-owner --path <folder>` (and the `--json` form). **MUST NOT** `sudo /bin/chown` |
+
+Menu front row **2** runs this verb. Help lists it. The dispatcher routes it.
 
 ### 2.6 Privilege split
 
@@ -134,7 +173,7 @@ This gate is **in addition to** sudoers exact-argv at re-exec. Type 0 lists from
 |-----|------|
 | You (unprivileged) | Parse flags, guided input, validate path/owner **without** changing inodes that need root |
 | Already root (`id -u` = 0) | Run recursive chown **directly** (no `sudo`) |
-| Not root | Re-exec **`sudo -n ${GLOBAL_BIN}/take-ownership action --path <folder> --ownership <user:group>`** (same order). **MUST NOT** `sudo /bin/chown` |
+| Not root | Re-exec **`sudo -n ${GLOBAL_BIN}/take-ownership action --path <folder> --ownership <user:group>`** (same order), or **`sudo -n ${GLOBAL_BIN}/take-ownership return-original-owner --path <folder>`**. **MUST NOT** `sudo /bin/chown` |
 | Missing grant / sudo | Fail closed; operator-readable next step: `generate-sudoer-request --path <folder> --ownership <user:group>` then `submit-sudoer-request` |
 
 In-tool `sudo` **MUST** go through `requirement-shell-sudo-command` (`util_sudo`). Already-root **MUST NOT** wrap `sudo`.
@@ -149,7 +188,7 @@ Operator **MAY** type `sudo take-ownership action --path … --ownership …` th
 |-----|----------------|
 | Sudoers JSON body | `requirement-sudoer-json-file` |
 | Submit / generate workflow | `requirement-three-layer-privilege-model` |
-| Archive backup | **Absent** (retired with folder-backup domain) |
+| Archive backup or per-file restore | **Absent.** `return-original-owner` is one saved directory `user:group`, applied recursively |
 | OS-tool sudoers `chown` lines | **Forbidden** |
 
 ### 2.8 Implementation Notes (this project)
@@ -157,7 +196,8 @@ Operator **MAY** type `sudo take-ownership action --path … --ownership …` th
 | Item | Value |
 |------|--------|
 | **Product** | `take-ownership` |
-| **Handler** | `to_action` · `to_list_folders` |
+| **Handler** | `to_action` · `to_return_original_owner` · `to_list_folders` |
+| **Original-owner directory** | `/var/take-ownership/original-owner` (`TO_ORIGINAL_OWNER_DIR` for a trusted test directory) |
 | **Chown implementation** | POSIX `chown -R` **without** `-L`/`-H` (or equivalent walk that does not follow links) |
 | **GLOBAL_BIN** | `/usr/local/bin` |
 | **Worked path** | `/var/www/html` |
@@ -177,7 +217,7 @@ Operator **MAY** type `sudo take-ownership action --path … --ownership …` th
 ## 3. Design Principles (CIAO / CIAO-Lite)
 
 - **Caution:** Fail closed on bad path/owner; never follow links into a grant hole.  
-- **Intentional:** One verb, two long flags, fixed order — sudoers can match.  
+- **Intentional:** `action` has two long flags in a fixed order. `return-original-owner` has `--path` only. Sudoers can match both.  
 - **Anti-fragile:** Already-matching owner is success.  
 - **Over-protect:** No short flags; no USER_BIN re-exec; no OS-tool sudoers.
 
@@ -207,7 +247,11 @@ Detect (typical): Termux — `PREFIX` contains `com.termux`, `TERMUX_VERSION` se
 7. Claim success when any walked inode failed.  
 8. Restore backup/restore as this file’s job.  
 9. Run `action` without confirming `--path` against the `list-folders` set.  
-10. Treat a parent directory grant as covering a child path.
+10. Treat a parent directory grant as covering a child path.  
+11. Put `--ownership` on `return-original-owner`.  
+12. Replace a saved original-owner file that is already there.  
+13. Chown when that file is missing on return, or when it is not a trusted regular file.  
+14. Change the mode of `/var` or any parent other than `/var/take-ownership`.
 
 **Violating this rule is a critical ownership / privilege regression.**
 
@@ -228,6 +272,11 @@ Detect (typical): Termux — `PREFIX` contains `com.termux`, `TERMUX_VERSION` se
 | AC-9 | `action` fails closed when `--path` is missing from that set, including already-matching trees |
 | AC-10 | Granted `--path` that is not an existing directory is not a live TTY pick; `action --path` names recreate-then-action and **MUST NOT** name `generate-sudoer-request` |
 | AC-11 | TTY folder picker prints **0** Back; **0** / `q` leaves without `[ERROR]`; an unknown token reprints the list and does not exit |
+| AC-12 | The first `action` that can write the record stores the directory inode `user:group` before chown. A later `action` does not replace a trusted file |
+| AC-13 | A symlink or group/world-writable record fails closed and is not replaced |
+| AC-14 | `return-original-owner --path F` reads that line and succeeds when the tree already has it. `--ownership` on that verb fails closed |
+| AC-15 | A missing record fails closed and names `action` as the next step |
+| AC-16 | Return is not backup or restore of bytes, and not a per-file owner journal |
 
 ---
 
@@ -260,6 +309,11 @@ Detect (typical): Termux — `PREFIX` contains `com.termux`, `TERMUX_VERSION` se
 | **TP-TAKE-OWNERSHIP-44** | same | **have** — granted-missing dir is not a live pick; recreate-then-action |
 | **TP-TAKE-OWNERSHIP-45** | same | **have** — TTY picker **0** Back; unknown token reprints; menu **1** then **0** returns to the front board |
 | **TP-TAKE-OWNERSHIP-46** | same | **have** — multi-draft remove list **0** Back; unknown token reprints |
+| **TP-TAKE-OWNERSHIP-47** | same | **have** — first `action` writes the directory `user:group` |
+| **TP-TAKE-OWNERSHIP-48** | same | **have** — a trusted record is not replaced |
+| **TP-TAKE-OWNERSHIP-49** | same | **have** — return with no record fails closed |
+| **TP-TAKE-OWNERSHIP-50** | same | **have** — return uses the saved line and refuses `--ownership` |
+| **TP-TAKE-OWNERSHIP-52** | same | **have** — symlink or group-writable record fails closed |
 
 **Matrix:** `reviews/requirement-test-matrix.md`  
 **Map:** `reviews/test-plan.md`
@@ -272,9 +326,10 @@ Detect (typical): Termux — `PREFIX` contains `com.termux`, `TERMUX_VERSION` se
 | 2026-08-30 | Active 1.3.0 | Interactive `action`: numbered allowed-folder pick; current `user:group` with no prompt |
 | 2026-09-06 | Active 1.4.0 | Granted-missing dir is not a live TTY pick; recreate-then-action (INC-20260830-001) |
 | 2026-09-30 | Active 1.5.0 | TTY folder picker prints **0** Back. Back and an unknown token do not exit. **TP-TAKE-OWNERSHIP-45** / **46** |
+| 2026-10-14 | Active 1.6.0 | `return-original-owner` reads one saved directory `user:group`. The first recording `action` writes it and does not replace it later. Not backup or restore |
 
 ---
 
-**Last Updated**: 2026-09-30  
+**Last Updated**: 2026-10-14  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

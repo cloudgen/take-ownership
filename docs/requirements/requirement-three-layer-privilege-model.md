@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-three-layer-privilege-model.md  
-**Status**: Active (Version 2.2.0)  
+**Status**: Active (Version 2.3.0)  
 **Area**: architecture  
 **Key**: `requirement-three-layer-privilege-model`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -16,7 +16,7 @@ Domain catalog lives in `requirement-domain-take-ownership`. Recursive chown liv
 
 ### 1.1 Human-facing
 
-**In one sentence:** You install the program into `/usr/local/bin`, submit a grant for one folder, an admin installs it, then `take-ownership action --path <folder> --ownership user:group` can run passwordless — including from automation that has no terminal.
+**In one sentence:** You install the program into `/usr/local/bin`, submit a grant for one folder, an admin installs it, then `take-ownership action --path <folder> --ownership user:group` and `take-ownership return-original-owner --path <folder>` can run passwordless — including from automation that has no terminal.
 
 | Box | Meaning | Example |
 |-----|---------|---------|
@@ -39,6 +39,7 @@ Domain catalog lives in `requirement-domain-take-ownership`. Recursive chown liv
 |---------|---------------|---------------|
 | Place the production binary | Root copies the ship unit to `/usr/local/bin` | `sudo take-ownership install` or `sudo sh src/take-ownership install` |
 | After admin install, take ownership | Automation may use `sudo -n` because NOPASSWD matches the full argv | `take-ownership action --path /var/www/html --ownership www-data:www-data` |
+| After that take, put the folder back | The saved line names the owner. The return argv has no `--ownership` | `take-ownership return-original-owner --path /var/www/html` |
 
 ---
 
@@ -49,13 +50,13 @@ Domain catalog lives in `requirement-domain-take-ownership`. Recursive chown liv
 | Layer | Privilege | Actor | take-ownership responsibilities |
 |-------|-----------|-------|--------------------------------|
 | **You (Type 0)** | Invoking user | End user / automation | Local or global install/uninstall, diagnostics, grant generate/submit (no `/etc` write), path report |
-| **Host change (Type 1)** | Elevated (controlled sudo) | root via **allowlisted** command only | `take-ownership action --path <folder> --ownership <user:group>` of the **global** binary. After elev, chown runs **inside** the ship unit |
+| **Host change (Type 1)** | Elevated (controlled sudo) | root via **allowlisted** command only | `take-ownership action --path <folder> --ownership <user:group>` and `take-ownership return-original-owner --path <folder>` of the **global** binary. After elev, chown runs **inside** the ship unit. The original-owner directory is created only on that elevated path |
 | **Dedicated badge (Type 2)** | Dedicated least-privilege system user | App runtime user | **Not used** — no dedicated app user required |
 
 ### 2.2 Least-privilege rules
 
 1. **MUST NOT** require the whole CLI to run as root for help/generate/submit.  
-2. **MUST** elevate only for `action` (and only via allowlisted sudo of the global binary).  
+2. **MUST** elevate only for `action` and `return-original-owner` (and only via allowlisted sudo of the global binary). Type 0 **MUST NOT** create `/var/take-ownership`.  
 3. **MUST NOT** grant unrestricted shell, package install, `/bin/chown`, or arbitrary `cp`.  
 4. **MUST NOT** open unapproved network egress as part of privilege design (non-online-installable product).  
 5. **MUST NOT** treat “sudoers installed” as permission to broaden Cmnds later without a new security review.  
@@ -149,6 +150,8 @@ Match the JSON grant:
 ```text
 <user> ALL=(root) NOPASSWD: /usr/local/bin/take-ownership action --path /var/www/html --ownership www-data\:www-data
 <user> ALL=(root) NOPASSWD: /usr/local/bin/take-ownership --json action --path /var/www/html --ownership www-data\:www-data
+<user> ALL=(root) NOPASSWD: /usr/local/bin/take-ownership return-original-owner --path /var/www/html
+<user> ALL=(root) NOPASSWD: /usr/local/bin/take-ownership --json return-original-owner --path /var/www/html
 ```
 
 JSON `args` keep `"www-data:www-data"` (live argv). Sudoers text **MUST** write `www-data\:www-data` so `visudo -c` parses (raw `:` after `NOPASSWD:` is a tag separator). Body SSOT: `requirement-sudoer-json-file`.
@@ -169,7 +172,7 @@ Worked user in comments: `alice` (illustrative; live emit uses `id -un`).
 
 | Rule | Detail |
 |------|--------|
-| **Invocation** | Non-root `action` **MUST** re-exec `sudo -n /usr/local/bin/take-ownership action --path <folder> --ownership <user:group>` |
+| **Invocation** | Non-root `action` **MUST** re-exec `sudo -n /usr/local/bin/take-ownership action --path <folder> --ownership <user:group>`. Non-root `return-original-owner` **MUST** re-exec `sudo -n /usr/local/bin/take-ownership return-original-owner --path <folder>` (no `--ownership`) |
 | **Root path** | If `id -u` is 0, chown **MAY** run without sudo |
 | **Wrapper** | `requirement-shell-sudo-command` |
 | **Probe honesty** | **MUST NOT** claim elevation is impossible solely because there is no TTY. Verb-only or wrong-flag-order grant + password prompt is **grant-too-narrow** |
@@ -203,6 +206,7 @@ If sudo is missing, not authorized for the `action` argv, the global binary is m
 | **Queued basename** | `sudoer-{{YYYYMMDD}}-take-ownership-{{user}}-add-{{n}}.json` (or `update`) |
 | **Worked sample basename** | `sudoer-20260825-take-ownership-alice-add-1.json` |
 | **JSON body SSOT** | `requirement-sudoer-json-file` |
+| **Original-owner directory** | `/var/take-ownership/original-owner` — created by elevated `action`, not by Type 0 generate |
 | **Test emit gate** | **None** — global binary required |
 
 ### 2.5 Why This Requirement Exists (CIAO)
@@ -235,7 +239,9 @@ If sudo is missing, not authorized for the `action` argv, the global binary is m
 6. `mkdir` the production inbound.  
 7. Confuse draft removal with host fragment uninstall.  
 8. Share one `/etc/sudoers.d/take-ownership` basename across users.  
-9. Drop a previously granted folder on update.
+9. Drop a previously granted folder on update.  
+10. Put `--ownership` on the `return-original-owner` sudoers line.  
+11. Create `/var/take-ownership` from Type 0 generate or submit.
 
 **Violating this rule is a critical privilege regression.**
 
@@ -245,14 +251,15 @@ If sudo is missing, not authorized for the `action` argv, the global binary is m
 
 | ID | Criterion |
 |----|-----------|
-| AC-1 | Layer map: you / host-change `action` / Type 2 unused |
+| AC-1 | Layer map: you / host-change `action` and `return-original-owner` / Type 2 unused |
 | AC-2 | Grant emit fails closed without `/usr/local/bin/take-ownership` |
-| AC-3 | Fragment path is global binary + `action --path F --ownership user:group` plus `--json` twin |
+| AC-3 | Fragment path is the global binary: `action --path F --ownership user:group` plus `--json` twin, and `return-original-owner --path F` plus `--json` twin |
 | AC-4 | Type 0 never writes `/etc` or mkdirs inbound |
 | AC-5 | Independent generate dest is readable without sudo |
 | AC-6 | Per-user installed fragment `/etc/sudoers.d/take-ownership-<user>` |
 | AC-7 | Replacement union: extra unique folder = extra line; skip duplicates; never files on one line |
 | AC-8 | Readable inbound still has exact `--ownership user:group` (`*` and cwd listings fail closed) |
+| AC-9 | Type 0 does not create `/var/take-ownership`. The return sudoers line has no `--ownership` |
 
 ---
 
@@ -300,9 +307,10 @@ Detect (typical): Termux — `PREFIX` contains `com.termux`; Git Bash — `MSYST
 | 2026-08-25 | Active 2.0.0 | Retarget take-ownership; **global-only** grant; no `--allow-test-local` |
 | 2026-08-26 | Active 2.1.0 | Inbound exact-args; `generate-sudoer-json` independent generate alias |
 | 2026-08-26 | Active 2.2.0 | Workflow copy requires `--ownership user:group`. Text dual escapes `:`. No leftover `--ownership *` gold. |
+| 2026-10-14 | Active 2.3.0 | Each folder also grants `return-original-owner --path`. Type 0 does not create `/var/take-ownership`. |
 
 ---
 
-**Last Updated**: 2026-08-26  
+**Last Updated**: 2026-10-14  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

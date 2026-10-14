@@ -3,9 +3,9 @@
 Maps **TP-*** coverage to `tests/`.  
 **Suite entry:** `./tests/run.sh`  
 **Ship unit:** `src/take-ownership`  
-**Product VERSION:** 3.1.0  
-**Last plan update:** 2026-10-04  
-**Last suite run:** `./tests/run.sh` on 2026-10-04 — **PASS=479 FAIL=0 SKIP=1** (TP-CURL-09 optional online; menu language **TP-CLI-32**)
+**Product VERSION:** 3.2.0  
+**Last plan update:** 2026-10-14  
+**Last suite run:** `./tests/run.sh` on 2026-10-14 — **PASS=515 FAIL=0 SKIP=1** (TP-CURL-09 optional online; menu language **TP-CLI-32**; return **TP-TAKE-OWNERSHIP-47..52**)
 
 Status: **have** = automated today · **todo** = needed · **optional** · **n/a** · **skip** (environment)
 
@@ -26,7 +26,7 @@ Status: **have** = automated today · **todo** = needed · **optional** · **n/a
 | Command line for normal user only (Git Bash still Type 0) | have | TP-CLI-20 |
 | Local install / idempotent / uninstall / mode 0755 | have | TP-LC-01..10 |
 | Grant emit requires global binary | have | TP-TAKE-OWNERSHIP-03, **30** |
-| JSON grant `action --path` `--ownership user:group` | have | TP-TAKE-OWNERSHIP-20..22, **27**, **31** |
+| JSON grant `action` plus `return-original-owner` (no `--ownership` on return) | have | TP-TAKE-OWNERSHIP-20..22, **27**, **31**, **51** |
 | Ownership fence (`*` / glob / missing) | have | TP-TAKE-OWNERSHIP-28, **29** |
 | list-folders + action gate | have | TP-TAKE-OWNERSHIP-17, **40**, **41** |
 | TTY numbered pick + current `user:group` | have | TP-TAKE-OWNERSHIP-42, **43** |
@@ -55,7 +55,7 @@ Status: **have** = automated today · **todo** = needed · **optional** · **n/a
 | TP-CLI-10 | online verbs rejected; backup/restore unknown | test_cli | requirement-bootstrap-chain | **have** |
 | TP-CLI-11 | env -u HOME version | test_cli | class / defensive | **have** |
 | TP-CLI-12 | preferred cache `/dev/shm/cache/cache-${APP_NAME}-${login}-$$` | test_cli | requirement-shell-cli-storage | **have** |
-| TP-CLI-13 | interactive `menu` and empty argv print front **1 / 5 / 7 / 8 / 9**; no **6** language row | test_cli | shell-cli-default-interaction · shell-cli-language | **have** |
+| TP-CLI-13 | interactive `menu` and empty argv print front **1 / 2 / 5 / 7 / 8 / 9**; no **6** language row; no `2. sudoers` | test_cli | shell-cli-default-interaction · shell-cli-language | **have** |
 | TP-CLI-14 | interactive `menu --json` still prints the list | test_cli | shell-cli-default-interaction | **have** |
 | TP-CLI-15 | non-interactive `menu` is help | test_cli | shell-cli-default-interaction | **have** |
 | TP-CLI-16 | front board omits install/version/about; those rows are **81–83** | test_cli | shell-cli-default-interaction | **have** |
@@ -127,6 +127,12 @@ Status: **have** = automated today · **todo** = needed · **optional** · **n/a
 | TP-TAKE-OWNERSHIP-44 | Granted-missing dir not a live pick; recreate-then-action | test_domain | take-ownership-ops · operator-readable-error · L-OPS-01 | **have** |
 | TP-TAKE-OWNERSHIP-45 | TTY folder picker **0** Back; unknown token reprints; menu **1** then **0** returns to the front board | test_domain | take-ownership-ops · default-interaction | **have** |
 | TP-TAKE-OWNERSHIP-46 | Multi-draft remove list **0** Back; unknown token reprints | test_domain | take-ownership-ops · default-interaction | **have** |
+| TP-TAKE-OWNERSHIP-47 | First `action` writes the saved directory `user:group` | test_domain | take-ownership-ops | **have** |
+| TP-TAKE-OWNERSHIP-48 | A later `action` leaves a trusted saved line unchanged | test_domain | take-ownership-ops · idempotency | **have** |
+| TP-TAKE-OWNERSHIP-49 | `return-original-owner` with no saved line fails closed | test_domain | take-ownership-ops | **have** |
+| TP-TAKE-OWNERSHIP-50 | Return of the current owner is success; `--ownership` on return fails | test_domain | take-ownership-ops · idempotency · incorrect-ownership | **have** |
+| TP-TAKE-OWNERSHIP-51 | Grant JSON and text dual include return lines with no `--ownership`; an action-only grant fails submit | test_domain | sudoer-json-file · three-layer | **have** |
+| TP-TAKE-OWNERSHIP-52 | A symlink or mode **0666** record fails closed and is not replaced; a trusted multi-line file is left and return fails | test_domain | take-ownership-ops · incorrect-ownership | **have** |
 
 ---
 

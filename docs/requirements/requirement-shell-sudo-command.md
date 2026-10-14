@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-shell-sudo-command.md  
-**Status**: Active (Version 1.0.0)  
+**Status**: Active (Version 1.1.0)  
 **Area**: shell  
 **Key**: `requirement-shell-sudo-command`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -10,7 +10,7 @@ This requirement is the **product Single Source of Truth** for **in-tool sudo**:
 
 **Without this file, agents bring portable sudo-wrapping lessons raw** or scatter `sudo` through domain functions.
 
-Coding-style **points** here. Class residual **points** here. Runtime `action` re-exec is owned with `requirement-take-ownership-ops`; this file owns **how** sudo is invoked.
+Coding-style **points** here. Class residual **points** here. Runtime `action` and `return-original-owner` re-exec are owned with `requirement-take-ownership-ops`; this file owns **how** sudo is invoked.
 
 ### 1.1 Human-facing
 
@@ -35,6 +35,7 @@ Coding-style **points** here. Class residual **points** here. Runtime `action` r
 | You do… | What it means | What you type |
 |---------|---------------|---------------|
 | Run `action` as yourself | Wrapper uses `sudo -n` of the **global** binary after a non-sudo probe | `take-ownership action --path /var/www/html --ownership www-data:www-data` |
+| Run `return-original-owner` as yourself | Same wrapper, no `--ownership` on the re-exec | `take-ownership return-original-owner --path /var/www/html` |
 | Run already as root | No `sudo` prefix | `sudo take-ownership action --path /var/www/html --ownership www-data:www-data` |
 
 ---
@@ -46,7 +47,7 @@ Coding-style **points** here. Class residual **points** here. Runtime `action` r
 1. In-tool `sudo` **MUST** go through **`util_sudo`**. **MUST NOT** scatter raw `sudo`.  
 2. If `id -u` is 0, `util_sudo` **MUST** run the command **without** `sudo`.  
 3. If `sudo` is missing from `PATH`, **MUST** fail closed (no hang).  
-4. For `action` re-exec after a NOPASSWD grant, **MAY** use `sudo -n` of **`${GLOBAL_BIN}/take-ownership`** only. **MUST NOT** copy `sudo -n` onto first-time `install --global` / unrelated tools.  
+4. For `action` and `return-original-owner` re-exec after a NOPASSWD grant, **MAY** use `sudo -n` of **`${GLOBAL_BIN}/take-ownership`** only. **MUST NOT** copy `sudo -n` onto first-time `install --global` / unrelated tools. The return re-exec **MUST NOT** pass `--ownership`.  
 5. **MUST NOT** `sudo /bin/chown` or `sudo chmod` as the take-ownership mechanism (chown is inside the elevated ship unit).
 
 ### 2.2 Check before sudo
@@ -56,7 +57,7 @@ Coding-style **points** here. Class residual **points** here. Runtime `action` r
 | # | Rule |
 |---|------|
 | **C0** | Class: every in-tool `sudo <cmd>`. chmod is the **example**, not the only case. |
-| **C1** | Probe with a **non-sudo** command. chmod example: POSIX `[ -O path ]`. `action` example: `id -u` (already root) **or** the path is already `user:group` (then no elev — success no-op on `requirement-take-ownership-ops`). |
+| **C1** | Probe with a **non-sudo** command. chmod example: POSIX `[ -O path ]`. `action` example: `id -u` (already root) **or** the path is already `user:group` (then no elev — success no-op on `requirement-take-ownership-ops`). `return-original-owner` uses the same probe against the saved line. |
 | **C2** | Probe match → **MUST NOT** `sudo`. |
 | **C3** | `sudo` **MAY** run only when the probe misses. |
 | **C4** | **MUST NOT** probe with `sudo` (`sudo ls`, `sudo stat`, `sudo -n stat`). |
@@ -93,6 +94,8 @@ util_chmod() {
 ```sh
 # After validation; only when not already root and ownership still differs.
 util_sudo -n /usr/local/bin/take-ownership action --path "${TO_PATH}" --ownership "${TO_OWNERSHIP}"
+# return-original-owner re-exec has no --ownership. The saved line is the owner.
+util_sudo -n /usr/local/bin/take-ownership return-original-owner --path "${TO_PATH}"
 ```
 
 **MUST NOT** pass `${USER_BIN}/take-ownership` or `$0` when that path is user-writable.
@@ -104,7 +107,7 @@ util_sudo -n /usr/local/bin/take-ownership action --path "${TO_PATH}" --ownershi
 | **Product** | `take-ownership` |
 | **Wrapper** | `util_sudo` |
 | **chmod helper** | `util_chmod` |
-| **Production re-exec** | `sudo -n /usr/local/bin/take-ownership action --path F --ownership U:G` |
+| **Production re-exec** | `sudo -n /usr/local/bin/take-ownership action --path F --ownership U:G` and `sudo -n /usr/local/bin/take-ownership return-original-owner --path F` |
 | **Coding-style peer** | `requirement-shell-script-coding` (points here) |
 
 ### 2.5 Why This Requirement Exists (CIAO)
@@ -146,7 +149,7 @@ util_sudo -n /usr/local/bin/take-ownership action --path "${TO_PATH}" --ownershi
 | AC-1 | Only `util_sudo` invokes `sudo` |
 | AC-2 | euid 0 does not call `sudo` |
 | AC-3 | `util_chmod` uses `[ -O` before sudo |
-| AC-4 | `action` re-execs `/usr/local/bin/take-ownership` |
+| AC-4 | `action` re-execs `/usr/local/bin/take-ownership`; `return-original-owner` re-execs the same binary with `--path` and no `--ownership` |
 
 ---
 
@@ -182,10 +185,11 @@ Detect (typical): Termux — `PREFIX` contains `com.termux`; Git Bash — `MSYST
 
 | Date | Status | Note |
 |------|--------|------|
+| 2026-10-14 | Active 1.1.0 | `return-original-owner` re-execs the global binary with no `--ownership` |
 | 2026-08-25 | Active 1.0.0 | Specialize-in home for in-tool sudo on take-ownership |
 
 ---
 
-**Last Updated**: 2026-08-25  
+**Last Updated**: 2026-10-14  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

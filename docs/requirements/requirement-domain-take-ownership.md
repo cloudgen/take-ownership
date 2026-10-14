@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-domain-take-ownership.md  
-**Status**: Active (Version 1.6.0)  
+**Status**: Active (Version 1.7.0)  
 **Area**: domain  
 **Key**: `requirement-domain-take-ownership`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -40,6 +40,7 @@ Must-not-confuse: JSON field **`action`** means add vs update of a grant. CLI ve
 |---------|---------------|---------------|
 | Bind a folder into a grant you can read | Independent generate; no `/etc` write | `take-ownership generate-sudoer-request --path /var/www/html --ownership www-data:www-data` |
 | Take ownership after the grant is installed | Immediate recursive chown of that folder | `take-ownership action --path /var/www/html --ownership www-data:www-data` |
+| Put the folder back | One saved directory `user:group`, applied recursively. Not restore of bytes | `take-ownership return-original-owner --path /var/www/html` |
 
 ---
 
@@ -50,7 +51,8 @@ Must-not-confuse: JSON field **`action`** means add vs update of a grant. CLI ve
 | Command | Operands / flags | Handler prefix | Behavior summary | Behavior SSOT |
 |---------|------------------|----------------|------------------|---------------|
 | `list-folders` | none | `to_*` | List folders this login may take ownership of (union of `--path` values from this login’s grant artifacts). Type 0; no `/etc` write | **`requirement-take-ownership-ops`** |
-| `action` | `--path <folder>` **then** `--ownership <user:group>` (long flags only; that order). TTY: numbered allowed-folder pick; current `user:group` with no prompt | `to_*` | Take ownership immediately (recursive chown; no symlink follow). **MUST** confirm `--path` is on the `list-folders` set first | **`requirement-take-ownership-ops`** |
+| `action` | `--path <folder>` **then** `--ownership <user:group>` (long flags only; that order). TTY: numbered allowed-folder pick; current `user:group` with no prompt | `to_*` | Take ownership immediately (recursive chown; no symlink follow). **MUST** confirm `--path` is on the `list-folders` set first. The first recording run saves the directory `user:group` and does not replace it later | **`requirement-take-ownership-ops`** |
+| `return-original-owner` | `--path <folder>` only. **MUST NOT** take `--ownership`. TTY: the same numbered folder pick | `to_*` | Read the saved line and chown the tree back to that one pair. **MUST** confirm `--path` is on the `list-folders` set first. Not backup or restore | **`requirement-take-ownership-ops`** |
 | `print-sudoers` | optional output path; **`--path <folder>` required** | `to_*` | Emit **project-sudoers-file** (draft; no `/etc` write). **Fails closed** unless `${GLOBAL_BIN}/take-ownership` exists | **`requirement-three-layer-privilege-model`** |
 | `print-sudoers-install-script` | optional script path; same `--path` and global-bin gate | `to_*` | Admin handoff script under `/dev/shm` or temp | **`requirement-three-layer-privilege-model`** |
 | `remove-project-sudoers` | optional path; `--force` | `to_*` | Remove **project-sudoers-file** draft only (not `/etc`) | **`requirement-three-layer-privilege-model`** |
@@ -58,13 +60,13 @@ Must-not-confuse: JSON field **`action`** means add vs update of a grant. CLI ve
 | `generate-sudoer-json` | same as `generate-sudoer-request` | `to_*` | **Test-purpose alias** of generate-sudoer-request. Canonical JSON for tests: `"--ownership","<user:group>"` plus `--json` twin (never `"*"`, never cwd names) | same |
 | `submit-sudoer-request` | **`--path <folder>`** and **`--ownership <user:group>`** when emitting; optional sudoers file; `--purpose`; `--update` / `--add` | `to_*` | Type 0 submitter into sibling public inbound. **Fails closed** unless global binary exists. Default **update** if this user’s host fragment exists, else add | workflow: **`requirement-three-layer-privilege-model`** · JSON body: **`requirement-sudoer-json-file`** |
 
-**Purpose (this product):** `list-folders`, `action`, `generate-sudoer-request`, `submit-sudoer-request`, `print-sudoers`, `print-sudoers-install-script`, and `remove-project-sudoers` are **operational**. `generate-sudoer-json` is **test-purpose** (alias of generate-sudoer-request). `list-folders` stays on `help` and is **not** a numbered menu row. `action` is front row **1**. The five grant/draft verbs live on the **sudoers** submenu **71–75** (`requirement-shell-cli-default-interaction`) and **MUST** stay live dispatcher commands. **`sudoers` is not a live command.** Test-purpose `generate-sudoer-json` stays on `help` under a heading **apart** from operational work and **MUST NOT** appear on the front board or the sudoers submenu. Self-management **81–86** is not a domain row.
+**Purpose (this product):** `list-folders`, `action`, `return-original-owner`, `generate-sudoer-request`, `submit-sudoer-request`, `print-sudoers`, `print-sudoers-install-script`, and `remove-project-sudoers` are **operational**. `generate-sudoer-json` is **test-purpose** (alias of generate-sudoer-request). `list-folders` stays on `help` and is **not** a numbered menu row. `action` is front row **1**. `return-original-owner` is front row **2**. The five grant/draft verbs live on the **sudoers** submenu **71–75** (`requirement-shell-cli-default-interaction`) and **MUST** stay live dispatcher commands. **`sudoers` is not a live command.** Test-purpose `generate-sudoer-json` stays on `help` under a heading **apart** from operational work and **MUST NOT** appear on the front board or the sudoers submenu. Self-management **81–86** is not a domain row. `return-original-owner` is **not** the retired `restore` verb.
 
 **Routing:** Dispatcher in `app_main` **MUST** route these verbs; unknown operands fail closed.
 
 **Reserved tokens:** `help`, `install`, `uninstall`, `where-is-me`, `version`, `about`, `menu`, `main`, and the grant verbs above. A bare path as argv0 after flags **MUST NOT** be treated as `action` (use the `action` verb).
 
-**Non-goals as subcommands:** backup, restore, retention, remote sync, schedule daemon, dest approve/reject.
+**Non-goals as subcommands:** backup, restore, retention, remote sync, schedule daemon, dest approve/reject. `return-original-owner` does not bring those back.
 
 ### 2.2 Pillar B — Specialized features (surface map only)
 
@@ -72,6 +74,7 @@ Must-not-confuse: JSON field **`action`** means add vs update of a grant. CLI ve
 |--------------|-------------|----------|
 | List grant folders | Expose `list-folders` | `requirement-take-ownership-ops` |
 | Take ownership of a folder | Expose `action` verb + `--path` / `--ownership`; confirm against `list-folders` | `requirement-take-ownership-ops` |
+| Return the saved owner | Expose `return-original-owner` with `--path` only | `requirement-take-ownership-ops` |
 | Elevated chown | Product uses a Type 1 re-exec of the **global** binary | `requirement-three-layer-privilege-model` + ops REQ |
 | Sudoers draft print | Expose `print-sudoers` | `requirement-three-layer-privilege-model` |
 | Admin sudoers install script | Expose `print-sudoers-install-script` | `requirement-three-layer-privilege-model` |
@@ -102,7 +105,8 @@ Complete JSON bodies live on `requirement-sudoer-json-file` (add = one folder / 
 | Help row | Text intent |
 |----------|-------------|
 | `list-folders` | List folders this login may take ownership of |
-| `action --path <folder> --ownership <user:group>` | Recursively take ownership of that folder (no symlink follow). Confirms `--path` is on `list-folders` first. |
+| `action --path <folder> --ownership <user:group>` | Recursively take ownership of that folder (no symlink follow). Confirms `--path` is on `list-folders` first. The first recording run saves the directory owner and does not replace that line. |
+| `return-original-owner --path <folder>` | Put the folder back to the saved `user:group`. No `--ownership` flag. |
 | `generate-sudoer-request --path <folder> --ownership <user:group> [dest]` | Independently write a JSON grant you can read; no `/etc`; no inbound |
 | `submit-sudoer-request [--path <folder>] [file]` | Queue a JSON grant for that folder via sudoer-cli (default **update** if this user’s host fragment exists) |
 | `print-sudoers --path <folder> --ownership <user:group>` | Emit **project-sudoers-file** (draft) for admin install. Requires global install. |
@@ -127,6 +131,7 @@ take-ownership generate-sudoer-json --path /var/www/html --ownership www-data:ww
 take-ownership submit-sudoer-request --path /var/www/html --ownership www-data:www-data
 take-ownership list-folders
 take-ownership action --path /var/www/html --ownership www-data:www-data
+take-ownership --json return-original-owner --path /var/www/html
 ```
 
 ### 2.4 Pillar D — Specialized project about items
@@ -259,9 +264,10 @@ Detect (typical): Termux — `PREFIX` contains `com.termux`; Git Bash — `MSYST
 | 2026-08-26 | Active 1.3.0 | Canonical JSON is `"--ownership","<user:group>"`. Help/examples require `--ownership`. |
 | 2026-09-03 | Active 1.4.0 | Five grant/draft verbs operational (sudoers submenu); `generate-sudoer-json` remains test-purpose |
 | 2026-09-30 | Active 1.6.0 | Menu pointers follow default-interaction **3.0.0**: `action` is **1**; grant/draft verbs are **71–75** |
+| 2026-10-14 | Active 1.7.0 | `return-original-owner` is operational, on help, routed, and front row **2**. It is not restore |
 
 ---
 
-**Last Updated**: 2026-09-30  
+**Last Updated**: 2026-10-14  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

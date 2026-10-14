@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-shell-cli-interface.md  
-**Status**: Active (Version 3.2.0)  
+**Status**: Active (Version 3.3.0)  
 **Area**: shell  
 **Key**: `requirement-shell-cli-interface`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -121,14 +121,15 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | `about` | You | `app_about` | Diagnostics including **global-bin presence**, cache/persist, **install channel**; no `CHECKSUM` field |
 | `help` | You | `app_help` | Full usage; test-purpose `generate-sudoer-json` apart |
 | `list-folders` | You | `to_list_folders` | **Operational.** List folders this login may take ownership of |
-| `action` | You (+ host-change re-exec) | `to_action` | **Operational.** `--path` then `--ownership`; confirm against `list-folders` then recursive take-ownership. TTY without `--path`: numbered allowed-folder pick. TTY without `--ownership`: current `user:group` (no prompt). Off-TTY still requires both flags |
+| `action` | You (+ host-change re-exec) | `to_action` | **Operational.** `--path` then `--ownership`; confirm against `list-folders` then recursive take-ownership. TTY without `--path`: numbered allowed-folder pick. TTY without `--ownership`: current `user:group` (no prompt). Off-TTY still requires both flags. Before chown, save the directory owner once |
+| `return-original-owner` | You (+ host-change re-exec) | `to_return_original_owner` | **Operational.** `--path` only. Reads the saved `user:group` and chowns the tree back. **MUST NOT** accept `--ownership`. Menu front **2**. Not backup or restore |
 | `print-sudoers` | You | `to_print_sudoers` | **Operational.** `--path` required; **fails closed** without global binary. Menu **73** |
 | `print-sudoers-install-script` | You | `to_print_sudoers_install_script` | **Operational.** Admin handoff script. Menu **74** |
 | `remove-project-sudoers` | You | `to_remove_project_sudoers` | **Operational.** Draft only. Menu **75** |
 | `generate-sudoer-request` | You | `to_generate_sudoer_request` | **Operational.** Independent JSON; `--path` required; global-bin gate. Menu **71** |
 | `generate-sudoer-json` | You | `to_generate_sudoer_request` | **Test-purpose alias.** Same handler as `generate-sudoer-request`. Canonical JSON for tests (`--ownership` stays `user:group`). Off every numbered list |
 | `submit-sudoer-request` | You | `to_submit_sudoer_request` | **Operational.** Sibling inbound; global-bin gate. Menu **72** |
-| `menu` | You | `app_main_menu` | TTY tree: front **1** / **5** / **7** / **8** / **9** (`requirement-shell-cli-default-interaction`) |
+| `menu` | You | `app_main_menu` | TTY tree: front **1** / **2** / **5** / **7** / **8** / **9** (`requirement-shell-cli-default-interaction`) |
 | `main` | You | `app_main_menu` | Alias of `menu` |
 
 #### Dispatcher acceptance criteria
@@ -225,7 +226,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | TP family / ID | Suite | Status |
 |----------------|-------|--------|
 | **TP-CLI-01..12** | `tests/test_cli.sh` | **todo** — retarget from folder-backup names |
-| **TP-CLI-13..16**, **21..26**, **32** | same | **have** — front **1 / 5 / 7 / 8 / 9**; sudoers **71–75**; self-management **81–86**; `language`, `sudoers`, and `self-management` unknown |
+| **TP-CLI-13..16**, **21..26**, **32** | same | **have** — front **1 / 2 / 5 / 7 / 8 / 9**; sudoers **71–75**; self-management **81–86**; `language`, `sudoers`, and `self-management` unknown |
 | **TP-CLI-17** | same | **have** — help lists test-purpose `generate-sudoer-json` apart |
 
 **Matrix:** `reviews/requirement-test-matrix.md`  
@@ -250,9 +251,10 @@ Detect (typical): Termux — `PREFIX` contains `com.termux`; Git Bash — `MSYST
 | 2026-09-03 | Active 2.3.0 | Five sudoers verbs operational (submenu); `generate-sudoer-json` remains test-purpose; `sudoers` not dispatched |
 | 2026-09-30 | Active 3.1.0 | Menu pointers: sudoers **71–75**, self-management **81–86**; category names not dispatched; empty argv follows Type O |
 | 2026-10-04 | Active 3.2.0 | `language` is menu-only (front **5** / **51–63**), not an argv verb |
+| 2026-10-14 | Active 3.3.0 | `return-original-owner` is a routed verb. Front row **2**. No `--ownership` on that verb |
 
 ---
 
-**Last Updated**: 2026-10-04  
+**Last Updated**: 2026-10-14  
 **Owner**: project maintainers  
 **Alignment**: Registry `docs/requirements/index.md`; **CIAO** (https://github.com/cloudgen/ciao); CIAO-Lite (https://github.com/cloudgen/ciao-lite).

@@ -5,6 +5,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [3.2.0] - 2026-10-14
+
+### Added
+
+- **`return-original-owner`.** The verb takes `--path` only. It reads `/var/take-ownership/original-owner/<sha256 of the path>`. That file is one line, `user:group`, the directory owner saved by the first elevated `action`. Return applies that one pair to the tree. A mixed tree becomes that pair. This is not a byte backup and not a per-file restore. A missing or untrusted file fails closed and is not replaced. `--ownership` on this verb fails closed.
+- **First take saves the owner.** Before `action` changes the tree, a missing record is written. A trusted record is left as it is. The directory `/var/take-ownership` and `original-owner` are created only by root, mode **0755**, `root:root`. The record is mode **0644**, `root:root`, not a symlink, and not group- or world-writable. Type 0 does not create that directory.
+- **Grant shape.** Each folder is four command objects: `action` and its `--json` twin (with `--ownership`), plus `return-original-owner --path` and its `--json` twin (no `--ownership`). An older grant that has only the `action` pair fails closed on submit. Regenerate it.
+- **Menu row 2.** The front board is **1** `action`, **2** `return-original-owner`, **5** language, **7** sudoers, **8** self-management, **9** Exit. Front **3**, **4**, and **6** stay reserved. **0** is Back only on submenus.
+- Law: `requirement-take-ownership-ops` **1.6.0**, `requirement-sudoer-json-file` **2.5.0**, `requirement-three-layer-privilege-model` **2.3.0**, `requirement-domain-take-ownership` **1.7.0**, `requirement-shell-cli-default-interaction` **3.2.0**, `requirement-shell-cli-interface` **3.3.0**, `requirement-shell-cli-language` **1.1.0**, `requirement-incorrect-ownership-parameter` **1.1.0**, `requirement-shell-idempotency` **1.1.0**, `requirement-shell-sudo-command` **1.1.0**. Suite **TP-TAKE-OWNERSHIP-47** through **52** and **TP-CLI-13**.
+- Product version **3.2.0**.
+
 ## [3.1.0] - 2026-10-04
 
 ### Added

@@ -467,6 +467,7 @@ run_test_cli() {
         _out=$(PTY_IN="9" ci_pty_run menu)
         _plain=$(ci_strip_ansi "$_out")
         assert_contains "TP-CLI-13 TTY menu action row" "$_plain" "1. action: Recursively take ownership of a named folder"
+        assert_contains "TP-CLI-13 TTY menu return row" "$_plain" "2. return-original-owner: Put the folder back to the saved original owner"
         assert_contains "TP-CLI-13 TTY menu language row" "$_plain" "5. language:"
         assert_not_contains "TP-CLI-13 TTY menu no row 6 language" "$_plain" "6. language:"
         assert_contains "TP-CLI-13 TTY menu family sudoers" "$_plain" "7. sudoers: Grant and drafts"
@@ -482,6 +483,7 @@ run_test_cli() {
         _out=$(PTY_IN="9" ci_pty_run)
         _plain=$(ci_strip_ansi "$_out")
         assert_contains "TP-CLI-13 TTY empty argv action row" "$_plain" "1. action: Recursively take ownership of a named folder"
+        assert_contains "TP-CLI-13 TTY empty argv return row" "$_plain" "2. return-original-owner: Put the folder back to the saved original owner"
         assert_contains "TP-CLI-13 TTY empty argv language row" "$_plain" "5. language:"
         assert_not_contains "TP-CLI-13 TTY empty argv no row 6 language" "$_plain" "6. language:"
         assert_contains "TP-CLI-13 TTY empty argv family sudoers" "$_plain" "7. sudoers: Grant and drafts"
