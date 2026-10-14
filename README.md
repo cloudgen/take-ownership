@@ -1,6 +1,6 @@
 # take-ownership - Take Unix ownership of a named folder with a narrow sudo grant
 
-![Version](https://img.shields.io/badge/Version-3.2.0-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-3.3.0-blue?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 [![CIAO](https://img.shields.io/badge/Philosophy-CIAO%20(Caution%20%E2%80%A2%20Intentional%20%E2%80%A2%20Anti--fragile%20%E2%80%A2%20Over--engineered)-purple.svg)](https://github.com/cloudgen/ciao)
 [![Stars](https://img.shields.io/github/stars/cloudgen/take-ownership?style=flat-square)](https://github.com/cloudgen/take-ownership)
@@ -88,33 +88,33 @@ sudo sh /dev/shm/take-ownership-<user>-sudoers-admin.sh uninstall
 After install, on a terminal (`take-ownership` or `take-ownership menu`) the front board looks like:
 
 ```text
-[INFO] **take-ownership**(*3.2.0*) — Take Unix ownership of a named folder with a narrow global-only sudo grant
+[INFO] **take-ownership**(*3.3.0*) — Take Unix ownership of a named folder with a narrow global-only sudo grant
 1. action: Recursively take ownership of a named folder
 2. return-original-owner: Put the folder back to the saved original owner
-5. language: display language for this menu
-7. sudoers: Grant and drafts
-8. self-management: This CLI install, version, update, uninstall
+5. sudoers: Grant and drafts
+6. self-management: This CLI install, version, update, uninstall
+7. language: display language for this menu
 9. Exit
 Choice:
 ```
 
-**5** opens the language board. **51** through **63** save one language for the next run. **0** returns to the front board and does not write the file. **9** on that board is not Exit.
+**7** opens the language board. **71** through **83** save one language for the next run. **0** returns to the front board and does not write the file. **9** on that board is not Exit.
 
 ```text
-[INFO] **take-ownership**(*3.2.0*) — language
-51. English: use English for this menu
-52. 简体中文: use Simplified Chinese for this menu
-53. 繁體中文: use Traditional Chinese for this menu
-54. Español: use Spanish for this menu
-55. العربية: use Arabic for this menu
-56. Français: use French for this menu
-57. Português: use Portuguese for this menu
-58. Русский: use Russian for this menu
-59. Deutsch: use German for this menu
-60. 日本語: use Japanese for this menu
-61. 한국어: use Korean for this menu
-62. Nederlands: use Dutch for this menu
-63. Ελληνικά: use Greek for this menu
+[INFO] **take-ownership**(*3.3.0*) — language
+71. English: use English for this menu
+72. 简体中文: use Simplified Chinese for this menu
+73. 繁體中文: use Traditional Chinese for this menu
+74. Español: use Spanish for this menu
+75. العربية: use Arabic for this menu
+76. Français: use French for this menu
+77. Português: use Portuguese for this menu
+78. Русский: use Russian for this menu
+79. Deutsch: use German for this menu
+80. 日本語: use Japanese for this menu
+81. 한국어: use Korean for this menu
+82. Nederlands: use Dutch for this menu
+83. Ελληνικά: use Greek for this menu
 0. Back
 Choice:
 ```
@@ -128,29 +128,29 @@ Choice:
 Choice:
 ```
 
-**7** opens grant and drafts. **0** returns to the front board. **9** on that board is not Exit.
+**5** opens grant and drafts. **0** returns to the front board. **9** on that board is not Exit.
 
 ```text
-[INFO] **take-ownership**(*3.2.0*) — sudoers (grant and drafts)
-71. generate-sudoer-request: Write a JSON grant you can read
-72. submit-sudoer-request: Queue the JSON grant inbound
-73. print-sudoers: Emit sudoers draft
-74. print-sudoers-install-script: Write admin install script
-75. remove-project-sudoers: Remove sudoers draft only
+[INFO] **take-ownership**(*3.3.0*) — sudoers (grant and drafts)
+51. generate-sudoer-request: Write a JSON grant you can read
+52. submit-sudoer-request: Queue the JSON grant inbound
+53. print-sudoers: Emit sudoers draft
+54. print-sudoers-install-script: Write admin install script
+55. remove-project-sudoers: Remove sudoers draft only
 0. Back
 Choice:
 ```
 
-**8** opens install, version, update, and remove. **0** returns. `self-install` is not a row.
+**6** opens install, version, update, and remove. **0** returns. `self-install` is not a row.
 
 ```text
-[INFO] **take-ownership**(*3.2.0*) — self-management (this CLI)
-81. install: Ensure this program from the channel
-82. version: Show the local version
-83. about: Show diagnostics including global-bin presence
-84. version-check: Compare local version to the channel
-85. self-update: Update this program when the channel is newer
-86. self-uninstall: Remove the managed binary (not the host grant)
+[INFO] **take-ownership**(*3.3.0*) — self-management (this CLI)
+61. install: Ensure this program from the channel
+62. version: Show the local version
+63. about: Show diagnostics including global-bin presence
+64. version-check: Compare local version to the channel
+65. self-update: Update this program when the channel is newer
+66. self-uninstall: Remove the managed binary (not the host grant)
 0. Back
 Choice:
 ```
@@ -232,4 +232,4 @@ MIT License — see [`LICENSE.md`](./LICENSE.md).
 
 ## Last Update
 
-2026-10-14 — version **3.2.0** (`return-original-owner`, saved directory owner, menu row **2**). See [`CHANGELOG.md`](./CHANGELOG.md) for earlier releases.
+2026-10-14 — version **3.3.0** (front **5** sudoers, **6** self-management, **7** language). See [`CHANGELOG.md`](./CHANGELOG.md) for earlier releases.

@@ -5,7 +5,7 @@
 **Always load first:** `reviews/lessons.md`
 
 **Last plan update:** 2026-10-14  
-**Ship unit VERSION:** 3.2.0  
+**Ship unit VERSION:** 3.3.0  
 **Suite baseline:** see `reviews/test-plan.md`
 
 ---
@@ -41,7 +41,7 @@
 | **Incorrect ownership** | `requirement-incorrect-ownership-parameter.md` | no `*`; no cwd listings; return does not take `--ownership` |
 | **Operator-readable error** | `requirement-operator-readable-error.md` | Blocking `[ERROR]` what-happened + next step; granted-missing recreate |
 | CLI interface | `requirement-shell-cli-interface.md` | Commands, flags; five sudoers verbs live; `language`, `sudoers`, and `self-management` unknown |
-| Default interaction | `requirement-shell-cli-default-interaction.md` | Front **1 / 2 / 5 / 7 / 8 / 9**; language **51–63**; sudoers **71–75**; self-management **81–86**; **0** Back |
+| Default interaction | `requirement-shell-cli-default-interaction.md` | Front **1 / 2 / 5 / 6 / 7 / 9**; sudoers **51–55**; self-management **61–66**; language **71–83**; **0** Back |
 | Menu language | `requirement-shell-cli-language.md` | Thirteen codes; leaf `language` mode **0600**; `TAKE_OWNERSHIP_LANG` does not write; human help and about follow the code; JSON stays English |
 | Empty argv | `requirement-shell-cli-zero-arguments.md` | TTY menu; off-TTY Type O install-ensure |
 | Local self-management | `requirement-shell-local-self-management.md` | install/uninstall; **0755**; global preferred for elev |

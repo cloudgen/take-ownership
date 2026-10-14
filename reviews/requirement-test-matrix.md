@@ -1,8 +1,8 @@
 # Requirement ↔ test matrix — take-ownership
 
 **Updated:** 2026-10-14  
-**Product VERSION:** 3.2.0  
-**Suite:** `tests/run.sh` on 2026-10-14 — **PASS=515 FAIL=0 SKIP=1** (TP-CURL-09 optional online; menu language **TP-CLI-32**; return **TP-TAKE-OWNERSHIP-47..52**)
+**Product VERSION:** 3.3.0  
+**Suite:** `tests/run.sh` on 2026-10-14 — **PASS=517 FAIL=0 SKIP=1** (TP-CURL-09 optional online; menu **5 / 6 / 7** **TP-CLI-13** · **TP-CLI-32**; return **TP-TAKE-OWNERSHIP-47..52**)
 
 | Requirement key | Area | TP families | Coverage notes |
 |-----------------|------|-------------|----------------|
@@ -15,7 +15,7 @@
 | requirement-take-ownership-ops | domain-ops | TP-TAKE-OWNERSHIP-**11**, **11b**, **13**, **14**, **15**, **16**, **17**, **40**, **41**, **42**, **43**, **44**, **47**, **48**, **49**, **50**, **52** | Recursive chown; saved directory owner; return; ram-drive exception; list-folders gate |
 | requirement-shell-cli-interface | shell | TP-CLI-* | Commands, flags, dispatch; **menu/main** TP-CLI-13..16 and **32**; `language` is not dispatched; test-purpose `generate-sudoer-json` apart (**TP-CLI-17**) |
 | requirement-shell-cli-zero-arguments | shell | TP-CLI-07, **13**, **15** | TTY menu; off-TTY Type O install-ensure |
-| requirement-shell-cli-default-interaction | shell | TP-CLI-07, **13**, **14**, **15**, **16**, **19**, **21–26**, **32** | Front **1 / 2 / 5 / 7 / 8 / 9**; language **51–63**; **0** Back; sudoers **71–75**; self-management **81–86** |
+| requirement-shell-cli-default-interaction | shell | TP-CLI-07, **13**, **14**, **15**, **16**, **19**, **21–26**, **32** | Front **1 / 2 / 5 / 6 / 7 / 9**; sudoers **51–55**; self-management **61–66**; language **71–83**; **0** Back |
 | requirement-shell-cli-language | shell | TP-CLI-**13**, **32** | Thirteen codes; front **2** and **5**; leaf shorts `action` and `return-original-owner` stay English; human help and about; JSON stays English |
 | requirement-shell-local-self-management | shell | TP-LC-* (incl. **09/10** mode) | install/uninstall/where-is-me; **0755** |
 | requirement-shell-output-requirements | shell | TP-CLI-03,05,08,09, **19** | JSON / quiet / errors |

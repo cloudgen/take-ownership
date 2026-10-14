@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-domain-take-ownership.md  
-**Status**: Active (Version 1.7.0)  
+**Status**: Active (Version 1.8.0)  
 **Area**: domain  
 **Key**: `requirement-domain-take-ownership`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -60,7 +60,7 @@ Must-not-confuse: JSON field **`action`** means add vs update of a grant. CLI ve
 | `generate-sudoer-json` | same as `generate-sudoer-request` | `to_*` | **Test-purpose alias** of generate-sudoer-request. Canonical JSON for tests: `"--ownership","<user:group>"` plus `--json` twin (never `"*"`, never cwd names) | same |
 | `submit-sudoer-request` | **`--path <folder>`** and **`--ownership <user:group>`** when emitting; optional sudoers file; `--purpose`; `--update` / `--add` | `to_*` | Type 0 submitter into sibling public inbound. **Fails closed** unless global binary exists. Default **update** if this user’s host fragment exists, else add | workflow: **`requirement-three-layer-privilege-model`** · JSON body: **`requirement-sudoer-json-file`** |
 
-**Purpose (this product):** `list-folders`, `action`, `return-original-owner`, `generate-sudoer-request`, `submit-sudoer-request`, `print-sudoers`, `print-sudoers-install-script`, and `remove-project-sudoers` are **operational**. `generate-sudoer-json` is **test-purpose** (alias of generate-sudoer-request). `list-folders` stays on `help` and is **not** a numbered menu row. `action` is front row **1**. `return-original-owner` is front row **2**. The five grant/draft verbs live on the **sudoers** submenu **71–75** (`requirement-shell-cli-default-interaction`) and **MUST** stay live dispatcher commands. **`sudoers` is not a live command.** Test-purpose `generate-sudoer-json` stays on `help` under a heading **apart** from operational work and **MUST NOT** appear on the front board or the sudoers submenu. Self-management **81–86** is not a domain row. `return-original-owner` is **not** the retired `restore` verb.
+**Purpose (this product):** `list-folders`, `action`, `return-original-owner`, `generate-sudoer-request`, `submit-sudoer-request`, `print-sudoers`, `print-sudoers-install-script`, and `remove-project-sudoers` are **operational**. `generate-sudoer-json` is **test-purpose** (alias of generate-sudoer-request). `list-folders` stays on `help` and is **not** a numbered menu row. `action` is front row **1**. `return-original-owner` is front row **2**. The five grant/draft verbs live on the **sudoers** submenu **51–55** (`requirement-shell-cli-default-interaction`) and **MUST** stay live dispatcher commands. **`sudoers` is not a live command.** Test-purpose `generate-sudoer-json` stays on `help` under a heading **apart** from operational work and **MUST NOT** appear on the front board or the sudoers submenu. Self-management **61–66** is not a domain row. `return-original-owner` is **not** the retired `restore` verb.
 
 **Routing:** Dispatcher in `app_main` **MUST** route these verbs; unknown operands fail closed.
 
@@ -230,7 +230,7 @@ take-ownership --json return-original-owner --path /var/www/html
 | `requirement-sudoer-json-file` | JSON sudoer file body (`take-ownership` only; `--ownership user:group`) |
 | `requirement-incorrect-ownership-parameter` | Fence: no `--ownership *`; no cwd listings |
 | `requirement-shell-cli-interface` | Routes domain verbs; help purpose split |
-| `requirement-shell-cli-default-interaction` | Front **1** `action`; sudoers **71–75**; **0** Back |
+| `requirement-shell-cli-default-interaction` | Front **1** `action`; sudoers **51–55**; **0** Back |
 | `requirement-bootstrap-chain` | Domain replace from folder-backup |
 | `docs/requirements/index.md` | Registry |
 | `./src/take-ownership` | Implementation under test |
@@ -265,6 +265,7 @@ Detect (typical): Termux — `PREFIX` contains `com.termux`; Git Bash — `MSYST
 | 2026-09-03 | Active 1.4.0 | Five grant/draft verbs operational (sudoers submenu); `generate-sudoer-json` remains test-purpose |
 | 2026-09-30 | Active 1.6.0 | Menu pointers follow default-interaction **3.0.0**: `action` is **1**; grant/draft verbs are **71–75** |
 | 2026-10-14 | Active 1.7.0 | `return-original-owner` is operational, on help, routed, and front row **2**. It is not restore |
+| 2026-10-14 | Active 1.8.0 | Menu pointers follow default-interaction **3.3.0**: grant/draft verbs are **51–55** |
 
 ---
 

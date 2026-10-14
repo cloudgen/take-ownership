@@ -1,41 +1,41 @@
 **file**: docs/requirements/requirement-shell-cli-language.md
-**Status**: Active (Version 1.1.0)
+**Status**: Active (Version 1.2.0)
 **Area**: shell
 **Key**: `requirement-shell-cli-language`
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
 
 ## 1. Purpose
 
-This requirement is the product law for **menu language** on take-ownership. The thirteen codes and the order **51–63** match the sibling shell language block used by grok-cli and sshd-cli: English, Simplified Chinese, Traditional Chinese, Spanish, Arabic, French, Portuguese, Russian, German, Japanese, Korean, Dutch, and Greek. It owns the language codes, the saved file, which boards follow the code, and the words those boards print.
+This requirement is the product law for **menu language** on take-ownership. The thirteen codes, in this order, match the sibling shell language block used by grok-cli and sshd-cli: English, Simplified Chinese, Traditional Chinese, Spanish, Arabic, French, Portuguese, Russian, German, Japanese, Korean, Dutch, and Greek. This product assigns them to **71–83**. It owns the language codes, the saved file, which boards follow the code, and the words those boards print.
 
-Which row is **5**, and how Back and Exit behave on the numbered tree, stays owned by `requirement-shell-cli-default-interaction`. The persistence directory stays owned by `requirement-shell-cli-storage`. This file owns the `language` leaf and the copy.
+Which row is **7**, and how Back and Exit behave on the numbered tree, stays owned by `requirement-shell-cli-default-interaction`. The persistence directory stays owned by `requirement-shell-cli-storage`. This file owns the `language` leaf and the copy.
 
 On this product, **9** leaves only from the front board. The language board is a submenu: it prints **0** Back and does not print **9** Exit. That leave rule is this product’s menu law. It is not the grok-cli submenu rule, where **9** on a submenu leaves the program.
 
 ### 1.1 Human-facing
 
-**In one sentence:** Menu **5** chooses one of thirteen languages, **51** English through **63** Ελληνικά, for the numbered menu, for human `help`, and for human `about`, and the next run opens in that language.
+**In one sentence:** Menu **7** chooses one of thirteen languages, **71** English through **83** Ελληνικά, for the numbered menu, for human `help`, and for human `about`, and the next run opens in that language.
 
 | Box | Meaning | Example |
 |-----|---------|---------|
-| You / this login | Pick a language and the next run opens in it | `5` then `53` |
+| You / this login | Pick a language and the next run opens in it | `7` then `73` |
 | Scripts / CI | The override does not write the file | `TAKE_OWNERSHIP_LANG=ja take-ownership help` |
-| Not this file | Which row is **5**, and that **9** leaves only from the front board | `requirement-shell-cli-default-interaction` |
+| Not this file | Which row is **7**, and that **9** leaves only from the front board | `requirement-shell-cli-default-interaction` |
 
 | Includes | Excludes |
 |----------|----------|
-| Codes `en`, `zh-Hans`, `zh-Hant`, `es`, `ar`, `fr`, `pt`, `ru`, `de`, `ja`, `ko`, `nl`, and `el`; front **5** / block **50–69** (assigned **51–63**); human `help` and human `about` | Translating command output, argv `version`, JSON about fields, or operational error text |
+| Codes `en`, `zh-Hans`, `zh-Hant`, `es`, `ar`, `fr`, `pt`, `ru`, `de`, `ja`, `ko`, `nl`, and `el`; front **7** / block **70–89** (assigned **71–83**); human `help` and human `about` | Translating command output, argv `version`, JSON about fields, or operational error text |
 | File `${HOME}/.local/${APP_NAME}/language` | Putting that file in the cache folder or under `/var` |
 
 | Surface | What you open | What for |
 |---------|---------------|----------|
 | `./src/take-ownership` | ship unit | live menu, help, and about |
-| `take-ownership` | no command, on a terminal | front board, including row **5** |
+| `take-ownership` | no command, on a terminal | front board, including row **7** |
 | `take-ownership help` | command | human help in the saved language |
 
 | You do… | What it means | What you type |
 |---------|---------------|---------------|
-| Change the menu language | The language board lists **51** through **63**. The choice is saved. The front board comes back in that language. | `5`, then `51` through `63` |
+| Change the menu language | The language board lists **71** through **83**. The choice is saved. The front board comes back in that language. | `7`, then `71` through `83` |
 | Leave the language board | Back does not write the file. **9** on that board is not Exit. | `0` |
 | One run in another language | The env wins for this process and does not write the file. | `TAKE_OWNERSHIP_LANG=ja take-ownership menu` |
 
@@ -47,21 +47,21 @@ On this product, **9** leaves only from the front board. The language board is a
 
 | Code | Name on the language board | Number | Default |
 |------|----------------------------|--------|---------|
-| `en` | English | **51** | yes |
-| `zh-Hans` | 简体中文 | **52** | no |
-| `zh-Hant` | 繁體中文 | **53** | no |
-| `es` | Español | **54** | no |
-| `ar` | العربية | **55** | no |
-| `fr` | Français | **56** | no |
-| `pt` | Português | **57** | no |
-| `ru` | Русский | **58** | no |
-| `de` | Deutsch | **59** | no |
-| `ja` | 日本語 | **60** | no |
-| `ko` | 한국어 | **61** | no |
-| `nl` | Nederlands | **62** | no |
-| `el` | Ελληνικά | **63** | no |
+| `en` | English | **71** | yes |
+| `zh-Hans` | 简体中文 | **72** | no |
+| `zh-Hant` | 繁體中文 | **73** | no |
+| `es` | Español | **74** | no |
+| `ar` | العربية | **75** | no |
+| `fr` | Français | **76** | no |
+| `pt` | Português | **77** | no |
+| `ru` | Русский | **78** | no |
+| `de` | Deutsch | **79** | no |
+| `ja` | 日本語 | **80** | no |
+| `ko` | 한국어 | **81** | no |
+| `nl` | Nederlands | **82** | no |
+| `el` | Ελληνικά | **83** | no |
 
-**MUST** accept only these thirteen codes in this version. **MUST** treat a missing file, an empty file, or any other first line as English for this process. **MUST NOT** rewrite a file whose first line is not one of these codes. **MUST NOT** add a fourteenth code without a new revision of this file. Numbers **50** through **69** are the only language rows (not more than 20 languages). **50** and **64** through **69** are reserved and are not printed.
+**MUST** accept only these thirteen codes in this version. **MUST** treat a missing file, an empty file, or any other first line as English for this process. **MUST NOT** rewrite a file whose first line is not one of these codes. **MUST NOT** add a fourteenth code without a new revision of this file. Numbers **70** through **89** are the only language rows (not more than 20 languages). **70** and **84** through **89** are reserved and are not printed.
 
 The short names **English**, **简体中文**, **繁體中文**, **Español**, **العربية**, **Français**, **Português**, **Русский**, **Deutsch**, **日本語**, **한국어**, **Nederlands**, and **Ελληνικά** are the same words in every language (each language’s own name).
 
@@ -75,11 +75,11 @@ The short names **English**, **简体中文**, **繁體中文**, **Español**, *
 
 ### 2.3 Menu numbers
 
-Front **5** opens the language board on every host, including Termux, Git Bash, and Windows cmd. It is not a hide cause. Front **2**, **3**, **4**, and **6** are not rows. Choosing **6** warns and does not open the language board and does not write the file. **51** saves `en`. **52** saves `zh-Hans`. **53** saves `zh-Hant`. **54** saves `es`. **55** saves `ar`. **56** saves `fr`. **57** saves `pt`. **58** saves `ru`. **59** saves `de`. **60** saves `ja`. **61** saves `ko`. **62** saves `nl`. **63** saves `el`. Each is a valid leaf: an info line names the language, then the front board redisplays in that language.
+Front **7** opens the language board on every host, including Termux, Git Bash, and Windows cmd. It is not a hide cause. Front **3**, **4**, and **8** are not rows. Choosing **8** warns and does not open the language board and does not write the file. **71** saves `en`. **72** saves `zh-Hans`. **73** saves `zh-Hant`. **74** saves `es`. **75** saves `ar`. **76** saves `fr`. **77** saves `pt`. **78** saves `ru`. **79** saves `de`. **80** saves `ja`. **81** saves `ko`. **82** saves `nl`. **83** saves `el`. Each is a valid leaf: an info line names the language, then the front board redisplays in that language.
 
-**0** / `q` / empty / `back` is Back and does not write the file. **9** on this board is an invalid choice. It does not leave the program. EOF returns to the front board and does not write the file. An invalid choice, including **50** and **64** through **69**, warns and reprints this board. **MUST NOT** `out_die`.
+**0** / `q` / empty / `back` is Back and does not write the file. **9** on this board is an invalid choice. It does not leave the program. EOF returns to the front board and does not write the file. An invalid choice, including **70** and **84** through **89**, warns and reprints this board. **MUST NOT** `out_die`.
 
-`language` is not an argv verb. Typed `language`, `語言`, `语言`, `idioma`, `langue`, `Sprache`, `sprache`, `言語`, `언어`, `لغة`, `язык`, `taal`, and `γλώσσα` on the front board open it when row **5** is listed (it always is).
+`language` is not an argv verb. Typed `language`, `語言`, `语言`, `idioma`, `langue`, `Sprache`, `sprache`, `言語`, `언어`, `لغة`, `язык`, `taal`, and `γλώσσα` on the front board open it when row **7** is listed (it always is).
 
 The language board also accepts:
 
@@ -107,7 +107,7 @@ The front board also accepts the displayed category short for self-management: `
 
 **MUST** keep each leaf short as the English verb in every language (`action`, `return-original-owner`, `install`, `generate-sudoer-request`, and the other leaf tokens). The sudoers category short stays `sudoers` in every language.
 
-English (`APP_LANG=en`, or unset) **MUST** keep these literals so the existing menu tests still match: `Choice: ` (trailing space), `Not a menu choice:`, `Choose a listed number or command name.`, `9. Exit`, `0. Back`, `1. action: Recursively take ownership of a named folder`, `2. return-original-owner: Put the folder back to the saved original owner`, `5. language: display language for this menu`, `7. sudoers: Grant and drafts`, `8. self-management: This CLI install, version, update, uninstall`, `sudoers not available for `, and the front title `Take Unix ownership of a named folder with a narrow global-only sudo grant`.
+English (`APP_LANG=en`, or unset) **MUST** keep these literals so the existing menu tests still match: `Choice: ` (trailing space), `Not a menu choice:`, `Choose a listed number or command name.`, `9. Exit`, `0. Back`, `1. action: Recursively take ownership of a named folder`, `2. return-original-owner: Put the folder back to the saved original owner`, `5. sudoers: Grant and drafts`, `6. self-management: This CLI install, version, update, uninstall`, `7. language: display language for this menu`, `sudoers not available for `, and the front title `Take Unix ownership of a named folder with a narrow global-only sudo grant`.
 
 Category shorts:
 
@@ -169,9 +169,9 @@ A failed write warns in the language that was current before the failed write, l
 | **Load / save** | `app_lang_load` once in `app_main`; `app_lang_save` from the language board |
 | **Copy** | `app_menu_text` |
 | **Boards** | `app_main_menu_print`, `app_main_menu_print_language`, `app_main_menu_print_sudoers`, `app_main_menu_print_self` |
-| **Front row** | **5** (every host) |
-| **Assigned rows** | **51–63** |
-| **Reserved, not printed** | **50**, **64–69**; front **2**, **3**, **4**, **6** |
+| **Front row** | **7** (every host) |
+| **Assigned rows** | **71–83** |
+| **Reserved, not printed** | **70**, **84–89**; front **3**, **4**, **8** |
 | **Not an argv verb** | `language` |
 
 ### 2.6 Why this requirement exists
@@ -184,12 +184,12 @@ A failed write warns in the language that was current before the failed write, l
 
 When this program runs on Termux, Git Bash, or Windows Command Prompt, it **MUST** stay on **your own login**. Admin privilege and a dedicated system account are **unused**.
 
-**This requirement:** front **5** language stays on that class. The language file stays under this login’s persistence directory. Saving a language does not wrap `sudo` and does not write `/etc`.
+**This requirement:** front **7** language stays on that class. The language file stays under this login’s persistence directory. Saving a language does not wrap `sudo` and does not write `/etc`.
 
 ## 3. Design Principles (CIAO / CIAO-Lite)
 
 - **Caution:** Do not rewrite a file that is not one of the thirteen codes. Do not `out_die` for a bad language pick.
-- **Intentional:** Thirteen codes, row **5**, block **50–69**, env override that does not write.
+- **Intentional:** Thirteen codes, row **7**, block **70–89**, env override that does not write.
 - **Anti-fragile:** Missing, empty, or unknown file means English for this process only.
 - **Over-protect:** Leaf mode **0600**. JSON and argv `version` stay English. `language` is not a dispatcher token.
 
@@ -198,14 +198,14 @@ When this program runs on Termux, Git Bash, or Windows Command Prompt, it **MUST
 **Future AI assistants or maintainers MUST NOT**:
 
 1. Add a fourteenth language code without a new revision of this file.
-2. Print **50** or **64** through **69**, or print front **6** as the language row.
+2. Print **70** or **84** through **89**, or print front **8** as the language row.
 3. Put the language file in the cache folder or under `/var`.
 4. Call `app_lang_load` again after a menu pick in the same process.
 5. Let `TAKE_OWNERSHIP_LANG` write the file.
 6. Dispatch `language` as an argv verb.
 7. Translate JSON about keys, JSON help, or argv `version`.
 8. Change the English menu literals named in §2.4.
-9. Hide row **5** on Termux, Git Bash, or Windows cmd.
+9. Hide row **7** on Termux, Git Bash, or Windows cmd.
 10. Use **9** on the language board as Exit.
 
 ## 5. Related artifacts
@@ -213,7 +213,7 @@ When this program runs on Termux, Git Bash, or Windows Command Prompt, it **MUST
 | Artifact | Role |
 |----------|------|
 | `docs/requirements/index.md` | Registry |
-| `docs/requirements/requirement-shell-cli-default-interaction.md` | Front **5**; Back and Exit |
+| `docs/requirements/requirement-shell-cli-default-interaction.md` | Front **7**; Back and Exit |
 | `docs/requirements/requirement-shell-cli-storage.md` | Persistence directory |
 | `docs/requirements/requirement-shell-cli-interface.md` | `language` is not dispatched |
 | `./src/take-ownership` | Ship unit |
@@ -222,14 +222,14 @@ When this program runs on Termux, Git Bash, or Windows Command Prompt, it **MUST
 
 | TP family / ID | Suite | Status |
 |----------------|-------|--------|
-| **TP-CLI-32** | `tests/test_cli.sh` | have (front **5** / block **50–69**, assigned **51–63**, **50** and **64–69** unprinted, front **6** does not open the board, save mode 0600, `TAKE_OWNERSHIP_LANG` override, Back does not write, next run uses the file, help and about follow the code) |
-| **TP-CLI-13** · **TP-CLI-25** · **TP-CLI-26** | `tests/test_cli.sh` | have (English front still matches; **5** is language; Termux still prints **5** and still hides **7**) |
+| **TP-CLI-32** | `tests/test_cli.sh` | have (front **7** / block **70–89**, assigned **71–83**, **70** and **84–89** unprinted, front **8** does not open the board, save mode 0600, `TAKE_OWNERSHIP_LANG` override, Back does not write, next run uses the file, help and about follow the code) |
+| **TP-CLI-13** · **TP-CLI-25** · **TP-CLI-26** | `tests/test_cli.sh` | have (English front still matches; **7** is language; Termux still prints **7** and still hides **5**) |
 
 **Matrix:** `reviews/requirement-test-matrix.md`
 **Map:** `reviews/test-plan.md`
 
 ---
 
-**Last Updated**: 2026-10-14
+**Last Updated**: 2026-10-14 (front **7** / **71–83**)
 **Owner**: product
 **Alignment**: `requirement-shell-cli-default-interaction` · `requirement-shell-cli-storage` · `requirement-shell-cli-interface` · CIAO / CIAO-Lite

@@ -468,40 +468,42 @@ run_test_cli() {
         _plain=$(ci_strip_ansi "$_out")
         assert_contains "TP-CLI-13 TTY menu action row" "$_plain" "1. action: Recursively take ownership of a named folder"
         assert_contains "TP-CLI-13 TTY menu return row" "$_plain" "2. return-original-owner: Put the folder back to the saved original owner"
-        assert_contains "TP-CLI-13 TTY menu language row" "$_plain" "5. language:"
-        assert_not_contains "TP-CLI-13 TTY menu no row 6 language" "$_plain" "6. language:"
-        assert_contains "TP-CLI-13 TTY menu family sudoers" "$_plain" "7. sudoers: Grant and drafts"
-        assert_contains "TP-CLI-13 TTY menu family self-management" "$_plain" "8. self-management: This CLI install, version, update, uninstall"
+        assert_contains "TP-CLI-13 TTY menu family sudoers" "$_plain" "5. sudoers: Grant and drafts"
+        assert_contains "TP-CLI-13 TTY menu family self-management" "$_plain" "6. self-management: This CLI install, version, update, uninstall"
+        assert_contains "TP-CLI-13 TTY menu language row" "$_plain" "7. language:"
+        assert_not_contains "TP-CLI-13 TTY menu no row 8 language" "$_plain" "8. language:"
+        assert_not_contains "TP-CLI-13 TTY menu no row 5 language" "$_plain" "5. language:"
         assert_contains "TP-CLI-13 TTY menu Exit 9" "$_plain" "9. Exit"
         assert_contains "TP-CLI-13 TTY menu ident token" "$_plain" "${APP_NAME}(${PRODUCT_VERSION})"
         assert_not_contains "TP-CLI-13 TTY menu no old family row 2" "$_plain" "2. sudoers:"
         assert_not_contains "TP-CLI-13 TTY menu no list-folders row" "$_plain" "list-folders: List folders this login may take ownership of"
         assert_not_contains "TP-CLI-13 TTY menu no backup row" "$_plain" "1. backup:"
-        assert_not_contains "TP-CLI-13 TTY main hides generate row" "$_plain" "71. generate-sudoer-request:"
-        assert_not_contains "TP-CLI-13 TTY main hides install row" "$_plain" "81. install:"
+        assert_not_contains "TP-CLI-13 TTY main hides generate row" "$_plain" "51. generate-sudoer-request:"
+        assert_not_contains "TP-CLI-13 TTY main hides install row" "$_plain" "61. install:"
 
         _out=$(PTY_IN="9" ci_pty_run)
         _plain=$(ci_strip_ansi "$_out")
         assert_contains "TP-CLI-13 TTY empty argv action row" "$_plain" "1. action: Recursively take ownership of a named folder"
         assert_contains "TP-CLI-13 TTY empty argv return row" "$_plain" "2. return-original-owner: Put the folder back to the saved original owner"
-        assert_contains "TP-CLI-13 TTY empty argv language row" "$_plain" "5. language:"
-        assert_not_contains "TP-CLI-13 TTY empty argv no row 6 language" "$_plain" "6. language:"
-        assert_contains "TP-CLI-13 TTY empty argv family sudoers" "$_plain" "7. sudoers: Grant and drafts"
-        assert_contains "TP-CLI-13 TTY empty argv family self-management" "$_plain" "8. self-management: This CLI install, version, update, uninstall"
+        assert_contains "TP-CLI-13 TTY empty argv family sudoers" "$_plain" "5. sudoers: Grant and drafts"
+        assert_contains "TP-CLI-13 TTY empty argv family self-management" "$_plain" "6. self-management: This CLI install, version, update, uninstall"
+        assert_contains "TP-CLI-13 TTY empty argv language row" "$_plain" "7. language:"
+        assert_not_contains "TP-CLI-13 TTY empty argv no row 8 language" "$_plain" "8. language:"
+        assert_not_contains "TP-CLI-13 TTY empty argv no row 5 language" "$_plain" "5. language:"
         assert_contains "TP-CLI-13 TTY empty argv Exit 9" "$_plain" "9. Exit"
         assert_contains "TP-CLI-13 TTY empty argv ident token" "$_plain" "${APP_NAME}(${PRODUCT_VERSION})"
         assert_not_contains "TP-CLI-13 TTY empty argv no list-folders row" "$_plain" "list-folders: List folders this login may take ownership of"
         assert_not_contains "TP-CLI-13 TTY empty argv not help Usage" "$_plain" "Usage:"
 
-        _out=$(PTY_IN="7
+        _out=$(PTY_IN="5
 0
 9" ci_pty_run menu)
         _plain=$(ci_strip_ansi "$_out")
-        assert_contains "TP-CLI-22 TTY submenu generate row" "$_plain" "71. generate-sudoer-request: Write a JSON grant you can read"
-        assert_contains "TP-CLI-22 TTY submenu submit row" "$_plain" "72. submit-sudoer-request: Queue the JSON grant inbound"
-        assert_contains "TP-CLI-22 TTY submenu print row" "$_plain" "73. print-sudoers: Emit sudoers draft"
-        assert_contains "TP-CLI-22 TTY submenu install-script row" "$_plain" "74. print-sudoers-install-script: Write admin install script"
-        assert_contains "TP-CLI-22 TTY submenu remove row" "$_plain" "75. remove-project-sudoers: Remove sudoers draft only"
+        assert_contains "TP-CLI-22 TTY submenu generate row" "$_plain" "51. generate-sudoer-request: Write a JSON grant you can read"
+        assert_contains "TP-CLI-22 TTY submenu submit row" "$_plain" "52. submit-sudoer-request: Queue the JSON grant inbound"
+        assert_contains "TP-CLI-22 TTY submenu print row" "$_plain" "53. print-sudoers: Emit sudoers draft"
+        assert_contains "TP-CLI-22 TTY submenu install-script row" "$_plain" "54. print-sudoers-install-script: Write admin install script"
+        assert_contains "TP-CLI-22 TTY submenu remove row" "$_plain" "55. remove-project-sudoers: Remove sudoers draft only"
         assert_contains "TP-CLI-22 TTY submenu Back 0" "$_plain" "0. Back"
         assert_not_contains "TP-CLI-22 TTY submenu no Back 8" "$_plain" "8. Back"
         _mid=$(printf '%s\n' "$_plain" | sed -n '/sudoers (grant and drafts)/,/0\. Back/p')
@@ -511,14 +513,14 @@ run_test_cli() {
         _plain=$(ci_strip_ansi "$_out")
         assert_contains "TP-CLI-14 TTY menu --json still numbered list" "$_plain" "9. Exit"
         assert_contains "TP-CLI-14 TTY menu --json action row" "$_plain" "1. action: Recursively take ownership"
-        assert_contains "TP-CLI-14 TTY menu --json family sudoers" "$_plain" "7. sudoers: Grant and drafts"
-        assert_contains "TP-CLI-14 TTY menu --json family self-management" "$_plain" "8. self-management:"
+        assert_contains "TP-CLI-14 TTY menu --json family sudoers" "$_plain" "5. sudoers: Grant and drafts"
+        assert_contains "TP-CLI-14 TTY menu --json family self-management" "$_plain" "6. self-management:"
         assert_not_contains "TP-CLI-14 TTY menu --json ignores JSON help" "$_out" '"type":"success"'
 
         _out=$(PTY_IN="9" ci_pty_run menu)
         _plain=$(ci_strip_ansi "$_out")
         assert_not_contains "TP-CLI-16 no help row" "$_plain" "help: Show this help"
-        assert_not_contains "TP-CLI-16 front no install row" "$_plain" "81. install:"
+        assert_not_contains "TP-CLI-16 front no install row" "$_plain" "61. install:"
         assert_not_contains "TP-CLI-16 front no install explain" "$_plain" "install: Ensure this program from the channel"
         assert_not_contains "TP-CLI-16 front no uninstall row" "$_plain" "self-uninstall: Remove the managed binary"
         assert_not_contains "TP-CLI-16 no where-is-me row" "$_plain" "where-is-me: Show running"
@@ -528,18 +530,18 @@ run_test_cli() {
         assert_not_contains "TP-CLI-16 no menu row" "$_plain" "menu: Show the numbered list"
         assert_not_contains "TP-CLI-16 no main row" "$_plain" "main: Same numbered list"
         assert_not_contains "TP-CLI-16 no list-folders row" "$_plain" "list-folders:"
-        _out=$(PTY_IN="8
+        _out=$(PTY_IN="6
 0
 9" ci_pty_run menu)
         _plain=$(ci_strip_ansi "$_out")
-        assert_contains "TP-CLI-16 submenu install row" "$_plain" "81. install: Ensure this program from the channel"
-        assert_contains "TP-CLI-23 submenu version row" "$_plain" "82. version: Show the local version"
-        assert_contains "TP-CLI-23 submenu about row" "$_plain" "83. about: Show diagnostics including global-bin presence"
-        assert_contains "TP-CLI-23 submenu version-check row" "$_plain" "84. version-check: Compare local version to the channel"
-        assert_contains "TP-CLI-23 submenu self-update row" "$_plain" "85. self-update: Update this program when the channel is newer"
-        assert_contains "TP-CLI-23 submenu self-uninstall row" "$_plain" "86. self-uninstall: Remove the managed binary (not the host grant)"
+        assert_contains "TP-CLI-16 submenu install row" "$_plain" "61. install: Ensure this program from the channel"
+        assert_contains "TP-CLI-23 submenu version row" "$_plain" "62. version: Show the local version"
+        assert_contains "TP-CLI-23 submenu about row" "$_plain" "63. about: Show diagnostics including global-bin presence"
+        assert_contains "TP-CLI-23 submenu version-check row" "$_plain" "64. version-check: Compare local version to the channel"
+        assert_contains "TP-CLI-23 submenu self-update row" "$_plain" "65. self-update: Update this program when the channel is newer"
+        assert_contains "TP-CLI-23 submenu self-uninstall row" "$_plain" "66. self-uninstall: Remove the managed binary (not the host grant)"
         assert_contains "TP-CLI-23 submenu Back 0" "$_plain" "0. Back"
-        assert_not_contains "TP-CLI-23 submenu no self-install row" "$_plain" "87. self-install"
+        assert_not_contains "TP-CLI-23 submenu no self-install row" "$_plain" "67. self-install"
         assert_not_contains "TP-CLI-23 submenu no where-is-me row" "$_plain" "where-is-me:"
         _mid=$(printf '%s\n' "$_plain" | sed -n '/self-management (this CLI)/,/0\. Back/p')
         assert_not_contains "TP-CLI-23 TTY submenu no Exit 9" "$_mid" "9. Exit"
@@ -560,7 +562,7 @@ run_test_cli() {
         assert_contains "TP-CLI-19 TTY explain SGR 3;37" "$_out" "${_esc}[3;37m"
         assert_contains "TP-CLI-19 TTY action name unstyled" "$_out" "1. action: "
         assert_contains "TP-CLI-19 TTY Exit unstyled" "$_plain" "9. Exit"
-        _out=$(PTY_IN="7
+        _out=$(PTY_IN="5
 0
 9" ci_pty_run menu)
         _plain=$(ci_strip_ansi "$_out")
@@ -573,8 +575,8 @@ run_test_cli() {
         assert_not_contains "TP-CLI-19 off-TTY empty argv no explain CSI" "$_empty" "${_esc}[3;37m"
 
         # TP-CLI-24 — after version, the front board returns; a bad token reprints this layer
-        _out=$(PTY_IN="8
-82
+        _out=$(PTY_IN="6
+62
 9" ci_pty_run menu)
         _plain=$(ci_strip_ansi "$_out")
         assert_contains "TP-CLI-24 version leaf ran" "$_plain" "${APP_NAME} version ${PRODUCT_VERSION}"
@@ -588,38 +590,38 @@ run_test_cli() {
         assert_not_contains "TP-CLI-24 unknown token is not ERROR" "$_plain" "[ERROR]"
         _nfront=$(printf '%s\n' "$_plain" | grep -c '1\. action: Recursively take ownership of a named folder' || true)
         assert_eq "TP-CLI-24 unknown token reprints front" "2" "${_nfront}"
-        _out=$(PTY_IN="7
+        _out=$(PTY_IN="5
 9
 0
 9" ci_pty_run menu)
         _plain=$(ci_strip_ansi "$_out")
         assert_contains "TP-CLI-24 submenu 9 is not Exit" "$_plain" "Not a menu choice: '9'"
-        _nsudo=$(printf '%s\n' "$_plain" | grep -c '71\. generate-sudoer-request:' || true)
+        _nsudo=$(printf '%s\n' "$_plain" | grep -c '51\. generate-sudoer-request:' || true)
         assert_eq "TP-CLI-24 submenu 9 reprints sudoers" "2" "${_nsudo}"
 
-        # TP-CLI-25 — Termux / Git Bash / Windows cmd omit row 7 and name why
+        # TP-CLI-25 — Termux / Git Bash / Windows cmd omit row 5 and name why
         _out=$(PREFIX="/data/data/com.termux/files/usr" PTY_IN="9" ci_pty_run menu)
         _plain=$(ci_strip_ansi "$_out")
         _head=${_plain%%1. action:*}
         assert_contains "TP-CLI-25 termux reason before numbers" "$_head" "sudoers not available for termux"
-        assert_not_contains "TP-CLI-25 termux omits row 7" "$_plain" "7. sudoers:"
-        assert_contains "TP-CLI-25 termux keeps language" "$_plain" "5. language:"
-        assert_contains "TP-CLI-25 termux keeps self-management" "$_plain" "8. self-management:"
+        assert_not_contains "TP-CLI-25 termux omits row 5" "$_plain" "5. sudoers:"
+        assert_contains "TP-CLI-25 termux keeps self-management" "$_plain" "6. self-management:"
+        assert_contains "TP-CLI-25 termux keeps language" "$_plain" "7. language:"
         assert_contains "TP-CLI-25 termux keeps Exit 9" "$_plain" "9. Exit"
         _gbhome=$(mktemp -d "${TMPDIR:-/tmp}/to-menu-gb.XXXXXX")
         _out=$(MSYSTEM="MINGW64" HOME="${_gbhome}" PTY_IN="9" ci_pty_run menu)
         _plain=$(ci_strip_ansi "$_out")
         _head=${_plain%%1. action:*}
         assert_contains "TP-CLI-25 gitbash reason before numbers" "$_head" "sudoers not available for gitbash"
-        assert_not_contains "TP-CLI-25 gitbash omits row 7" "$_plain" "7. sudoers:"
-        assert_contains "TP-CLI-25 gitbash keeps language" "$_plain" "5. language:"
+        assert_not_contains "TP-CLI-25 gitbash omits row 5" "$_plain" "5. sudoers:"
+        assert_contains "TP-CLI-25 gitbash keeps language" "$_plain" "7. language:"
         rm -rf "${_gbhome}"
         _out=$(OS="Windows_NT" PTY_IN="9" ci_pty_run menu)
         _plain=$(ci_strip_ansi "$_out")
         _head=${_plain%%1. action:*}
         assert_contains "TP-CLI-25 windows-cmd reason before numbers" "$_head" "sudoers not available for windows-cmd"
-        assert_not_contains "TP-CLI-25 windows-cmd omits row 7" "$_plain" "7. sudoers:"
-        assert_contains "TP-CLI-25 windows-cmd keeps language" "$_plain" "5. language:"
+        assert_not_contains "TP-CLI-25 windows-cmd omits row 5" "$_plain" "5. sudoers:"
+        assert_contains "TP-CLI-25 windows-cmd keeps language" "$_plain" "7. language:"
         assert_contains "TP-CLI-25 windows-cmd keeps action" "$_plain" "1. action:"
 
         # TP-CLI-26 — 0 is Back on every layer except the front board.
@@ -634,38 +636,38 @@ run_test_cli() {
         _nfront=$(printf '%s\n' "$_plain" | grep -c '1\. action: Recursively take ownership of a named folder' || true)
         assert_eq "TP-CLI-26 front 0 reprints the front board" "2" "${_nfront}"
 
-        # TP-CLI-32 — menu language. Front 5, rows 51-63, save, override.
+        # TP-CLI-32 — menu language. Front 7, rows 71-83, save, override.
         # 9 on the language board warns. It does not leave the program.
         ci_isolated_env
         unset TAKE_OWNERSHIP_LANG
         _langf="${CI_HOME}/.local/${APP_NAME}/language"
-        _out=$(HOME="${CI_HOME}" PTY_IN="5
+        _out=$(HOME="${CI_HOME}" PTY_IN="7
 9
 0
 9" ci_pty_run menu)
         _plain=$(ci_strip_ansi "$_out")
-        assert_contains "TP-CLI-32 front row is 5" "$_plain" "5. language:"
-        assert_not_contains "TP-CLI-32 front has no row 6" "$_plain" "6. language:"
-        assert_contains "TP-CLI-32 language row 51" "$_plain" "51. English:"
-        assert_contains "TP-CLI-32 language row 52" "$_plain" "52. 简体中文:"
-        assert_contains "TP-CLI-32 language row 53" "$_plain" "53. 繁體中文:"
-        assert_contains "TP-CLI-32 language row 54" "$_plain" "54. Español:"
-        assert_contains "TP-CLI-32 language row 55" "$_plain" "55. العربية:"
-        assert_contains "TP-CLI-32 language row 56" "$_plain" "56. Français:"
-        assert_contains "TP-CLI-32 language row 57" "$_plain" "57. Português:"
-        assert_contains "TP-CLI-32 language row 58" "$_plain" "58. Русский:"
-        assert_contains "TP-CLI-32 language row 59" "$_plain" "59. Deutsch:"
-        assert_contains "TP-CLI-32 language row 60" "$_plain" "60. 日本語:"
-        assert_contains "TP-CLI-32 language row 61" "$_plain" "61. 한국어:"
-        assert_contains "TP-CLI-32 language row 62" "$_plain" "62. Nederlands:"
-        assert_contains "TP-CLI-32 language row 63" "$_plain" "63. Ελληνικά:"
+        assert_contains "TP-CLI-32 front row is 7" "$_plain" "7. language:"
+        assert_not_contains "TP-CLI-32 front has no row 8" "$_plain" "8. language:"
+        assert_contains "TP-CLI-32 language row 71" "$_plain" "71. English:"
+        assert_contains "TP-CLI-32 language row 72" "$_plain" "72. 简体中文:"
+        assert_contains "TP-CLI-32 language row 73" "$_plain" "73. 繁體中文:"
+        assert_contains "TP-CLI-32 language row 74" "$_plain" "74. Español:"
+        assert_contains "TP-CLI-32 language row 75" "$_plain" "75. العربية:"
+        assert_contains "TP-CLI-32 language row 76" "$_plain" "76. Français:"
+        assert_contains "TP-CLI-32 language row 77" "$_plain" "77. Português:"
+        assert_contains "TP-CLI-32 language row 78" "$_plain" "78. Русский:"
+        assert_contains "TP-CLI-32 language row 79" "$_plain" "79. Deutsch:"
+        assert_contains "TP-CLI-32 language row 80" "$_plain" "80. 日本語:"
+        assert_contains "TP-CLI-32 language row 81" "$_plain" "81. 한국어:"
+        assert_contains "TP-CLI-32 language row 82" "$_plain" "82. Nederlands:"
+        assert_contains "TP-CLI-32 language row 83" "$_plain" "83. Ελληνικά:"
         assert_contains "TP-CLI-32 English long" "$_plain" "use English for this menu"
         assert_contains "TP-CLI-32 Greek long" "$_plain" "use Greek for this menu"
-        assert_not_contains "TP-CLI-32 reserved 50 is not printed" "$_plain" "50. "
-        assert_not_contains "TP-CLI-32 reserved 64 is not printed" "$_plain" "64. "
-        assert_not_contains "TP-CLI-32 reserved 69 is not printed" "$_plain" "69. "
+        assert_not_contains "TP-CLI-32 reserved 70 is not printed" "$_plain" "70. "
+        assert_not_contains "TP-CLI-32 reserved 84 is not printed" "$_plain" "84. "
+        assert_not_contains "TP-CLI-32 reserved 89 is not printed" "$_plain" "89. "
         assert_contains "TP-CLI-32 language 9 warns" "$_plain" "Not a menu choice: '9'"
-        _mid=$(printf '%s\n' "$_plain" | sed -n '/51\. English:/,/0\. Back/p')
+        _mid=$(printf '%s\n' "$_plain" | sed -n '/71\. English:/,/0\. Back/p')
         assert_contains "TP-CLI-32 language board Back" "$_mid" "0. Back"
         assert_not_contains "TP-CLI-32 language board has no Exit 9" "$_mid" "9. Exit"
         if [ -f "${_langf}" ]; then
@@ -674,69 +676,69 @@ run_test_cli() {
             t_pass "TP-CLI-32 Back did not write the language file"
         fi
 
-        _out=$(HOME="${CI_HOME}" PTY_IN="6
+        _out=$(HOME="${CI_HOME}" PTY_IN="8
 9" ci_pty_run menu)
         _plain=$(ci_strip_ansi "$_out")
-        assert_contains "TP-CLI-32 front 6 is not a menu choice" "$_plain" "Not a menu choice: '6'"
-        assert_contains "TP-CLI-32 front 6 says choose listed" "$_plain" "Choose a listed number or command name."
-        assert_not_contains "TP-CLI-32 front 6 does not open the board" "$_plain" "51. English:"
+        assert_contains "TP-CLI-32 front 8 is not a menu choice" "$_plain" "Not a menu choice: '8'"
+        assert_contains "TP-CLI-32 front 8 says choose listed" "$_plain" "Choose a listed number or command name."
+        assert_not_contains "TP-CLI-32 front 8 does not open the board" "$_plain" "71. English:"
         if [ -f "${_langf}" ]; then
-            t_fail "TP-CLI-32 front 6 wrote the language file"
+            t_fail "TP-CLI-32 front 8 wrote the language file"
         else
-            t_pass "TP-CLI-32 front 6 did not write the language file"
+            t_pass "TP-CLI-32 front 8 did not write the language file"
         fi
 
-        _out=$(HOME="${CI_HOME}" PTY_IN="5
-50
-64
-69
+        _out=$(HOME="${CI_HOME}" PTY_IN="7
+70
+84
+89
 0
 9" ci_pty_run menu)
         _plain=$(ci_strip_ansi "$_out")
-        assert_contains "TP-CLI-32 reserved 50 warns" "$_plain" "Not a menu choice: '50'"
-        assert_contains "TP-CLI-32 reserved 64 warns" "$_plain" "Not a menu choice: '64'"
-        assert_contains "TP-CLI-32 reserved 69 warns" "$_plain" "Not a menu choice: '69'"
-        assert_contains "TP-CLI-32 reserved reprint still lists 51" "$_plain" "51. English:"
+        assert_contains "TP-CLI-32 reserved 70 warns" "$_plain" "Not a menu choice: '70'"
+        assert_contains "TP-CLI-32 reserved 84 warns" "$_plain" "Not a menu choice: '84'"
+        assert_contains "TP-CLI-32 reserved 89 warns" "$_plain" "Not a menu choice: '89'"
+        assert_contains "TP-CLI-32 reserved reprint still lists 71" "$_plain" "71. English:"
         if [ -f "${_langf}" ]; then
             t_fail "TP-CLI-32 reserved picks wrote the language file"
         else
             t_pass "TP-CLI-32 reserved picks did not write the language file"
         fi
 
-        _out=$(HOME="${CI_HOME}" PTY_IN="5
-53
+        _out=$(HOME="${CI_HOME}" PTY_IN="7
+73
 9" ci_pty_run menu)
         _plain=$(ci_strip_ansi "$_out")
         assert_contains "TP-CLI-32 saved Traditional Chinese" "$_plain" "選單語言是繁體中文"
-        assert_contains "TP-CLI-32 front redraws in Traditional Chinese" "$_plain" "5. 語言:"
+        assert_contains "TP-CLI-32 front redraws in Traditional Chinese" "$_plain" "7. 語言:"
         assert_eq "TP-CLI-32 language file is zh-Hant" "zh-Hant" "$(head -n 1 "${_langf}")"
         _mode=$(stat -c '%a' "${_langf}" 2>/dev/null || stat -f '%OLp' "${_langf}")
         assert_eq "TP-CLI-32 language file mode 0600" "600" "${_mode}"
 
         _out=$(HOME="${CI_HOME}" PTY_IN="9" ci_pty_run menu)
         _plain=$(ci_strip_ansi "$_out")
-        assert_contains "TP-CLI-32 next run keeps Traditional Chinese" "$_plain" "5. 語言:"
-        assert_not_contains "TP-CLI-32 next run is not the English short" "$_plain" "5. language:"
+        assert_contains "TP-CLI-32 next run keeps Traditional Chinese" "$_plain" "7. 語言:"
+        assert_not_contains "TP-CLI-32 next run is not the English short" "$_plain" "7. language:"
 
         _out=$(HOME="${CI_HOME}" TAKE_OWNERSHIP_LANG=ja PTY_IN="9" ci_pty_run menu)
         _plain=$(ci_strip_ansi "$_out")
-        assert_contains "TP-CLI-32 TAKE_OWNERSHIP_LANG ja" "$_plain" "5. 言語:"
+        assert_contains "TP-CLI-32 TAKE_OWNERSHIP_LANG ja" "$_plain" "7. 言語:"
         assert_eq "TP-CLI-32 override does not rewrite the file" "zh-Hant" "$(head -n 1 "${_langf}")"
 
-        _out=$(HOME="${CI_HOME}" PTY_IN="5
-63
+        _out=$(HOME="${CI_HOME}" PTY_IN="7
+83
 9" ci_pty_run menu)
         _plain=$(ci_strip_ansi "$_out")
         assert_contains "TP-CLI-32 saved Greek" "$_plain" "Η γλώσσα του μενού είναι ελληνικά"
-        assert_contains "TP-CLI-32 front redraws in Greek" "$_plain" "5. γλώσσα:"
+        assert_contains "TP-CLI-32 front redraws in Greek" "$_plain" "7. γλώσσα:"
         assert_eq "TP-CLI-32 language file is el" "el" "$(head -n 1 "${_langf}")"
 
-        _out=$(HOME="${CI_HOME}" PTY_IN="5
+        _out=$(HOME="${CI_HOME}" PTY_IN="7
 arabic
 9" ci_pty_run menu)
         _plain=$(ci_strip_ansi "$_out")
         assert_contains "TP-CLI-32 saved Arabic" "$_plain" "لغة القائمة هي العربية"
-        assert_contains "TP-CLI-32 front redraws in Arabic" "$_plain" "5. لغة:"
+        assert_contains "TP-CLI-32 front redraws in Arabic" "$_plain" "7. لغة:"
         assert_eq "TP-CLI-32 language file is ar" "ar" "$(head -n 1 "${_langf}")"
 
         _help=$(HOME="${CI_HOME}" TAKE_OWNERSHIP_LANG=ja sh "${SCRIPT}" help 2>/dev/null)
@@ -754,8 +756,8 @@ arabic
         _help_en=$(HOME="${CI_HOME}" TAKE_OWNERSHIP_LANG=en sh "${SCRIPT}" help 2>/dev/null)
         assert_contains "TP-CLI-32 en help lists thirteen codes" "${_help_en}" \
             "en zh-Hans zh-Hant es ar fr pt ru de ja ko nl el"
-        assert_contains "TP-CLI-32 en help names row 5" "${_help_en}" \
-            "Menu row 5 sets the display language (51 English through 63 Greek)."
+        assert_contains "TP-CLI-32 en help names row 7" "${_help_en}" \
+            "Menu row 7 sets the display language (71 English through 83 Greek)."
 
         _err=$(HOME="${CI_HOME}" sh "${SCRIPT}" language 2>&1 >/dev/null)
         assert_eq "TP-CLI-32 language is not an argv verb" 1 "$?"
@@ -764,7 +766,7 @@ arabic
         _out=$(HOME="${CI_HOME}" TAKE_OWNERSHIP_LANG=en \
             PREFIX="/data/data/com.termux/files/usr" PTY_IN="9" ci_pty_run menu)
         _plain=$(ci_strip_ansi "$_out")
-        assert_contains "TP-CLI-32 Termux still lists language" "$_plain" "5. language:"
+        assert_contains "TP-CLI-32 Termux still lists language" "$_plain" "7. language:"
         assert_eq "TP-CLI-32 Termux override does not rewrite the file" "ar" "$(head -n 1 "${_langf}")"
         unset TAKE_OWNERSHIP_LANG
         ci_cleanup_env

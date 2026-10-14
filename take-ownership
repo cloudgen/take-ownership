@@ -39,7 +39,7 @@
 # Single file at repo root for curl | sh. Global bin still required before sudoers emit.
 #
 # APP NAME: hard-assign APP_NAME="take-ownership"
-# VERSION: hard-assign VERSION="3.1.0"
+# VERSION: hard-assign VERSION="3.3.0"
 #
 # =============================================================================
 
@@ -56,8 +56,8 @@ APP_NAME="take-ownership"
 : "${SHORT_DESCRIPTION:=${APP_DESC}}"
 : "${DESCRIPTION:=POSIX /bin/sh online-installable CLI: curl|sh install, version-check, self-update, self-uninstall, about, plus take-ownership action, return-original-owner, and grant/draft verbs.}"
 # Product version SSOT (semver). Extractors use: grep '^VERSION="'
-VERSION="3.2.0"
-: "${VERSION:=3.2.0}"
+VERSION="3.3.0"
+: "${VERSION:=3.3.0}"
 # Repository identity → install channel (inherited from selfmanaged).
 : "${REPO_USER:=cloudgen}"
 : "${REPO_NAME:=take-ownership}"
@@ -7262,19 +7262,19 @@ app_menu_read() {
 
 app_menu_language_code() {
     case "${1-}" in
-        51|en|english|English) printf '%s' "en" ;;
-        52|zh-Hans|zh-hans|simplified-chinese|简体中文) printf '%s' "zh-Hans" ;;
-        53|zh-Hant|zh-hant|traditional-chinese|繁體中文) printf '%s' "zh-Hant" ;;
-        54|es|spanish|Español|español) printf '%s' "es" ;;
-        55|ar|arabic|العربية|عربي) printf '%s' "ar" ;;
-        56|fr|french|Français|français) printf '%s' "fr" ;;
-        57|pt|portuguese|Português|português|portugues) printf '%s' "pt" ;;
-        58|ru|russian|Русский|русский) printf '%s' "ru" ;;
-        59|de|german|Deutsch|deutsch) printf '%s' "de" ;;
-        60|ja|japanese|日本語) printf '%s' "ja" ;;
-        61|ko|korean|한국어) printf '%s' "ko" ;;
-        62|nl|dutch|Nederlands|nederlands) printf '%s' "nl" ;;
-        63|el|greek|Ελληνικά|ελληνικά) printf '%s' "el" ;;
+        71|en|english|English) printf '%s' "en" ;;
+        72|zh-Hans|zh-hans|simplified-chinese|简体中文) printf '%s' "zh-Hans" ;;
+        73|zh-Hant|zh-hant|traditional-chinese|繁體中文) printf '%s' "zh-Hant" ;;
+        74|es|spanish|Español|español) printf '%s' "es" ;;
+        75|ar|arabic|العربية|عربي) printf '%s' "ar" ;;
+        76|fr|french|Français|français) printf '%s' "fr" ;;
+        77|pt|portuguese|Português|português|portugues) printf '%s' "pt" ;;
+        78|ru|russian|Русский|русский) printf '%s' "ru" ;;
+        79|de|german|Deutsch|deutsch) printf '%s' "de" ;;
+        80|ja|japanese|日本語) printf '%s' "ja" ;;
+        81|ko|korean|한국어) printf '%s' "ko" ;;
+        82|nl|dutch|Nederlands|nederlands) printf '%s' "nl" ;;
+        83|el|greek|Ελληνικά|ελληνικά) printf '%s' "el" ;;
         *) return 1 ;;
     esac
 }
@@ -7284,19 +7284,19 @@ app_main_menu_print_language() {
     : "${JSON:=0}"
     : "${QUIET:=0}"
     out_info "$(util_app_ident) — $(app_menu_text cat_language)"
-    out_menu_choice 51 English "$(app_menu_text lang_en_long)"
-    out_menu_choice 52 "简体中文" "$(app_menu_text lang_zh_hans_long)"
-    out_menu_choice 53 "繁體中文" "$(app_menu_text lang_zh_long)"
-    out_menu_choice 54 "Español" "$(app_menu_text lang_es_long)"
-    out_menu_choice 55 "العربية" "$(app_menu_text lang_ar_long)"
-    out_menu_choice 56 "Français" "$(app_menu_text lang_fr_long)"
-    out_menu_choice 57 "Português" "$(app_menu_text lang_pt_long)"
-    out_menu_choice 58 "Русский" "$(app_menu_text lang_ru_long)"
-    out_menu_choice 59 "Deutsch" "$(app_menu_text lang_de_long)"
-    out_menu_choice 60 "日本語" "$(app_menu_text lang_ja_long)"
-    out_menu_choice 61 "한국어" "$(app_menu_text lang_ko_long)"
-    out_menu_choice 62 "Nederlands" "$(app_menu_text lang_nl_long)"
-    out_menu_choice 63 "Ελληνικά" "$(app_menu_text lang_el_long)"
+    out_menu_choice 71 English "$(app_menu_text lang_en_long)"
+    out_menu_choice 72 "简体中文" "$(app_menu_text lang_zh_hans_long)"
+    out_menu_choice 73 "繁體中文" "$(app_menu_text lang_zh_long)"
+    out_menu_choice 74 "Español" "$(app_menu_text lang_es_long)"
+    out_menu_choice 75 "العربية" "$(app_menu_text lang_ar_long)"
+    out_menu_choice 76 "Français" "$(app_menu_text lang_fr_long)"
+    out_menu_choice 77 "Português" "$(app_menu_text lang_pt_long)"
+    out_menu_choice 78 "Русский" "$(app_menu_text lang_ru_long)"
+    out_menu_choice 79 "Deutsch" "$(app_menu_text lang_de_long)"
+    out_menu_choice 80 "日本語" "$(app_menu_text lang_ja_long)"
+    out_menu_choice 81 "한국어" "$(app_menu_text lang_ko_long)"
+    out_menu_choice 82 "Nederlands" "$(app_menu_text lang_nl_long)"
+    out_menu_choice 83 "Ελληνικά" "$(app_menu_text lang_el_long)"
     out_menu_choice 0 "$(app_menu_text label_back)"
 }
 
@@ -7459,19 +7459,19 @@ app_main_menu_warn_bad() {
 # =============================================================================
 #
 # GENERAL PURPOSE:
-# Front board is 1 action, 2 return-original-owner, 5 language, 7 sudoers,
-# 8 self-management, 9 Exit. Header is take-ownership(VERSION) and the short
-# description. On a TTY, explain text is italic + light gray. Lifecycle verbs
-# stay on the self-management board. language, sudoers, and self-management
-# are menu-only (not dispatcher tokens). Front 3, 4, and 6 are not rows.
-# Row 5 stays on every host.
+# Front board is 1 action, 2 return-original-owner, 5 sudoers,
+# 6 self-management, 7 language, 9 Exit. Header is take-ownership(VERSION)
+# and the short description. On a TTY, explain text is italic + light gray.
+# Lifecycle verbs stay on the self-management board. language, sudoers, and
+# self-management are menu-only (not dispatcher tokens). Front 3, 4, and 8
+# are not rows. Row 7 (language) stays on every host.
 #
 # ALIGNMENT:
 # - requirement-shell-cli-default-interaction.md
 # - requirement-shell-cli-language.md
 # - requirement-shell-output-requirements.md
 #
-# Last updated: 2026-10-04
+# Last updated: 2026-10-14
 # =============================================================================
 app_main_menu_print() {
     : "${APP_NAME:=take-ownership}"
@@ -7485,20 +7485,20 @@ app_main_menu_print() {
     fi
     out_menu_choice 1 action "$(app_menu_text long_action)"
     out_menu_choice 2 return-original-owner "$(app_menu_text long_return)"
-    out_menu_choice 5 "$(app_menu_text cat_language)" "$(app_menu_text cat_language_long)"
     if ! app_main_menu_sudoers_hidden; then
-        out_menu_choice 7 sudoers "$(app_menu_text cat_sudoers_long)"
+        out_menu_choice 5 sudoers "$(app_menu_text cat_sudoers_long)"
     fi
-    out_menu_choice 8 "$(app_menu_text cat_self)" "$(app_menu_text cat_self_long)"
+    out_menu_choice 6 "$(app_menu_text cat_self)" "$(app_menu_text cat_self_long)"
+    out_menu_choice 7 "$(app_menu_text cat_language)" "$(app_menu_text cat_language_long)"
     out_menu_choice 9 "$(app_menu_text label_exit)"
 }
 
 # =============================================================================
-# app_main_menu_print_sudoers() - Sudoers submenu (parent 7)
+# app_main_menu_print_sudoers() - Sudoers submenu (parent 5)
 # =============================================================================
 #
 # GENERAL PURPOSE:
-# Grant/draft rows 71-75. Back is 0. Exit 9 is not on this board.
+# Grant/draft rows 51-55. Back is 0. Exit 9 is not on this board.
 #
 # ALIGNMENT:
 # - requirement-shell-cli-default-interaction.md
@@ -7512,20 +7512,20 @@ app_main_menu_print_sudoers() {
     : "${QUIET:=0}"
 
     out_info "$(util_app_ident) — $(app_menu_text title_sudoers)"
-    out_menu_choice 71 generate-sudoer-request "$(app_menu_text long_gen)"
-    out_menu_choice 72 submit-sudoer-request "$(app_menu_text long_submit)"
-    out_menu_choice 73 print-sudoers "$(app_menu_text long_print)"
-    out_menu_choice 74 print-sudoers-install-script "$(app_menu_text long_script)"
-    out_menu_choice 75 remove-project-sudoers "$(app_menu_text long_remove)"
+    out_menu_choice 51 generate-sudoer-request "$(app_menu_text long_gen)"
+    out_menu_choice 52 submit-sudoer-request "$(app_menu_text long_submit)"
+    out_menu_choice 53 print-sudoers "$(app_menu_text long_print)"
+    out_menu_choice 54 print-sudoers-install-script "$(app_menu_text long_script)"
+    out_menu_choice 55 remove-project-sudoers "$(app_menu_text long_remove)"
     out_menu_choice 0 "$(app_menu_text label_back)"
 }
 
 # =============================================================================
-# app_main_menu_print_self() - Self-management submenu (parent 8)
+# app_main_menu_print_self() - Self-management submenu (parent 6)
 # =============================================================================
 #
 # GENERAL PURPOSE:
-# Lifecycle rows 81-86. 87 self-install stays unprinted. Back is 0.
+# Lifecycle rows 61-66. 67 self-install stays unprinted. Back is 0.
 #
 # ALIGNMENT:
 # - requirement-shell-cli-default-interaction.md
@@ -7540,12 +7540,12 @@ app_main_menu_print_self() {
     : "${QUIET:=0}"
 
     out_info "$(util_app_ident) — $(app_menu_text title_self)"
-    out_menu_choice 81 install "$(app_menu_text long_install)"
-    out_menu_choice 82 version "$(app_menu_text long_version)"
-    out_menu_choice 83 about "$(app_menu_text long_about)"
-    out_menu_choice 84 version-check "$(app_menu_text long_vercheck)"
-    out_menu_choice 85 self-update "$(app_menu_text long_update)"
-    out_menu_choice 86 self-uninstall "$(app_menu_text long_uninstall)"
+    out_menu_choice 61 install "$(app_menu_text long_install)"
+    out_menu_choice 62 version "$(app_menu_text long_version)"
+    out_menu_choice 63 about "$(app_menu_text long_about)"
+    out_menu_choice 64 version-check "$(app_menu_text long_vercheck)"
+    out_menu_choice 65 self-update "$(app_menu_text long_update)"
+    out_menu_choice 66 self-uninstall "$(app_menu_text long_uninstall)"
     out_menu_choice 0 "$(app_menu_text label_back)"
 }
 
@@ -7638,7 +7638,7 @@ app_main_menu_run_named() {
 # =============================================================================
 #
 # GENERAL PURPOSE:
-# Numbers 71-75 or a live verb. 0 / 9 / Back are owned by the loop.
+# Numbers 51-55 or a live verb. 0 / 9 / Back are owned by the loop.
 #
 # ALIGNMENT:
 # - requirement-shell-cli-default-interaction.md
@@ -7650,20 +7650,20 @@ app_main_menu_run_sudoers_pick() {
     _a="${2-}"
 
     case "${_pick}" in
-        71|generate-sudoer-request)
+        51|generate-sudoer-request)
             COMMAND="generate-sudoer-request"
             to_generate_sudoer_request "${_a}"
             ;;
-        72|submit-sudoer-request)
+        52|submit-sudoer-request)
             to_submit_sudoer_request "${_a}"
             ;;
-        73|print-sudoers)
+        53|print-sudoers)
             to_print_sudoers "${_a}"
             ;;
-        74|print-sudoers-install-script)
+        54|print-sudoers-install-script)
             to_print_sudoers_install_script "${_a}"
             ;;
-        75|remove-project-sudoers)
+        55|remove-project-sudoers)
             to_remove_project_sudoers "${_a}"
             ;;
         *)
@@ -7679,8 +7679,8 @@ app_main_menu_run_sudoers_pick() {
 # =============================================================================
 #
 # GENERAL PURPOSE:
-# Numbers 81-86, or uninstall as the alias of 86, or another live verb.
-# 87 is not a row. Returns 1 when the token is not a choice.
+# Numbers 61-66, or uninstall as the alias of 66, or another live verb.
+# 67 is not a row. Returns 1 when the token is not a choice.
 #
 # ALIGNMENT:
 # - requirement-shell-cli-default-interaction.md
@@ -7692,22 +7692,22 @@ app_main_menu_run_self_pick() {
     _a="${2-}"
 
     case "${_pick}" in
-        81|install)
+        61|install)
             inst_perform_install
             ;;
-        82|version)
+        62|version)
             app_version
             ;;
-        83|about)
+        63|about)
             app_about
             ;;
-        84|version-check)
+        64|version-check)
             ver_check
             ;;
-        85|self-update)
+        65|self-update)
             inst_self_update
             ;;
-        86|self-uninstall|uninstall)
+        66|self-uninstall|uninstall)
             inst_self_uninstall
             ;;
         *)
@@ -7723,8 +7723,8 @@ app_main_menu_run_self_pick() {
 # =============================================================================
 #
 # GENERAL PURPOSE:
-# 1 / action, or a typed live verb (including verbs that live on a submenu).
-# Category rows 7 and 8 are owned by the front loop.
+# 1 / action, 2 / return-original-owner, or a typed live verb.
+# Category rows 5, 6, and 7 are owned by the front loop.
 #
 # ALIGNMENT:
 # - requirement-shell-cli-default-interaction.md
@@ -7890,13 +7890,7 @@ app_main_menu() {
                 export JSON QUIET
                 return 0
                 ;;
-            5|language|語言|语言|idioma|langue|Sprache|sprache|言語|언어|لغة|язык|taal|γλώσσα)
-                app_main_menu_language_loop
-                _argv_a=""
-                _argv_b=""
-                continue
-                ;;
-            7|sudoers)
+            5|sudoers)
                 if app_main_menu_sudoers_hidden; then
                     app_main_menu_warn_bad "${_pick}"
                     _argv_a=""
@@ -7908,8 +7902,14 @@ app_main_menu() {
                 _argv_b=""
                 continue
                 ;;
-            8|self-management|自我管理|autogestión|autogestion|Selbstverwaltung|selbstverwaltung|自己管理|자기관리|إدارة-ذاتية|autogestão|самоуправление|zelfbeheer|αυτοδιαχείριση)
+            6|self-management|自我管理|autogestión|autogestion|Selbstverwaltung|selbstverwaltung|自己管理|자기관리|إدارة-ذاتية|autogestão|самоуправление|zelfbeheer|αυτοδιαχείριση)
                 app_main_menu_layer_loop self "${_argv_a}"
+                _argv_a=""
+                _argv_b=""
+                continue
+                ;;
+            7|language|語言|语言|idioma|langue|Sprache|sprache|言語|언어|لغة|язык|taal|γλώσσα)
+                app_main_menu_language_loop
                 _argv_a=""
                 _argv_b=""
                 continue
@@ -8052,7 +8052,7 @@ app_help() {
     out_info "Empty argv on a real terminal shows the numbered list. Off-TTY empty argv is channel install-ensure (curl|sh)."
     out_info "${APP_NAME} --json with no command is JSON help (even on a TTY)."
     out_info "Only ${GLOBAL_BIN}/${APP_NAME} may appear in sudoers (not ~/.local/bin)."
-    out_info "Menu row 5 sets the display language (51 English through 63 Greek)."
+    out_info "Menu row 7 sets the display language (71 English through 83 Greek)."
 }
 
 # =============================================================================

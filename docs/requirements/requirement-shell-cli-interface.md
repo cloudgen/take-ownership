@@ -1,5 +1,5 @@
 **file**: docs/requirements/requirement-shell-cli-interface.md  
-**Status**: Active (Version 3.3.0)  
+**Status**: Active (Version 3.4.0)  
 **Area**: shell  
 **Key**: `requirement-shell-cli-interface`  
 **Philosophy**: CIAO **v2.10.2** / CIAO-Lite (Caution • Intentional • Anti-fragile • Over-engineered / Over-protect)
@@ -78,7 +78,7 @@ Additional flags **MAY** be added only when documented here (or a superseding re
 
 `help` **MUST** list usage, every supported command, privilege category, global flags, and an honest note that `action` needs an admin-installed sudoers fragment **and** a global install.
 
-**Purpose split:** the test-purpose alias is **`generate-sudoer-json`**. Help **MUST** list it under a heading **apart** from operational work. The five sudoers grant/draft verbs are **operational** (menu **71–75**; still live CLI commands). The six self-management verbs are live CLI commands (menu **81–86**). **`language`, `sudoers`, and `self-management` are not live commands.** `language` is menu row **5** only (`requirement-shell-cli-language`).
+**Purpose split:** the test-purpose alias is **`generate-sudoer-json`**. Help **MUST** list it under a heading **apart** from operational work. The five sudoers grant/draft verbs are **operational** (menu **51–55**; still live CLI commands). The six self-management verbs are live CLI commands (menu **61–66**). **`language`, `sudoers`, and `self-management` are not live commands.** `language` is menu row **7** only (`requirement-shell-cli-language`).
 
 | Purpose | Verbs |
 |---------|-------|
@@ -137,7 +137,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 1. Unknown token after flag parse → `out_die` with pointer to `take-ownership help`.  
 2. Zero-arg after flag parse → TTY menu / off-TTY Type O / `--json` JSON help.  
 3. Command routing table in `app_main` **must** include every **Implemented** row above.  
-4. Help text **must** stay aligned. Test-purpose `generate-sudoer-json` **MUST** appear under a heading **apart**. The five sudoers verbs and the six self-management verbs **MUST** stay routed (same handlers as menu **71–75** and **81–86**). **MUST NOT** route `language`, `sudoers`, or `self-management`.  
+4. Help text **must** stay aligned. Test-purpose `generate-sudoer-json` **MUST** appear under a heading **apart**. The five sudoers verbs and the six self-management verbs **MUST** stay routed (same handlers as menu **51–55** and **61–66**). **MUST NOT** route `language`, `sudoers`, or `self-management`.  
 5. Domain catalog detail is owned by `requirement-domain-take-ownership.md`.
 
 #### Explicitly out of scope
@@ -194,7 +194,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | AC-1 | All **Implemented** commands in the table are routed and listed in help |
 | AC-2 | Global flags wire QUIET/JSON/DEBUG/FORCE/TO_PATH/TO_OWNERSHIP as specified |
 | AC-3 | Empty argv is TTY menu / off-TTY Type O (same split as `requirement-shell-cli-zero-arguments`) and routes through `app_main` |
-| AC-4 | Online self-management verbs (`install`, `version-check`, `self-update`, `self-uninstall`) are routed; menu numbers are **81**, **84**, **85**, **86** |
+| AC-4 | Online self-management verbs (`install`, `version-check`, `self-update`, `self-uninstall`) are routed; menu numbers are **61**, **64**, **65**, **66** |
 | AC-5 | Domain verbs point to domain requirement for deep semantics |
 | AC-6 | `submit-sudoer-request` is Type 0, routed; does not write `/etc` or create inbound |
 | AC-7 | `generate-sudoer-request` / `generate-sudoer-json` are Type 0, independent of submit; dest readable; global-bin gate |
@@ -209,7 +209,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | Key | Relationship |
 |-----|--------------|
 | `requirement-shell-cli-zero-arguments` | Empty argv: TTY menu, off-TTY Type O |
-| `requirement-shell-cli-default-interaction` | TTY tree; language **5** / **51–63**; sudoers **71–75**; self-management **81–86** |
+| `requirement-shell-cli-default-interaction` | TTY tree; sudoers **5** / **51–55**; self-management **6** / **61–66**; language **7** / **71–83** |
 | `requirement-shell-cli-language` | `language` is menu-only; human help and about follow the code |
 | `requirement-shell-self-management` | Handlers for install, version-check, self-update, self-uninstall |
 | `requirement-shell-output-requirements` | `out_*` catalog |
@@ -226,7 +226,7 @@ In JSON mode, help **MUST NOT** dump long human text; return a short structured 
 | TP family / ID | Suite | Status |
 |----------------|-------|--------|
 | **TP-CLI-01..12** | `tests/test_cli.sh` | **todo** — retarget from folder-backup names |
-| **TP-CLI-13..16**, **21..26**, **32** | same | **have** — front **1 / 2 / 5 / 7 / 8 / 9**; sudoers **71–75**; self-management **81–86**; `language`, `sudoers`, and `self-management` unknown |
+| **TP-CLI-13..16**, **21..26**, **32** | same | **have** — front **1 / 2 / 5 / 6 / 7 / 9**; sudoers **51–55**; self-management **61–66**; language **71–83**; `language`, `sudoers`, and `self-management` unknown |
 | **TP-CLI-17** | same | **have** — help lists test-purpose `generate-sudoer-json` apart |
 
 **Matrix:** `reviews/requirement-test-matrix.md`  
@@ -252,6 +252,7 @@ Detect (typical): Termux — `PREFIX` contains `com.termux`; Git Bash — `MSYST
 | 2026-09-30 | Active 3.1.0 | Menu pointers: sudoers **71–75**, self-management **81–86**; category names not dispatched; empty argv follows Type O |
 | 2026-10-04 | Active 3.2.0 | `language` is menu-only (front **5** / **51–63**), not an argv verb |
 | 2026-10-14 | Active 3.3.0 | `return-original-owner` is a routed verb. Front row **2**. No `--ownership` on that verb |
+| 2026-10-14 | Active 3.4.0 | Menu pointers: sudoers **51–55**, self-management **61–66**, language front **7** / **71–83** |
 
 ---
 

@@ -3,9 +3,9 @@
 Maps **TP-*** coverage to `tests/`.  
 **Suite entry:** `./tests/run.sh`  
 **Ship unit:** `src/take-ownership`  
-**Product VERSION:** 3.2.0  
+**Product VERSION:** 3.3.0  
 **Last plan update:** 2026-10-14  
-**Last suite run:** `./tests/run.sh` on 2026-10-14 — **PASS=515 FAIL=0 SKIP=1** (TP-CURL-09 optional online; menu language **TP-CLI-32**; return **TP-TAKE-OWNERSHIP-47..52**)
+**Last suite run:** `./tests/run.sh` on 2026-10-14 — **PASS=517 FAIL=0 SKIP=1** (TP-CURL-09 optional online; menu **5 / 6 / 7** **TP-CLI-13** · **TP-CLI-32**; return **TP-TAKE-OWNERSHIP-47..52**)
 
 Status: **have** = automated today · **todo** = needed · **optional** · **n/a** · **skip** (environment)
 
@@ -58,18 +58,18 @@ Status: **have** = automated today · **todo** = needed · **optional** · **n/a
 | TP-CLI-13 | interactive `menu` and empty argv print front **1 / 2 / 5 / 7 / 8 / 9**; no **6** language row; no `2. sudoers` | test_cli | shell-cli-default-interaction · shell-cli-language | **have** |
 | TP-CLI-14 | interactive `menu --json` still prints the list | test_cli | shell-cli-default-interaction | **have** |
 | TP-CLI-15 | non-interactive `menu` is help | test_cli | shell-cli-default-interaction | **have** |
-| TP-CLI-16 | front board omits install/version/about; those rows are **81–83** | test_cli | shell-cli-default-interaction | **have** |
+| TP-CLI-16 | front board omits install/version/about; those rows are **61–63** | test_cli | shell-cli-default-interaction | **have** |
 | TP-CLI-17 | help lists test-purpose `generate-sudoer-json` apart | test_cli | shell-cli-interface | **have** |
 | TP-CLI-18 | persist `${HOME}/.local/${APP_NAME}` (no override) | test_cli | requirement-shell-cli-storage | **have** |
 | TP-CLI-19 | default CLI main menu style | test_cli | shell-cli-default-interaction · output | **have** |
 | TP-CLI-20 | Git Bash (`MSYSTEM`) still runs Type 0 `version` | test_cli | shell-sudo-command · command line for normal user only | **have** |
-| TP-CLI-21 | front **1 / 7 / 8 / 9**; `sudoers` and `self-management` unknown as argv | test_cli | shell-cli-default-interaction | **have** |
-| TP-CLI-22 | sudoers **71–75**, **0** Back, no submenu **9** | test_cli | shell-cli-default-interaction | **have** |
-| TP-CLI-23 | self-management **81–86**, **0** Back, **87** absent | test_cli | shell-cli-default-interaction | **have** |
+| TP-CLI-21 | front **1 / 5 / 6 / 7 / 9**; `sudoers` and `self-management` unknown as argv | test_cli | shell-cli-default-interaction | **have** |
+| TP-CLI-22 | sudoers **51–55**, **0** Back, no submenu **9** | test_cli | shell-cli-default-interaction | **have** |
+| TP-CLI-23 | self-management **61–66**, **0** Back, **67** absent | test_cli | shell-cli-default-interaction | **have** |
 | TP-CLI-24 | after a leaf, front board returns; unknown token reprints this layer | test_cli | shell-cli-default-interaction | **have** |
-| TP-CLI-25 | Termux / Git Bash / Windows cmd omits front **7** and prints the reason first | test_cli | shell-cli-default-interaction | **have** |
+| TP-CLI-25 | Termux / Git Bash / Windows cmd omits front **5** and prints the reason first | test_cli | shell-cli-default-interaction | **have** |
 | TP-CLI-26 | Front **0** warns and reprints; the front board has no **0** Back row | test_cli | shell-cli-default-interaction | **have** |
-| TP-CLI-32 | Language board **51–63**, save, override, human help/about; `language` is not an argv verb | test_cli | shell-cli-language · shell-cli-storage · shell-cli-interface | **have** |
+| TP-CLI-32 | Language board **71–83**, save, override, human help/about; `language` is not an argv verb | test_cli | shell-cli-language · shell-cli-storage · shell-cli-interface | **have** |
 | TP-CACHE-01 | about JSON and human cache labels | test_cli | requirement-shell-cli-storage | **have** |
 | TP-CACHE-02 | Linux / Git Bash / macOS chains, silent skip, mode 0700, one leaf per process | test_cli | requirement-shell-cli-storage | **have** |
 | TP-CACHE-03 | scratch file and directory stay in the cache leaf; absent `mktemp`; refuse `$$` names | test_cli | requirement-shell-cli-storage | **have** |

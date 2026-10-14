@@ -5,6 +5,13 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [3.3.0] - 2026-10-14
+
+### Changed
+
+- **Main menu order.** On a real terminal the front board is **1** `action`, **2** `return-original-owner`, **5** sudoers, **6** self-management, **7** language, **9** Exit. Sudoers children are **51–55**. Self-management children are **61** `install` through **66** `self-uninstall`. **67** `self-install` stays reserved and is not printed. Language is **71** English through **83** Ελληνικά. **70** and **84–89** stay reserved. Front **3**, **4**, and **8** are not rows. On Termux, Git Bash, and Windows cmd, row **5** is omitted and the menu says why. Language **7** and self-management **6** stay. Law: `requirement-shell-cli-default-interaction` **3.3.0**, `requirement-shell-cli-language` **1.2.0**, `requirement-shell-cli-interface` **3.4.0**, `requirement-domain-take-ownership` **1.8.0**. Suite **TP-CLI-13**, **TP-CLI-14**, **TP-CLI-16**, **TP-CLI-22** through **TP-CLI-25**, and **TP-CLI-32**.
+- Product version **3.3.0**.
+
 ## [3.2.0] - 2026-10-14
 
 ### Added
